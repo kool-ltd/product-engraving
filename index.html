@@ -422,7 +422,7 @@ window.addEventListener('pointermove', e => {
   pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
   pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
   draw();
-}));
+});
 window.addEventListener('pointerup',   e => { if(e.pointerId===pinchStart.cid) resizing=false; });
 window.addEventListener('pointercancel',e => { if(e.pointerId===pinchStart.cid) resizing=false; });
 
