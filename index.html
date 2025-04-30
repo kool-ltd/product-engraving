@@ -62,13 +62,13 @@
       border:1px solid var(--border);
       border-radius:var(--radius);
       background:#eaeaea;
-      touch-action: none;
+      touch-action: none; /* capture all pointer gestures */
       margin:auto;
     }
 
     canvas {
       display:block;
-      touch-action: none;
+      touch-action: none; /* ensure we get pinch/drag */
     }
 
     #loadingOverlay {
@@ -255,7 +255,7 @@
       const r = view.getBoundingClientRect();
       return {
         x: (cx - r.left) * (full.width / r.width),
-        y: (cy - r.top ) * (full.height/ r.height)
+        y: (cy - r.top ) * (full.height / r.height)
       };
     }
     function hitTest(fx,fy){
@@ -426,7 +426,6 @@
 
       // 1) preview blob
       full.toBlob(previewBlob=>{
-
         // 2) text-only canvas & blob
         const t = document.createElement('canvas');
         t.width  = full.width;
@@ -435,31 +434,28 @@
         tCtx.font         = `${baseFont*textScale}px ${fontSel.value}`;
         tCtx.fillStyle    = '#000';
         tCtx.textBaseline = 'top';
-        tCtx.fillText(txtInput.value, pos.x, pos.y);
+        tCtx.fillText(txtInput.value, pos.x, pos        pos.y);
 
-        t.toBlob(textBlob=>{
-
+        t.toBlob(textBlob => {
           // 3) pack into ZIP
           const zip = new JSZip();
           zip.file('preview.png', previewBlob);
           zip.file('text-only.png', textBlob);
 
-          zip.generateAsync({ type:'blob' }).then(content=>{
+          zip.generateAsync({ type: 'blob' }).then(content => {
             // 4) trigger download
             const url = URL.createObjectURL(content);
-            const a   = document.createElement('a');
-            a.href    = url;
-            a.download= 'knife-engravings.zip';
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'knife-engravings.zip';
             document.body.appendChild(a);
             a.click();
-            setTimeout(()=>{
+            setTimeout(() => {
               URL.revokeObjectURL(url);
               a.remove();
-            },100);
+            }, 100);
           });
-
         });
-
       });
     });
   </script>
