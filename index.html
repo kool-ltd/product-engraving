@@ -91,7 +91,6 @@ canvas {
   height: auto;
   touch-action: none;
 }
-
 /* loading overlay */
 #loadingOverlay {
   position: absolute;
@@ -105,7 +104,6 @@ canvas {
   visibility: hidden;
   z-index: 10;
 }
-
 /* bounding box & handles */
 #bbox {
   position: absolute;
@@ -139,7 +137,6 @@ button[disabled] {
   opacity: .4;
   cursor: not-allowed;
 }
-
 @media(max-width:600px){
   .controls { flex-direction: column; align-items: flex-start; }
 }
@@ -192,7 +189,7 @@ button[disabled] {
           <option value="Arial">Arial</option>
         </select>
       </div>
-      <!-- size input removed -->
+      <button type="button" id="toggleBoxBtn">Hide Box</button>
     </div>
     <p style="font-size:.8rem; color:#666; margin-top:.5rem;">
       • Drag the text box to move.<br>
@@ -222,152 +219,133 @@ button[disabled] {
 </div>
 
 <script>
-/* ──────────────── ELEMENTS & STATE ──────────────── */
-const view      = document.getElementById('viewCanvas');
-const vCtx      = view.getContext('2d');
-const full      = document.createElement('canvas');
-const fCtx      = full.getContext('2d');
-const radios    = document.querySelectorAll('[name="product"]');
-const txtInput  = document.getElementById('engraveText');
-const fontSel   = document.getElementById('fontSelect');
-const dlBtn     = document.getElementById('downloadBtn');
-const overlay   = document.getElementById('loadingOverlay');
-const bboxEl    = document.getElementById('bbox');
-const handles   = document.querySelectorAll('.handle');
+/* ─────────────── STATE & ELEMENTS ─────────────── */
+const view       = document.getElementById('viewCanvas');
+const vCtx       = view.getContext('2d');
+const full       = document.createElement('canvas');
+const fCtx       = full.getContext('2d');
+const radios     = document.querySelectorAll('[name="product"]');
+const txtInput   = document.getElementById('engraveText');
+const fontSel    = document.getElementById('fontSelect');
+const dlBtn      = document.getElementById('downloadBtn');
+const overlay    = document.getElementById('loadingOverlay');
+const bboxEl     = document.getElementById('bbox');
+const handles    = document.querySelectorAll('.handle');
+const toggleBtn  = document.getElementById('toggleBoxBtn');
 
-let img         = null;      // full-res Image
-let baseFont    = 150;       // px
-let textScale   = 1;
-let pos         = { x:0, y:0 };  // top-left in FULL coords
-let baseDims    = { w:0, h:0 };
+let img          = null;
+let baseFont     = 150;      // reference font-size
+let textScale    = 1;
+let baseDims     = { w:0, h:0 };  // at baseFont
+let pos          = { x:0, y:0 };
 
-/* dragging */
-let dragging    = false;
-let dragStart   = {};
-/* resizing */
-let resizing    = false;
-let resizeStart = {};
-/* pinch-to-zoom */
-let pointers    = {};        // map id→{x,y}
-let pinch       = false;
-let pinchStart  = {};
+// drag / resize / pinch state
+let dragging     = false, dragStart = {};
+let resizing     = false, resizeStart = {};
+let pointers     = {}, pinch = false, pinchStart = {};
+
 const MAX_W = 900, MAX_H = 600;
+let boxVisible   = true;
 
-/* ──────────────── HELPERS ──────────────── */
+/* ─────────────── HELPERS ─────────────── */
 function showOverlay(on) {
   overlay.style.visibility = on ? 'visible' : 'hidden';
 }
-
-/** load an Image via CORS */
 function loadImage(src) {
   return new Promise(res => {
     const i = new Image();
-    i.crossOrigin = "anonymous";
-    i.onload = () => res(i);
-    i.src = src;
+    i.crossOrigin = 'anonymous';
+    i.onload  = () => res(i);
+    i.src     = src;
   });
 }
-
-/** fit full into preview box */
 function fitInBox() {
-  const sw = Math.min(1, MAX_W / img.naturalWidth, MAX_H / img.naturalHeight);
-  view.width  = img.naturalWidth  * sw;
-  view.height = img.naturalHeight * sw;
+  const s = Math.min(1, MAX_W/img.naturalWidth, MAX_H/img.naturalHeight);
+  view.width  = img.naturalWidth  * s;
+  view.height = img.naturalHeight * s;
   full.width  = img.naturalWidth;
   full.height = img.naturalHeight;
 }
-
-/** measure the base text dims (at baseFont, before scale) */
 function measureBaseText() {
   fCtx.font = `${baseFont}px ${fontSel.value}`;
-  const w = fCtx.measureText(txtInput.value).width;
-  const h = baseFont;
-  return { w,h };
+  return { w: fCtx.measureText(txtInput.value).width, h: baseFont };
 }
-
-/** draw both full-res & preview */
-function draw() {
-  if (!img) return;
-  // full
-  fCtx.clearRect(0,0,full.width,full.height);
-  fCtx.drawImage(img,0,0);
-  fCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
-  fCtx.fillStyle = '#000';
-  fCtx.textBaseline = 'top';
-  fCtx.fillText(txtInput.value, pos.x, pos.y);
-
-  // preview
-  const scale = view.width / full.width;
-  vCtx.setTransform(scale,0,0,scale,0,0);
-  vCtx.clearRect(0,0,full.width,full.height);
-  vCtx.drawImage(img,0,0);
-  vCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
-  vCtx.fillStyle = '#000';
-  vCtx.textBaseline = 'top';
-  vCtx.fillText(txtInput.value, pos.x, pos.y);
-  vCtx.setTransform(1,0,0,1,0,0);
-
-  // update bounding box + handles
-  const { w:hW, h:hH } = { w: baseDims.w * textScale, h: baseDims.h * textScale };
-  const scalePx = view.width / full.width;
-  bboxEl.style.display = txtInput.value ? 'block' : 'none';
-  bboxEl.style.width  = hW * scalePx + 'px';
-  bboxEl.style.height = hH * scalePx + 'px';
-  bboxEl.style.left   = pos.x * scalePx + 'px';
-  bboxEl.style.top    = pos.y * scalePx + 'px';
-}
-
-/** convert client→full coords */
 function toFullCoords(cx, cy) {
   const r = view.getBoundingClientRect();
-  const fx = (cx - r.left) * (full.width / r.width);
-  const fy = (cy - r.top)  * (full.height / r.height);
-  return { x: fx, y: fy };
+  return {
+    x: (cx - r.left) * (full.width  / r.width),
+    y: (cy - r.top)  * (full.height / r.height)
+  };
 }
-
-/** test if point hits text box */
 function hitTest(fx, fy) {
-  const bw = baseDims.w * textScale;
-  const bh = baseDims.h * textScale;
-  return fx >= pos.x && fx <= pos.x + bw
-      && fy >= pos.y && fy <= pos.y + bh;
+  return fx >= pos.x && fx <= pos.x + baseDims.w*textScale
+      && fy >= pos.y && fy <= pos.y + baseDims.h*textScale;
 }
-
-/** for downloads */
 function downloadCanvas(can,name) {
   can.toBlob(b => {
     const url = URL.createObjectURL(b);
-    const a = document.createElement('a');
+    const a   = document.createElement('a');
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click();
     setTimeout(()=>{
       URL.revokeObjectURL(url);
       a.remove();
-    }, 100);
+    },100);
   });
 }
+function draw() {
+  if (!img) return;
+  // full-res
+  fCtx.clearRect(0,0,full.width,full.height);
+  fCtx.drawImage(img,0,0);
+  fCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+  fCtx.fillStyle = '#000';
+  fCtx.textBaseline = 'top';
+  fCtx.fillText(txtInput.value, pos.x, pos.y);
 
-/* ──────────────── EVENTS ──────────────── */
-// 1) product change
-radios.forEach(radio => radio.addEventListener('change', async e => {
-  showOverlay(true);
-  dlBtn.disabled = true;
-  // load full
-  img = await loadImage(e.target.value);
-  fitInBox();
-  // reset text‐box
-  baseDims = measureBaseText();
-  textScale = 1;
-  pos.x = full.width/2 - baseDims.w/2;
-  pos.y = full.height/2 - baseDims.h/2;
-  draw();
-  showOverlay(false);
-  dlBtn.disabled = false;
-}));
+  // preview
+  const s = view.width / full.width;
+  vCtx.setTransform(s,0,0,s,0,0);
+  vCtx.clearRect(0,0,full.width,full.height);
+  vCtx.drawImage(img,0,0);
+  vCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+  vCtx.fillText(txtInput.value, pos.x, pos.y);
+  vCtx.setTransform(1,0,0,1,0,0);
 
-// 2) text or font change → re‐measure & reset scale
-[ txtInput, fontSel ].forEach(el =>
-  el.addEventListener('input', () => {
+  // update bbox
+  const bw = baseDims.w*textScale, bh = baseDims.h*textScale;
+  if (boxVisible && txtInput.value) {
+    bboxEl.style.display = 'block';
+    bboxEl.style.width  = bw * s + 'px';
+    bboxEl.style.height = bh * s + 'px';
+    bboxEl.style.left   = pos.x * s + 'px';
+    bboxEl.style.top    = pos.y * s + 'px';
+  } else {
+    bboxEl.style.display = 'none';
+  }
+}
+
+/* ─────────────── EVENTS ─────────────── */
+// Product change
+radios.forEach(r=>{
+  r.addEventListener('change', async e=>{
+    showOverlay(true);
+    dlBtn.disabled = true;
+    img = await loadImage(e.target.value);
+    fitInBox();
+    baseDims = measureBaseText();
+    textScale = 1;
+    pos.x = full.width/2 - baseDims.w/2;
+    pos.y = full.height/2 - baseDims.h/2;
+    draw();
+    showOverlay(false);
+    dlBtn.disabled = false;
+  });
+});
+
+// Text / font change
+[ txtInput, fontSel ].forEach(el=>
+  el.addEventListener('input', ()=>{
     baseDims = measureBaseText();
     textScale = 1;
     pos.x = full.width/2 - baseDims.w/2;
@@ -376,106 +354,111 @@ radios.forEach(radio => radio.addEventListener('change', async e => {
   })
 );
 
-// 3) dragging text box
-view.addEventListener('pointerdown', e => {
-  // don't start drag if we're resizing or pinching
-  if (!img || resizing || pinch) return;
-  const f = toFullCoords(e.clientX, e.clientY);
-  if (!hitTest(f.x,f.y)) return;
+// Drag text
+view.addEventListener('pointerdown', e=>{
+  const f = toFullCoords(e.clientX,e.clientY);
+  // click outside to hide box
+  if (!hitTest(f.x,f.y) && boxVisible) {
+    boxVisible = false;
+    toggleBtn.textContent = 'Show Box';
+    draw();
+    return;
+  }
+  if (!hitTest(f.x,f.y) || resizing || pinch) return;
   dragging = true;
-  const { x, y } = f;
-  dragStart = { id: e.pointerId, dx: x - pos.x, dy: y - pos.y };
+  dragStart = { id:e.pointerId, dx:f.x - pos.x, dy:f.y - pos.y };
   e.preventDefault();
 });
-window.addEventListener('pointermove', e => {
+window.addEventListener('pointermove', e=>{
   if (!dragging || e.pointerId !== dragStart.id) return;
   const f = toFullCoords(e.clientX,e.clientY);
   pos.x = f.x - dragStart.dx;
   pos.y = f.y - dragStart.dy;
   draw();
 });
-window.addEventListener('pointerup',   e => { if(e.pointerId===dragStart.id) dragging=false; });
-window.addEventListener('pointercancel',e => { if(e.pointerId===dragStart.id) dragging=false; });
+window.addEventListener('pointerup',   e=>{ if(e.pointerId===dragStart.id) dragging=false; });
+window.addEventListener('pointercancel',e=>{ if(e.pointerId===dragStart.id) dragging=false; });
 
-// 4) resizing from any corner → uniform scale about box center
-handles.forEach(h => h.addEventListener('pointerdown', e => {
-  e.stopPropagation();
-  resizing = true;
-  const box = bboxEl.getBoundingClientRect();
-  // center in full coords
-  const c = toFullCoords(box.left + box.width/2, box.top + box.height/2);
-  pinchStart = {
-    cid: e.pointerId,
-    cx: c.x, cy: c.y,
-    scale: textScale,
-    // start distance
-    f0: toFullCoords(e.clientX, e.clientY),
-  };
-  pinchStart.d0 = Math.hypot(pinchStart.f0.x - c.x, pinchStart.f0.y - c.y);
-}));
-window.addEventListener('pointermove', e => {
+// Resize via handles (desktop uniform)
+handles.forEach(h=>{
+  h.addEventListener('pointerdown', e=>{
+    e.stopPropagation();
+    resizing = true;
+    const box = bboxEl.getBoundingClientRect();
+    const c    = toFullCoords(box.left+box.width/2, box.top+box.height/2);
+    const p0   = toFullCoords(e.clientX,e.clientY);
+    pinchStart = {
+      cid: e.pointerId,
+      cx:  c.x, cy: c.y,
+      scale: textScale,
+      d0: Math.hypot(p0.x-c.x, p0.y-c.y)
+    };
+  });
+});
+window.addEventListener('pointermove', e=>{
   if (!resizing || e.pointerId !== pinchStart.cid) return;
-  const f = toFullCoords(e.clientX,e.clientY);
-  const d = Math.hypot(f.x - pinchStart.cx, f.y - pinchStart.cy);
+  const p = toFullCoords(e.clientX,e.clientY);
+  const d = Math.hypot(p.x-pinchStart.cx, p.y-pinchStart.cy);
   textScale = pinchStart.scale * (d / pinchStart.d0);
-  // re‐center box about same center
   pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
   pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
   draw();
 });
-window.addEventListener('pointerup',   e => { if(e.pointerId===pinchStart.cid) resizing=false; });
-window.addEventListener('pointercancel',e => { if(e.pointerId===pinchStart.cid) resizing=false; });
+window.addEventListener('pointerup',   e=>{ if(e.pointerId===pinchStart.cid) resizing=false; });
+window.addEventListener('pointercancel',e=>{ if(e.pointerId===pinchStart.cid) resizing=false; });
 
-// 5) pinch-to-scale on mobile (two-finger)
-view.addEventListener('pointerdown', e => {
+// Pinch-to-scale (mobile)
+view.addEventListener('pointerdown', e=>{
   pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
-  if (Object.keys(pointers).length === 2 && !dragging && !resizing) {
+  if (Object.keys(pointers).length===2 && !dragging && !resizing) {
     pinch = true;
-    // pick two points
     const [a,b] = Object.values(pointers);
-    const pA = toFullCoords(a.x,a.y);
-    const pB = toFullCoords(b.x,b.y);
-    const cx = (pA.x + pB.x)/2, cy = (pA.y + pB.y)/2;
-    const d0 = Math.hypot(pA.x - pB.x, pA.y - pB.y);
-    pinchStart = { scale: textScale, cx, cy, d0 };
+    const pA     = toFullCoords(a.x,a.y);
+    const pB     = toFullCoords(b.x,b.y);
+    const cx     = (pA.x+pB.x)/2, cy=(pA.y+pB.y)/2;
+    const d0     = Math.hypot(pA.x-pB.x,pA.y-pB.y);
+    pinchStart = { scale:textScale, cx, cy, d0 };
   }
 });
-view.addEventListener('pointermove', e => {
-  if (pinch && pointers[e.pointerId]) {
-    pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
-    const [pa,pb] = Object.values(pointers);
-    const p1 = toFullCoords(pa.x, pa.y);
-    const p2 = toFullCoords(pb.x, pb.y);
-    const d1 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
-    textScale = pinchStart.scale * (d1 / pinchStart.d0);
-    pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
-    pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
-    draw();
-  }
+view.addEventListener('pointermove', e=>{
+  if (!pinch || !pointers[e.pointerId]) return;
+  pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
+  const [pa,pb] = Object.values(pointers);
+  const p1 = toFullCoords(pa.x,pa.y), p2 = toFullCoords(pb.x,pb.y);
+  const d1 = Math.hypot(p1.x-p2.x,p1.y-p2.y);
+  textScale = pinchStart.scale * (d1 / pinchStart.d0);
+  pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
+  pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
+  draw();
 });
-view.addEventListener('pointerup', e => {
+view.addEventListener('pointerup', e=>{
   delete pointers[e.pointerId];
   if (Object.keys(pointers).length < 2) pinch = false;
 });
-view.addEventListener('pointercancel', e => {
+view.addEventListener('pointercancel', e=>{
   delete pointers[e.pointerId];
   if (Object.keys(pointers).length < 2) pinch = false;
 });
 
-// 6) download
-dlBtn.addEventListener('click', () => {
+// Toggle bounding box button
+toggleBtn.addEventListener('click', ()=>{
+  boxVisible = !boxVisible;
+  toggleBtn.textContent = boxVisible ? 'Hide Box' : 'Show Box';
   draw();
-  // full
-  downloadCanvas(full, 'preview.png');
-  // text only
+});
+
+// Download
+dlBtn.addEventListener('click', ()=>{
+  draw();
+  downloadCanvas(full,'preview.png');
   const t = document.createElement('canvas');
   t.width = full.width; t.height = full.height;
   const tCtx = t.getContext('2d');
-  tCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
+  tCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
   tCtx.fillStyle = '#000';
   tCtx.textBaseline = 'top';
   tCtx.fillText(txtInput.value, pos.x, pos.y);
-  downloadCanvas(t, 'text-only.png');
+  downloadCanvas(t,'text-only.png');
 });
 </script>
 </body>
