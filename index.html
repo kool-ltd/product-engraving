@@ -6,55 +6,183 @@
 <title>Knife Engraving Customiser</title>
 <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
-<!-- faster Google-fonts -->
+<!-- fonts -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 
 <style>
-:root{--accent:#d00024;--bg:#fafafa;--border:#ddd;--pad:1rem;--radius:.5rem;}
-*{box-sizing:border-box;margin:0;}
-body{font-family:Roboto,Arial,Helvetica,sans-serif;background:var(--bg);color:#222;}
-h1{text-align:center;margin:1.75rem 0 1rem;}
-h2{margin:15px 0px;}
-h3{text-align:center;}
-.container{max-width:1200px;margin:auto;padding:var(--pad);display:flex;flex-direction:column;gap:var(--pad);}
-.section{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad);}
-#product-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;}
-.product-option{position:relative;}
-.product-option input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.product-option img{width:100%;border:2px solid transparent;border-radius:var(--radius);display:block;}
-.product-option input:checked+img{border-color:var(--accent);}
-.controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;}
-.controls label{font-size:.9rem;margin-right:.25rem;}
-#canvas-wrapper{width:100%;max-width:1168px;max-height:1168px;margin:auto;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius);background:#eaeaea;text-align:center;}
-canvas{touch-action:none;display:block;width:100%;height:auto;}
-button{background:var(--accent);color:#fff;border:none;padding:.6rem 1rem;border-radius:var(--radius);cursor:pointer;font-weight:600;}
-button[disabled]{opacity:.4;cursor:not-allowed;}
-@media(max-width:600px){.controls{flex-direction:column;align-items:flex-start;}}
+:root {
+  --accent: #d00024;
+  --bg: #fafafa;
+  --border: #ddd;
+  --pad: 1rem;
+  --radius: .5rem;
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  font-family: Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: #222;
+}
+h1, h2 { text-align: center; margin: 1rem 0; }
+h3 { text-align: center; margin-bottom: 2rem; }
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad);
+}
+.section {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--pad);
+}
+#product-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
+  gap: .75rem;
+}
+.product-option {
+  position: relative;
+}
+.product-option input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.product-option img {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  display: block;
+}
+.product-option input:checked + img {
+  border-color: var(--accent);
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+.controls label {
+  font-size: .9rem;
+  margin-right: .25rem;
+}
+#canvas-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1168px;
+  max-height: 1168px;
+  margin: auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #eaeaea;
+  touch-action: none;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+/* loading overlay */
+#loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #555;
+  visibility: hidden;
+  z-index: 10;
+}
+
+/* bounding box & handles */
+#bbox {
+  position: absolute;
+  border: 1px dashed #000;
+  pointer-events: none;
+  display: none;
+}
+.handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 1px solid #000;
+  pointer-events: auto;
+}
+.handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
+.handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
+.handle[data-handle="sw"] { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.handle[data-handle="se"] { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: .6rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+}
+button[disabled] {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+@media(max-width:600px){
+  .controls { flex-direction: column; align-items: flex-start; }
+}
 </style>
 </head>
 <body>
 <h1>Knife Engraving Customiser</h1>
-<h3>by <span><img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> </span></h3>
+<h3>by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
 <div class="container">
 
   <!-- 1. KNIFE -->
   <div class="section">
-    <h2 style="margin-top:0;">1. Choose your knife</h2>
+    <h2>1. Choose your knife</h2>
     <div id="product-picker">
-      <label class="product-option"><input type="radio" name="product" value="chef.jpg"><img src="chef.jpg" alt="Chef knife"></label>
-      <label class="product-option"><input type="radio" name="product" value="santoku.jpg"><img src="santoku.jpg" alt="Santoku knife"></label>
-      <label class="product-option"><input type="radio" name="product" value="paring.jpg"><img src="paring.jpg" alt="Paring knife"></label>
-      <label class="product-option"><input type="radio" name="product" value="utility.jpg"><img src="utility.jpg" alt="Utility knife"></label>
+      <label class="product-option">
+        <input type="radio" name="product" value="chef.jpg">
+        <img src="chef-thumb.jpg" alt="Chef knife">
+      </label>
+      <label class="product-option">
+        <input type="radio" name="product" value="santoku.jpg">
+        <img src="santoku-thumb.jpg" alt="Santoku knife">
+      </label>
+      <label class="product-option">
+        <input type="radio" name="product" value="paring.jpg">
+        <img src="paring-thumb.jpg" alt="Paring knife">
+      </label>
+      <label class="product-option">
+        <input type="radio" name="product" value="utility.jpg">
+        <img src="utility-thumb.jpg" alt="Utility knife">
+      </label>
     </div>
   </div>
 
   <!-- 2. TEXT CONTROLS -->
   <div class="section">
-    <h2 style="margin-top:0;">2. Customise text</h2>
+    <h2>2. Customise text</h2>
     <div class="controls">
-      <div><label for="engraveText">Text:</label><input type="text" id="engraveText" placeholder="Enter engraving"></div>
-      <div><label for="fontSelect">Font:</label>
+      <div>
+        <label for="engraveText">Text:</label>
+        <input type="text" id="engraveText" placeholder="Enter engraving">
+      </div>
+      <div>
+        <label for="fontSelect">Font:</label>
         <select id="fontSelect">
           <option value="Montserrat">Montserrat</option>
           <option value="Roboto">Roboto</option>
@@ -64,184 +192,290 @@ button[disabled]{opacity:.4;cursor:not-allowed;}
           <option value="Arial">Arial</option>
         </select>
       </div>
-      <div><label for="fontSize">Size:</label><input type="number" id="fontSize" value="150" min="10" max="800" style="width:5rem;"></div>
+      <!-- size input removed -->
     </div>
+    <p style="font-size:.8rem; color:#666; margin-top:.5rem;">
+      • Drag the text box to move.<br>
+      • Drag a corner to scale (desktop).<br>
+      • Pinch to zoom (mobile).
+    </p>
   </div>
 
   <!-- 3. PREVIEW & DOWNLOAD -->
   <div class="section">
-    <h2 style="margin-top:0;">3. Drag the text to position</h2>
-    <div id="canvas-wrapper"><canvas id="viewCanvas"></canvas></div>
-    <div style="text-align:center;margin-top:1rem;">
-      <button id="downloadBtn" disabled>Generate & Download PNGs</button>
+    <h2>3. Preview & download</h2>
+    <div id="canvas-wrapper">
+      <canvas id="viewCanvas"></canvas>
+      <div id="loadingOverlay">Loading…</div>
+      <div id="bbox">
+        <div class="handle" data-handle="nw"></div>
+        <div class="handle" data-handle="ne"></div>
+        <div class="handle" data-handle="sw"></div>
+        <div class="handle" data-handle="se"></div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:1rem;">
+      <button id="downloadBtn" disabled>Generate &amp; Download PNGs</button>
     </div>
   </div>
 
 </div>
 
 <script>
-/* ──────────────────────────────────────────────────────────────
-   ELEMENTS & GLOBAL STATE
-────────────────────────────────────────────────────────────────*/
-const view       = document.getElementById('viewCanvas');
-const vCtx       = view.getContext('2d');
-const full       = document.createElement('canvas');    // full-rez (knife + text)
-const fCtx       = full.getContext('2d');
-const radios     = document.querySelectorAll('[name="product"]');
-const txtInput   = document.getElementById('engraveText');
-const fontSel    = document.getElementById('fontSelect');
-const sizeInput  = document.getElementById('fontSize');
-const dlBtn      = document.getElementById('downloadBtn');
-const viewport   = document.querySelector('meta[name="viewport"]');
+/* ──────────────── ELEMENTS & STATE ──────────────── */
+const view      = document.getElementById('viewCanvas');
+const vCtx      = view.getContext('2d');
+const full      = document.createElement('canvas');
+const fCtx      = full.getContext('2d');
+const radios    = document.querySelectorAll('[name="product"]');
+const txtInput  = document.getElementById('engraveText');
+const fontSel   = document.getElementById('fontSelect');
+const dlBtn     = document.getElementById('downloadBtn');
+const overlay   = document.getElementById('loadingOverlay');
+const bboxEl    = document.getElementById('bbox');
+const handles   = document.querySelectorAll('.handle');
 
-let img = null;                 // loaded <img>
-let pos = { x: 0, y: 0 };       // text position (FULL pixels)
-let scale = 1;                  // view = full * scale
-let dragging = false;
-let pointerStart = { x: 0, y: 0 };
+let img         = null;      // full-res Image
+let baseFont    = 150;       // px
+let textScale   = 1;
+let pos         = { x:0, y:0 };  // top-left in FULL coords
+let baseDims    = { w:0, h:0 };
 
-/* ──────────────────────────────────────────────────────────────
-   HELPERS
-────────────────────────────────────────────────────────────────*/
-async function loadFullRes(src) {
-  const blob = await fetch(src, { mode: 'cors' }).then(r => r.blob());
-  const url  = URL.createObjectURL(blob);
+/* dragging */
+let dragging    = false;
+let dragStart   = {};
+/* resizing */
+let resizing    = false;
+let resizeStart = {};
+/* pinch-to-zoom */
+let pointers    = {};        // map id→{x,y}
+let pinch       = false;
+let pinchStart  = {};
+const MAX_W = 900, MAX_H = 600;
+
+/* ──────────────── HELPERS ──────────────── */
+function showOverlay(on) {
+  overlay.style.visibility = on ? 'visible' : 'hidden';
+}
+
+/** load an Image via CORS */
+function loadImage(src) {
   return new Promise(res => {
     const i = new Image();
-    i.onload = () => { URL.revokeObjectURL(url); res(i); };
-    i.src = url;
+    i.crossOrigin = "anonymous";
+    i.onload = () => res(i);
+    i.src = src;
   });
 }
 
+/** fit full into preview box */
 function fitInBox() {
-  const MAX_W = 900, MAX_H = 600;
-  scale = Math.min(1, MAX_W / img.naturalWidth, MAX_H / img.naturalHeight);
-  view.width  = img.naturalWidth  * scale;
-  view.height = img.naturalHeight * scale;
+  const sw = Math.min(1, MAX_W / img.naturalWidth, MAX_H / img.naturalHeight);
+  view.width  = img.naturalWidth  * sw;
+  view.height = img.naturalHeight * sw;
   full.width  = img.naturalWidth;
   full.height = img.naturalHeight;
 }
 
+/** measure the base text dims (at baseFont, before scale) */
+function measureBaseText() {
+  fCtx.font = `${baseFont}px ${fontSel.value}`;
+  const w = fCtx.measureText(txtInput.value).width;
+  const h = baseFont;
+  return { w,h };
+}
+
+/** draw both full-res & preview */
 function draw() {
   if (!img) return;
-
-  // full-rez
-  fCtx.clearRect(0, 0, full.width, full.height);
-  fCtx.drawImage(img, 0, 0);
-  fCtx.font = `${sizeInput.value}px ${fontSel.value}`;
+  // full
+  fCtx.clearRect(0,0,full.width,full.height);
+  fCtx.drawImage(img,0,0);
+  fCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
   fCtx.fillStyle = '#000';
   fCtx.textBaseline = 'top';
   fCtx.fillText(txtInput.value, pos.x, pos.y);
 
-  // scaled preview
-  vCtx.setTransform(scale, 0, 0, scale, 0, 0);
-  vCtx.clearRect(0, 0, view.width / scale, view.height / scale);
-  vCtx.drawImage(img, 0, 0);
-  vCtx.font = `${sizeInput.value}px ${fontSel.value}`;
+  // preview
+  const scale = view.width / full.width;
+  vCtx.setTransform(scale,0,0,scale,0,0);
+  vCtx.clearRect(0,0,full.width,full.height);
+  vCtx.drawImage(img,0,0);
+  vCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
   vCtx.fillStyle = '#000';
   vCtx.textBaseline = 'top';
   vCtx.fillText(txtInput.value, pos.x, pos.y);
-  vCtx.setTransform(1, 0, 0, 1, 0, 0);
+  vCtx.setTransform(1,0,0,1,0,0);
+
+  // update bounding box + handles
+  const { w:hW, h:hH } = { w: baseDims.w * textScale, h: baseDims.h * textScale };
+  const scalePx = view.width / full.width;
+  bboxEl.style.display = txtInput.value ? 'block' : 'none';
+  bboxEl.style.width  = hW * scalePx + 'px';
+  bboxEl.style.height = hH * scalePx + 'px';
+  bboxEl.style.left   = pos.x * scalePx + 'px';
+  bboxEl.style.top    = pos.y * scalePx + 'px';
 }
 
-function textBounds() {
-  fCtx.font = `${sizeInput.value}px ${fontSel.value}`;
-  return {
-    w: fCtx.measureText(txtInput.value).width,
-    h: parseInt(sizeInput.value, 10)
-  };
+/** convert client→full coords */
+function toFullCoords(cx, cy) {
+  const r = view.getBoundingClientRect();
+  const fx = (cx - r.left) * (full.width / r.width);
+  const fy = (cy - r.top)  * (full.height / r.height);
+  return { x: fx, y: fy };
 }
 
-function hitTest(fullX, fullY) {
-  const { w, h } = textBounds();
-  return fullX >= pos.x && fullX <= pos.x + w && fullY >= pos.y && fullY <= pos.y + h;
+/** test if point hits text box */
+function hitTest(fx, fy) {
+  const bw = baseDims.w * textScale;
+  const bh = baseDims.h * textScale;
+  return fx >= pos.x && fx <= pos.x + bw
+      && fy >= pos.y && fy <= pos.y + bh;
 }
 
-function clientToFull(clientX, clientY) {
-  const rect = view.getBoundingClientRect();          // CSS pixels
-  const ratioX = full.width  / rect.width;
-  const ratioY = full.height / rect.height;
-  return {
-    x: (clientX - rect.left) * ratioX,
-    y: (clientY - rect.top)  * ratioY
-  };
-}
-
-function downloadCanvas(can, name) {
+/** for downloads */
+function downloadCanvas(can,name) {
   can.toBlob(b => {
     const url = URL.createObjectURL(b);
-    const a   = document.createElement('a');
+    const a = document.createElement('a');
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+    setTimeout(()=>{
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 100);
   });
 }
 
-/* ──────────────────────────────────────────────────────────────
-   EVENT WIRING
-────────────────────────────────────────────────────────────────*/
-radios.forEach(r =>
-  r.addEventListener('change', async e => {
-    img = await loadFullRes(e.target.value);
-    fitInBox();
-    // default placement = centre of blade
-    pos.x = full.width * 0.5 - 150;
-    pos.y = full.height * 0.5 - 25;
+/* ──────────────── EVENTS ──────────────── */
+// 1) product change
+radios.forEach(radio => radio.addEventListener('change', async e => {
+  showOverlay(true);
+  dlBtn.disabled = true;
+  // load full
+  img = await loadImage(e.target.value);
+  fitInBox();
+  // reset text‐box
+  baseDims = measureBaseText();
+  textScale = 1;
+  pos.x = full.width/2 - baseDims.w/2;
+  pos.y = full.height/2 - baseDims.h/2;
+  draw();
+  showOverlay(false);
+  dlBtn.disabled = false;
+}));
+
+// 2) text or font change → re‐measure & reset scale
+[ txtInput, fontSel ].forEach(el =>
+  el.addEventListener('input', () => {
+    baseDims = measureBaseText();
+    textScale = 1;
+    pos.x = full.width/2 - baseDims.w/2;
+    pos.y = full.height/2 - baseDims.h/2;
     draw();
-    dlBtn.disabled = false;
   })
 );
 
-[txtInput, fontSel, sizeInput].forEach(el => el.addEventListener('input', draw));
-
-/* keyboard zoom-snapping */
-txtInput.addEventListener('focus', () =>
-  viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=10')
-);
-txtInput.addEventListener('blur', () => {
-  viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1');
-  setTimeout(() => window.scrollTo(0, 0), 50);
-});
-
-/* pointer-based drag */
+// 3) dragging text box
 view.addEventListener('pointerdown', e => {
-  if (!img) return;
-  const fullPos = clientToFull(e.clientX, e.clientY);
-  if (!hitTest(fullPos.x, fullPos.y)) return;
-
+  // don't start drag if we're resizing or pinching
+  if (!img || resizing || pinch) return;
+  const f = toFullCoords(e.clientX, e.clientY);
+  if (!hitTest(f.x,f.y)) return;
   dragging = true;
-  pointerStart = {
-    dx: fullPos.x - pos.x,
-    dy: fullPos.y - pos.y,
-    id: e.pointerId
-  };
+  const { x, y } = f;
+  dragStart = { id: e.pointerId, dx: x - pos.x, dy: y - pos.y };
   e.preventDefault();
 });
-
 window.addEventListener('pointermove', e => {
-  if (!dragging || e.pointerId !== pointerStart.id) return;
-  const fullPos = clientToFull(e.clientX, e.clientY);
-  pos.x = fullPos.x - pointerStart.dx;
-  pos.y = fullPos.y - pointerStart.dy;
+  if (!dragging || e.pointerId !== dragStart.id) return;
+  const f = toFullCoords(e.clientX,e.clientY);
+  pos.x = f.x - dragStart.dx;
+  pos.y = f.y - dragStart.dy;
   draw();
 });
+window.addEventListener('pointerup',   e => { if(e.pointerId===dragStart.id) dragging=false; });
+window.addEventListener('pointercancel',e => { if(e.pointerId===dragStart.id) dragging=false; });
 
-window.addEventListener('pointerup',   e => { if (e.pointerId === pointerStart.id) dragging = false; });
-window.addEventListener('pointercancel', e => { if (e.pointerId === pointerStart.id) dragging = false; });
+// 4) resizing from any corner → uniform scale about box center
+handles.forEach(h => h.addEventListener('pointerdown', e => {
+  e.stopPropagation();
+  resizing = true;
+  const box = bboxEl.getBoundingClientRect();
+  // center in full coords
+  const c = toFullCoords(box.left + box.width/2, box.top + box.height/2);
+  pinchStart = {
+    cid: e.pointerId,
+    cx: c.x, cy: c.y,
+    scale: textScale,
+    // start distance
+    f0: toFullCoords(e.clientX, e.clientY),
+  };
+  pinchStart.d0 = Math.hypot(pinchStart.f0.x - c.x, pinchStart.f0.y - c.y);
+}));
+window.addEventListener('pointermove', e => {
+  if (!resizing || e.pointerId !== pinchStart.cid) return;
+  const f = toFullCoords(e.clientX,e.clientY);
+  const d = Math.hypot(f.x - pinchStart.cx, f.y - pinchStart.cy);
+  textScale = pinchStart.scale * (d / pinchStart.d0);
+  // re‐center box about same center
+  pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
+  pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
+  draw();
+}));
+window.addEventListener('pointerup',   e => { if(e.pointerId===pinchStart.cid) resizing=false; });
+window.addEventListener('pointercancel',e => { if(e.pointerId===pinchStart.cid) resizing=false; });
 
-/* export both PNGs */
+// 5) pinch-to-scale on mobile (two-finger)
+view.addEventListener('pointerdown', e => {
+  pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
+  if (Object.keys(pointers).length === 2 && !dragging && !resizing) {
+    pinch = true;
+    // pick two points
+    const [a,b] = Object.values(pointers);
+    const pA = toFullCoords(a.x,a.y);
+    const pB = toFullCoords(b.x,b.y);
+    const cx = (pA.x + pB.x)/2, cy = (pA.y + pB.y)/2;
+    const d0 = Math.hypot(pA.x - pB.x, pA.y - pB.y);
+    pinchStart = { scale: textScale, cx, cy, d0 };
+  }
+});
+view.addEventListener('pointermove', e => {
+  if (pinch && pointers[e.pointerId]) {
+    pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
+    const [pa,pb] = Object.values(pointers);
+    const p1 = toFullCoords(pa.x, pa.y);
+    const p2 = toFullCoords(pb.x, pb.y);
+    const d1 = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+    textScale = pinchStart.scale * (d1 / pinchStart.d0);
+    pos.x = pinchStart.cx - (baseDims.w * textScale)/2;
+    pos.y = pinchStart.cy - (baseDims.h * textScale)/2;
+    draw();
+  }
+});
+view.addEventListener('pointerup', e => {
+  delete pointers[e.pointerId];
+  if (Object.keys(pointers).length < 2) pinch = false;
+});
+view.addEventListener('pointercancel', e => {
+  delete pointers[e.pointerId];
+  if (Object.keys(pointers).length < 2) pinch = false;
+});
+
+// 6) download
 dlBtn.addEventListener('click', () => {
-  draw();                                // make sure everything is current
-  downloadCanvas(full, 'preview.png');   // knife + text
-  // text-only
-  const tCan = document.createElement('canvas');
-  tCan.width = full.width; tCan.height = full.height;
-  const tCtx = tCan.getContext('2d');
-  tCtx.font = `${sizeInput.value}px ${fontSel.value}`;
+  draw();
+  // full
+  downloadCanvas(full, 'preview.png');
+  // text only
+  const t = document.createElement('canvas');
+  t.width = full.width; t.height = full.height;
+  const tCtx = t.getContext('2d');
+  tCtx.font = `${baseFont * textScale}px ${fontSel.value}`;
   tCtx.fillStyle = '#000';
   tCtx.textBaseline = 'top';
   tCtx.fillText(txtInput.value, pos.x, pos.y);
-  downloadCanvas(tCan, 'text-only.png');
+  downloadCanvas(t, 'text-only.png');
 });
 </script>
 </body>
