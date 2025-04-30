@@ -59,6 +59,7 @@
     #canvas-wrapper {
       position:relative;
       width:100%; max-width:1168px;
+      /* no max-height or overflow:hidden: canvas can grow */
       border:1px solid var(--border);
       border-radius:var(--radius);
       background:#eaeaea;
@@ -185,18 +186,12 @@
       <div style="text-align:center;margin-top:1rem;">
         <button id="scaleBtn" class="scale-btn">Scale: On</button><br>
         <button id="downloadBtn" disabled style="margin-top:1rem;">
-          Generate &amp; Download ZIP
+          Generate &amp; Download PNGs
         </button>
       </div>
     </div>
 
   </div>
-
-  <!-- JSZip for bundling both images into one ZIP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"
-          integrity="sha512-/+b8hI8OUf51QdXlD8zQ0Mg+Fx+rFdgC3vo91Bi55rZ6l51fQhG8jL0+ELCTGc0PKuwg5+zWvX1bK3JFgQvEGA=="
-          crossorigin="anonymous" referrerpolicy="no-referrer">
-  </script>
 
   <script>
     /* ELEMENTS & STATE */
@@ -216,8 +211,8 @@
     let img          = null;
     let baseFont     = 150;
     let textScale    = 1;
-    let baseDims     = { w:0, h:0 };
-    let pos          = { x:0, y:0 };
+    let baseDims     = {w:0,h:0};
+    let pos          = {x:0,y:0};
     let boxVisible   = true;
 
     let dragging=false, dragStart={};
@@ -226,7 +221,7 @@
 
     /* HELPERS */
     function showOverlay(on){
-      overlay.style.visibility = on ? 'visible' : 'hidden';
+      overlay.style.visibility = on? 'visible' : 'hidden';
     }
     function loadImage(src){
       return new Promise(r=>{
@@ -249,12 +244,12 @@
     }
     function measureBaseText(){
       fCtx.font = `${baseFont}px ${fontSel.value}`;
-      return { w: fCtx.measureText(txtInput.value).width, h: baseFont };
+      return { w:fCtx.measureText(txtInput.value).width, h:baseFont };
     }
     function toFullCoords(cx,cy){
       const r = view.getBoundingClientRect();
       return {
-        x: (cx - r.left) * (full.width / r.width),
+        x: (cx - r.left) * (full.width  / r.width),
         y: (cy - r.top ) * (full.height / r.height)
       };
     }
@@ -262,9 +257,23 @@
       return fx>=pos.x && fx<=pos.x+baseDims.w*textScale
           && fy>=pos.y && fy<=pos.y+baseDims.h*textScale;
     }
+    function downloadCanvas(can,name){
+      can.toBlob(b=>{
+        const url = URL.createObjectURL(b);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download= name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{
+          URL.revokeObjectURL(url);
+          a.remove();
+        },100);
+      });
+    }
     function draw(){
       if(!img) return;
-      // full-res canvas
+      // full‐res
       fCtx.clearRect(0,0,full.width,full.height);
       fCtx.drawImage(img,0,0);
       fCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
@@ -272,8 +281,8 @@
       fCtx.textBaseline='top';
       fCtx.fillText(txtInput.value, pos.x, pos.y);
 
-      // preview canvas
-      const s = view.width/full.width;
+      // preview
+      const s = view.width / full.width;
       vCtx.setTransform(s,0,0,s,0,0);
       vCtx.clearRect(0,0,full.width,full.height);
       vCtx.drawImage(img,0,0);
@@ -284,8 +293,8 @@
       vCtx.setTransform(1,0,0,1,0,0);
 
       // bounding box
-      const dx = view.width/full.width;
-      const dy = view.height/full.height;
+      const dx = view.width / full.width;
+      const dy = view.height/ full.height;
       if(boxVisible && txtInput.value){
         bboxEl.style.display='block';
         bboxEl.style.width  = (baseDims.w*textScale*dx) + 'px';
@@ -299,7 +308,7 @@
 
     /* EVENTS */
 
-    // 1) Knife select
+    // Knife select
     radios.forEach(r=>{
       r.addEventListener('change', async e=>{
         showOverlay(true);
@@ -309,35 +318,35 @@
         baseDims = measureBaseText();
         textScale = 1;
         pos.x = full.width/2 - baseDims.w/2;
-        pos.y = full.height/2- baseDims.h/2;
+        pos.y = full.height/2 - baseDims.h/2;
         draw();
         showOverlay(false);
         dlBtn.disabled = false;
       });
     });
 
-    // 2) Text / font change
+    // Text / font change
     [txtInput,fontSel].forEach(el=>
-      el.addEventListener('input',()=>{
+      el.addEventListener('input', ()=>{
         baseDims = measureBaseText();
         textScale = 1;
         pos.x = full.width/2 - baseDims.w/2;
-        pos.y = full.height/2- baseDims.h/2;
+        pos.y = full.height/2 - baseDims.h/2;
         draw();
       })
     );
 
-    // 3a) Drag text (desktop)
+    // Drag text (desktop)
     view.addEventListener('pointerdown', e=>{
-      const f = toFullCoords(e.clientX,e.clientY);
+      const f = toFullCoords(e.clientX, e.clientY);
       if(!hitTest(f.x,f.y) || resizing || pinch) return;
       dragging = true;
-      dragStart = { id:e.pointerId, dx:f.x-pos.x, dy:f.y-pos.y };
+      dragStart = { id: e.pointerId, dx: f.x - pos.x, dy: f.y - pos.y };
       e.preventDefault();
     });
     window.addEventListener('pointermove', e=>{
-      if(!dragging||e.pointerId!==dragStart.id) return;
-      const f = toFullCoords(e.clientX,e.clientY);
+      if(!dragging || e.pointerId!==dragStart.id) return;
+      const f = toFullCoords(e.clientX, e.clientY);
       pos.x = f.x - dragStart.dx;
       pos.y = f.y - dragStart.dy;
       draw();
@@ -348,27 +357,27 @@
       })
     );
 
-    // 3b) Resize via handles (desktop)
+    // Resize via handles (desktop)
     handles.forEach(h=>{
       h.addEventListener('pointerdown', e=>{
         e.stopPropagation();
         resizing = true;
         const box = bboxEl.getBoundingClientRect();
-        const c = toFullCoords(box.left+box.width/2, box.top+box.height/2);
-        const p0 = toFullCoords(e.clientX,e.clientY);
+        const center = toFullCoords(box.left+box.width/2, box.top+box.height/2);
+        const p0 = toFullCoords(e.clientX, e.clientY);
         resizeStart = {
           id: e.pointerId,
-          cx: c.x, cy: c.y,
+          cx: center.x, cy: center.y,
           scale: textScale,
-          d0: Math.hypot(p0.x-c.x,p0.y-c.y)
+          d0: Math.hypot(p0.x-center.x, p0.y-center.y)
         };
       });
     });
     window.addEventListener('pointermove', e=>{
-      if(!resizing||e.pointerId!==resizeStart.id) return;
-      const p = toFullCoords(e.clientX,e.clientY);
-      const d = Math.hypot(p.x-resizeStart.cx,p.y-resizeStart.cy);
-      textScale = resizeStart.scale * (d/resizeStart.d0);
+      if(!resizing || e.pointerId!==resizeStart.id) return;
+      const p = toFullCoords(e.clientX, e.clientY);
+      const d = Math.hypot(p.x - resizeStart.cx, p.y - resizeStart.cy);
+      textScale = resizeStart.scale * (d / resizeStart.d0);
       pos.x = resizeStart.cx - (baseDims.w*textScale)/2;
       pos.y = resizeStart.cy - (baseDims.h*textScale)/2;
       draw();
@@ -379,28 +388,30 @@
       })
     );
 
-    // 3c) Pinch-zoom (mobile)
+    // Pinch‐zoom (mobile)
     view.addEventListener('pointerdown', e=>{
-      pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
-      if(Object.keys(pointers).length===2 && !dragging && !resizing){
-        pinch=true;
-        const [a,b] = Object.values(pointers);
-        const fA = toFullCoords(a.x,a.y), fB = toFullCoords(b.x,b.y);
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if(Object.keys(pointers).length === 2 && !dragging && !resizing){
+        pinch = true;
+        const [pA, pB] = Object.values(pointers);
+        const fA = toFullCoords(pA.x, pA.y);
+        const fB = toFullCoords(pB.x, pB.y);
         pinchStart = {
           scale: textScale,
-          cx: (fA.x+fB.x)/2,
-          cy: (fA.y+fB.y)/2,
-          d0: Math.hypot(fA.x-fB.x,fA.y-fB.y)
+          cx: (fA.x + fB.x)/2,
+          cy: (fA.y + fB.y)/2,
+          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
         };
       }
     });
     view.addEventListener('pointermove', e=>{
-      if(!pinch||!(e.pointerId in pointers)) return;
-      pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
+      if(!pinch || !(e.pointerId in pointers)) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
       const [a,b] = Object.values(pointers);
-      const fA = toFullCoords(a.x,a.y), fB = toFullCoords(b.x,b.y);
-      const d1 = Math.hypot(fA.x-fB.x,fA.y-fB.y);
-      textScale = pinchStart.scale*(d1/pinchStart.d0);
+      const fA = toFullCoords(a.x, a.y);
+      const fB = toFullCoords(b.x, b.y);
+      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+      textScale = pinchStart.scale * (d1 / pinchStart.d0);
       pos.x = pinchStart.cx - (baseDims.w*textScale)/2;
       pos.y = pinchStart.cy - (baseDims.h*textScale)/2;
       draw();
@@ -408,55 +419,31 @@
     ['pointerup','pointercancel'].forEach(evt=>
       view.addEventListener(evt, e=>{
         delete pointers[e.pointerId];
-        if(Object.keys(pointers).length<2) pinch=false;
+        if(Object.keys(pointers).length < 2) pinch = false;
       })
     );
 
-    // 4) Toggle bounding-box scaling
+    // Toggle bounding‐box scaling
     scaleBtn.addEventListener('click', ()=>{
       boxVisible = !boxVisible;
-      scaleBtn.textContent = boxVisible? 'Scale: On' : 'Scale: Off';
+      scaleBtn.textContent = boxVisible ? 'Scale: On' : 'Scale: Off';
       scaleBtn.classList.toggle('off', !boxVisible);
       draw();
     });
 
-    // 5) DOWNLOAD → single ZIP
+    // Download
     dlBtn.addEventListener('click', ()=>{
-      draw(); // ensure up-to-date
-
-      // 1) preview blob
-      full.toBlob(previewBlob=>{
-        // 2) text-only canvas & blob
-        const t = document.createElement('canvas');
-        t.width  = full.width;
-        t.height = full.height;
-        const tCtx = t.getContext('2d');
-        tCtx.font         = `${baseFont*textScale}px ${fontSel.value}`;
-        tCtx.fillStyle    = '#000';
-        tCtx.textBaseline = 'top';
-        tCtx.fillText(txtInput.value, pos.x, pos        pos.y);
-
-        t.toBlob(textBlob => {
-          // 3) pack into ZIP
-          const zip = new JSZip();
-          zip.file('preview.png', previewBlob);
-          zip.file('text-only.png', textBlob);
-
-          zip.generateAsync({ type: 'blob' }).then(content => {
-            // 4) trigger download
-            const url = URL.createObjectURL(content);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'knife-engravings.zip';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-              URL.revokeObjectURL(url);
-              a.remove();
-            }, 100);
-          });
-        });
-      });
+      draw();
+      downloadCanvas(full,'preview.png');
+      // text‐only
+      const t = document.createElement('canvas');
+      t.width = full.width; t.height = full.height;
+      const tCtx = t.getContext('2d');
+      tCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+      tCtx.fillStyle = '#000';
+      tCtx.textBaseline = 'top';
+      tCtx.fillText(txtInput.value, pos.x, pos.y);
+      downloadCanvas(t,'text-only.png');
     });
   </script>
 </body>
