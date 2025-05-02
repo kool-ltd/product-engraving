@@ -18,7 +18,6 @@
       --border: #ddd;
       --pad: 1rem;
       --radius: .5rem;
-      --thumb-w: 80px;
     }
     * { box-sizing: border-box; margin: 0; }
     body {
@@ -26,246 +25,135 @@
       background: var(--bg);
       color: #222;
     }
-    h1,h2,h3 { text-align: center; margin: 1rem 0; }
+    h1,h2 { text-align:center; margin:1rem 0; }
+    h3 { text-align:center; margin-bottom:2rem; }
     .container {
-      max-width: 1200px; margin: auto; padding: var(--pad);
+      max-width:1200px; margin:auto; padding:var(--pad);
+      display:flex; flex-direction:column; gap:var(--pad);
     }
     .section {
-      background: #fff; border: 1px solid var(--border);
-      border-radius: var(--radius); padding: var(--pad);
-      margin-bottom: var(--pad);
+      background:#fff; border:1px solid var(--border);
+      border-radius:var(--radius); padding:var(--pad);
     }
     #product-picker {
-      display: flex; flex-direction: column; gap: .5rem;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+      gap:.75rem;
     }
-    .product-option {
-      display: flex; align-items: center; gap: .75rem;
+    .product-option { position:relative; }
+    .product-option input {
+      position:absolute; inset:0; opacity:0; cursor:pointer;
     }
     .product-option img {
-      width: var(--thumb-w); height: auto;
-      border: 1px solid var(--border); border-radius: var(--radius);
+      width:100%; border:2px solid transparent;
+      border-radius:var(--radius); display:block;
+    }
+    .product-option input:checked+img {
+      border-color:var(--accent);
     }
     .controls {
-      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+      display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
     }
-    .controls label { font-size: .9rem; }
-    button {
-      background: var(--accent); color: #fff; border: none;
-      padding: .6rem 1rem; border-radius: var(--radius);
-      cursor: pointer; font-weight: 600;
+    .controls label { font-size:.9rem; margin-right:.25rem; }
+
+    #canvas-wrapper {
+      position:relative;
+      width:100%; max-width:1168px;
+      /* no max-height or overflow:hidden: canvas can grow */
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:#eaeaea;
+      touch-action: none; /* capture all pointer gestures */
+      margin:auto;
     }
-    button[disabled] {
-      opacity: .4; cursor: not-allowed;
-    }
-    .canvas-wrapper {
-      position: relative; width: 100%;
-      border: 1px solid var(--border); border-radius: var(--radius);
-      background: #eaeaea; touch-action: none; margin: auto;
-    }
+
     canvas {
-      display: block; touch-action: none;
+      display:block;
+      touch-action: none; /* ensure we get pinch/drag */
     }
-    .loadingOverlay {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,0.85);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; color: #555;
-      visibility: hidden; z-index: 10;
+
+    #loadingOverlay {
+      position:absolute; inset:0;
+      background:rgba(255,255,255,0.85);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.5rem; color:#555;
+      visibility:hidden; z-index:10;
     }
-    .bbox {
-      position: absolute; border: 1px dashed #000;
-      pointer-events: none;
+
+    #bbox {
+      position:absolute; border:1px dashed #000;
+      pointer-events:none; display:none;
     }
     .handle {
-      position: absolute; width: 10px; height: 10px;
-      background: #fff; border: 1px solid #000;
-      pointer-events: auto;
+      position:absolute; width:10px; height:10px;
+      background:#fff; border:1px solid #000;
+      pointer-events:auto;
     }
-    .handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
-    .handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
-    .handle[data-handle="sw"] { bottom: -5px; left: -5px; cursor: nesw-resize; }
-    .handle[data-handle="se"] { bottom: -5px; right: -5px; cursor: nwse-resize; }
-    .group-controls {
-      display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 1rem;
+    .handle[data-handle="nw"] { top:-5px; left:-5px; cursor:nwse-resize; }
+    .handle[data-handle="ne"] { top:-5px; right:-5px; cursor:nesw-resize; }
+    .handle[data-handle="sw"] { bottom:-5px; left:-5px; cursor:nesw-resize; }
+    .handle[data-handle="se"] { bottom:-5px; right:-5px; cursor:nwse-resize; }
+
+    button {
+      background:var(--accent); color:#fff; border:none;
+      padding:.6rem 1rem; border-radius:var(--radius);
+      cursor:pointer; font-weight:600;
     }
-    #backBtn { background: var(--gray); margin-bottom: 1rem; }
+    button[disabled] {
+      opacity:.4; cursor:not-allowed;
+    }
+    .scale-btn {
+      margin-top:1rem;
+      background: var(--accent);
+      transition:background .2s;
+    }
+    .scale-btn.off {
+      background: var(--gray);
+    }
+    @media(max-width:600px){
+      .controls { flex-direction:column; align-items:flex-start; }
+    }
   </style>
 </head>
 <body>
   <h1>Knife Engraving Customiser</h1>
+  <h3>by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
   <div class="container">
 
-    <!-- STEP 1: SELECT KNIVES -->
-    <div id="selectionSection" class="section">
-      <h2>1. Select your knives</h2>
+    <!-- 1. KNIFE -->
+    <div class="section">
+      <h2>1. Choose your knife</h2>
       <div id="product-picker">
         <label class="product-option">
-          <input type="checkbox" data-id="chef" data-name="Chef Knife" data-src="chef.jpg" data-size="big">
-          <img src="chef-thumb.jpg" alt="Chef"><span>Chef Knife</span>
+          <input type="radio" name="product" value="chef.jpg">
+          <img src="chef-thumb.jpg" alt="Chef knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" data-id="santoku" data-name="Santoku Knife" data-src="santoku.jpg" data-size="big">
-          <img src="santoku-thumb.jpg" alt="Santoku"><span>Santoku Knife</span>
+          <input type="radio" name="product" value="santoku.jpg">
+          <img src="santoku-thumb.jpg" alt="Santoku knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" data-id="bread" data-name="Bread Knife" data-src="bread.jpg" data-size="big">
-          <img src="bread-thumb.jpg" alt="Bread"><span>Bread Knife</span>
+          <input type="radio" name="product" value="paring.jpg">
+          <img src="paring-thumb.jpg" alt="Paring knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" data-id="chopper" data-name="Chopper Knife" data-src="chopper.jpg" data-size="big">
-          <img src="chopper-thumb.jpg" alt="Chopper"><span>Chopper Knife</span>
+          <input type="radio" name="product" value="utility.jpg">
+          <img src="utility-thumb.jpg" alt="Utility knife">
         </label>
-        <label class="product-option">
-          <input type="checkbox" data-id="utility" data-name="Utility Knife" data-src="utility.jpg" data-size="small">
-          <img src="utility-thumb.jpg" alt="Utility"><span>Utility Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" data-id="paring" data-name="Paring Knife" data-src="paring.jpg" data-size="small">
-          <img src="paring-thumb.jpg" alt="Paring"><span>Paring Knife</span>
-        </label>
-      </div>
-      <div style="text-align:center; margin-top:1rem;">
-        <button id="toCustomizeBtn" disabled>Next: Customize</button>
       </div>
     </div>
 
-    <!-- EDITOR -->
-    <div id="editorSection" style="display:none;">
-      <button id="backBtn">← Back to selection</button>
-
-      <div id="bigSection" class="section">
-        <h2>Large Knives Customization</h2>
-        <div class="group-controls">
-          <button id="alignBig">Align to Last</button>
-          <button id="matchBig">Match Font Size</button>
-          <button id="toggleBoxBig">Hide Box</button>
+    <!-- 2. TEXT CONTROLS -->
+    <div class="section">
+      <h2>2. Customise text</h2>
+      <div class="controls">
+        <div>
+          <label for="engraveText">Text:</label>
+          <input type="text" id="engraveText" placeholder="Enter engraving">
         </div>
-        <div id="bigKnifeSections" class="container"></div>
-      </div>
-
-      <div id="smallSection" class="section">
-        <h2>Small Knives Customization</h2>
-        <div class="group-controls">
-          <button id="alignSmall">Align to Last</button>
-          <button id="matchSmall">Match Font Size</button>
-          <button id="toggleBoxSmall">Hide Box</button>
-        </div>
-        <div id="smallKnifeSections" class="container"></div>
-      </div>
-
-      <div style="text-align:center; margin:1rem 0;">
-        <button id="downloadZipBtn">Generate & Download ZIP</button>
-      </div>
-    </div>
-
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
-  <script>
-  (function(){
-    const baseFont = 150;
-    let selected = [];
-    let lastActive = null;
-    const showBox = { big: true, small: true };
-
-    // Global helpers
-    function measure(kn){
-      const ctx = kn._fCtx;
-      ctx.font = `${baseFont}px ${kn.font}`;
-      const w = ctx.measureText(kn.text).width;
-      return { w, h: baseFont };
-    }
-    function centerText(kn){
-      kn.pos.x = kn._full.width/2 - kn.baseDims.w/2;
-      kn.pos.y = kn._full.height/2 - kn.baseDims.h/2;
-    }
-
-    // ELEMENTS
-    const toCustomizeBtn  = document.getElementById('toCustomizeBtn');
-    const backBtn         = document.getElementById('backBtn');
-    const selectionSec    = document.getElementById('selectionSection');
-    const editorSec       = document.getElementById('editorSection');
-    const bigSection      = document.getElementById('bigSection');
-    const smallSection    = document.getElementById('smallSection');
-    const bigContainer    = document.getElementById('bigKnifeSections');
-    const smallContainer  = document.getElementById('smallKnifeSections');
-    const alignBigBtn     = document.getElementById('alignBig');
-    const matchBigBtn     = document.getElementById('matchBig');
-    const toggleBoxBigBtn = document.getElementById('toggleBoxBig');
-    const alignSmallBtn   = document.getElementById('alignSmall');
-    const matchSmallBtn   = document.getElementById('matchSmall');
-    const toggleBoxSmallBtn= document.getElementById('toggleBoxSmall');
-    const downloadZipBtn  = document.getElementById('downloadZipBtn');
-
-    // Load image helper
-    function loadImage(src){
-      return new Promise(res=>{
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = ()=>res(img);
-        img.src = src;
-      });
-    }
-
-    // Enable Next
-    document.querySelectorAll('#product-picker input[type=checkbox]').forEach(chk=>{
-      chk.addEventListener('change', ()=>{
-        toCustomizeBtn.disabled = ![...document.querySelectorAll('#product-picker input[type=checkbox]')]
-          .some(c=>c.checked);
-      });
-    });
-
-    toCustomizeBtn.addEventListener('click', ()=>{
-      selected = [...document.querySelectorAll('#product-picker input[type=checkbox]:checked')]
-        .map(chk=>({
-          id:      chk.dataset.id,
-          name:    chk.dataset.name,
-          src:     chk.dataset.src,
-          size:    chk.dataset.size,
-          text:    '',
-          font:    'Montserrat',
-          textScale: 1,
-          baseDims: {w:0,h:0},
-          pos:     {x:0,y:0},
-          pointers:{}, pinch:false,
-          _elements: {},
-        }));
-      selectionSec.style.display = 'none';
-      editorSec.style.display    = '';
-      renderEditors();
-    });
-
-    backBtn.addEventListener('click', ()=>{
-      editorSec.style.display    = 'none';
-      selectionSec.style.display = '';
-      bigContainer.innerHTML     = '';
-      smallContainer.innerHTML   = '';
-      selected = [];
-    });
-
-    function renderEditors(){
-      bigContainer.innerHTML   = '';
-      smallContainer.innerHTML = '';
-      const bigs   = selected.filter(k=>k.size==='big');
-      const smalls = selected.filter(k=>k.size==='small');
-      bigs.forEach((kn,i)=>makeKnifeSection(kn, i, bigContainer, bigs));
-      smalls.forEach((kn,i)=>makeKnifeSection(kn, i, smallContainer, smalls));
-      bigSection.style.display   = bigs.length   ? '' : 'none';
-      smallSection.style.display = smalls.length ? '' : 'none';
-    }
-
-    function makeKnifeSection(kn, index, container, group){
-      const sec = document.createElement('div');
-      sec.className = 'section';
-      let html = `<h3>${kn.name}</h3>
-        <div class="controls" style="margin-bottom:1rem; align-items:center;">
-          <label>Text:</label>
-          <input type="text" class="txtInput" style="min-width:200px;" value="">
-          ${index>0?`<label style="margin-left:.5rem;">
-            <input type="checkbox" class="sameText"> Same as previous
-           </label>`:''}
-          <label style="margin-left:1rem;">Font:</label>
-          <select class="fontSelect">
+        <div>
+          <label for="fontSelect">Font:</label>
+          <select id="fontSelect">
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
             <option value="Lobster">Lobster</option>
@@ -274,210 +162,289 @@
             <option value="Arial">Arial</option>
           </select>
         </div>
-        <div class="canvas-wrapper" id="wrap-${kn.id}">
-          <canvas id="view-${kn.id}"></canvas>
-          <div id="loading-${kn.id}" class="loadingOverlay">Loading…</div>
-          <div id="bbox-${kn.id}" class="bbox">
-            <div class="handle" data-handle="nw"></div>
-            <div class="handle" data-handle="ne"></div>
-            <div class="handle" data-handle="sw"></div>
-            <div class="handle" data-handle="se"></div>
-          </div>
-        </div>`;
-      sec.innerHTML = html;
-      container.appendChild(sec);
+      </div>
+      <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
+        • Drag the text box to move.<br>
+        • Drag a corner to scale (desktop).<br>
+        • Pinch to zoom (mobile).
+      </p>
+    </div>
 
-      const txtInput = sec.querySelector('.txtInput');
-      const fontSel  = sec.querySelector('.fontSelect');
-      const sameChk  = sec.querySelector('.sameText');
-      kn._elements = { txtInput, fontSel, sameChk };
+    <!-- 3. PREVIEW & CONTROLS -->
+    <div class="section">
+      <h2>3. Preview & download</h2>
+      <div id="canvas-wrapper">
+        <canvas id="viewCanvas"></canvas>
+        <div id="loadingOverlay">Loading…</div>
+        <div id="bbox">
+          <div class="handle" data-handle="nw"></div>
+          <div class="handle" data-handle="ne"></div>
+          <div class="handle" data-handle="sw"></div>
+          <div class="handle" data-handle="se"></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:1rem;">
+        <button id="scaleBtn" class="scale-btn">Scale: On</button><br>
+        <button id="downloadBtn" disabled style="margin-top:1rem;">
+          Generate &amp; Download PNGs
+        </button>
+      </div>
+    </div>
 
-      initCanvas(kn, group);
+  </div>
 
-      txtInput.addEventListener('input', e=>{
-        kn.text = e.target.value;
-        kn.baseDims = measure(kn);
-        kn.textScale = 1;
-        centerText(kn);
-        kn.draw();
-        lastActive = kn;
+  <script>
+    /* ELEMENTS & STATE */
+    const view     = document.getElementById('viewCanvas');
+    const vCtx     = view.getContext('2d');
+    const full     = document.createElement('canvas');
+    const fCtx     = full.getContext('2d');
+    const radios   = document.querySelectorAll('[name="product"]');
+    const txtInput = document.getElementById('engraveText');
+    const fontSel  = document.getElementById('fontSelect');
+    const dlBtn    = document.getElementById('downloadBtn');
+    const overlay  = document.getElementById('loadingOverlay');
+    const bboxEl   = document.getElementById('bbox');
+    const handles  = document.querySelectorAll('.handle');
+    const scaleBtn = document.getElementById('scaleBtn');
+
+    let img          = null;
+    let baseFont     = 150;
+    let textScale    = 1;
+    let baseDims     = {w:0,h:0};
+    let pos          = {x:0,y:0};
+    let boxVisible   = true;
+
+    let dragging=false, dragStart={};
+    let resizing=false, resizeStart={};
+    let pointers={}, pinch=false, pinchStart={};
+
+    /* HELPERS */
+    function showOverlay(on){
+      overlay.style.visibility = on? 'visible' : 'hidden';
+    }
+    function loadImage(src){
+      return new Promise(r=>{
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        i.onload = ()=> r(i);
+        i.src = src;
       });
-      fontSel.addEventListener('input', e=>{
-        kn.font = e.target.value;
-        kn.baseDims = measure(kn);
-        kn.textScale = 1;
-        centerText(kn);
-        kn.draw();
-        lastActive = kn;
+    }
+    function fitInBox(){
+      const wrapper = document.getElementById('canvas-wrapper');
+      const wrapW = wrapper.clientWidth;
+      const scale = wrapW / img.naturalWidth;
+      view.width  = img.naturalWidth * scale;
+      view.height = img.naturalHeight * scale;
+      full.width  = img.naturalWidth;
+      full.height = img.naturalHeight;
+      view.style.width  = view.width + 'px';
+      view.style.height = view.height + 'px';
+    }
+    function measureBaseText(){
+      fCtx.font = `${baseFont}px ${fontSel.value}`;
+      return { w:fCtx.measureText(txtInput.value).width, h:baseFont };
+    }
+    function toFullCoords(cx,cy){
+      const r = view.getBoundingClientRect();
+      return {
+        x: (cx - r.left) * (full.width  / r.width),
+        y: (cy - r.top ) * (full.height / r.height)
+      };
+    }
+    function hitTest(fx,fy){
+      return fx>=pos.x && fx<=pos.x+baseDims.w*textScale
+          && fy>=pos.y && fy<=pos.y+baseDims.h*textScale;
+    }
+    function downloadCanvas(can,name){
+      can.toBlob(b=>{
+        const url = URL.createObjectURL(b);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download= name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{
+          URL.revokeObjectURL(url);
+          a.remove();
+        },100);
       });
-      if(sameChk){
-        sameChk.addEventListener('change', e=>{
-          if(e.target.checked){
-            const prev = group[index-1];
-            kn.text = prev.text;
-            kn._elements.txtInput.value = kn.text;
-            kn.baseDims = measure(kn);
-            kn.textScale = 1;
-            centerText(kn);
-            kn.draw();
-          }
-        });
+    }
+    function draw(){
+      if(!img) return;
+      // full‐res
+      fCtx.clearRect(0,0,full.width,full.height);
+      fCtx.drawImage(img,0,0);
+      fCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+      fCtx.fillStyle = '#000';
+      fCtx.textBaseline='top';
+      fCtx.fillText(txtInput.value, pos.x, pos.y);
+
+      // preview
+      const s = view.width / full.width;
+      vCtx.setTransform(s,0,0,s,0,0);
+      vCtx.clearRect(0,0,full.width,full.height);
+      vCtx.drawImage(img,0,0);
+      vCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+      vCtx.fillStyle = '#000';
+      vCtx.textBaseline='top';
+      vCtx.fillText(txtInput.value, pos.x, pos.y);
+      vCtx.setTransform(1,0,0,1,0,0);
+
+      // bounding box
+      const dx = view.width / full.width;
+      const dy = view.height/ full.height;
+      if(boxVisible && txtInput.value){
+        bboxEl.style.display='block';
+        bboxEl.style.width  = (baseDims.w*textScale*dx) + 'px';
+        bboxEl.style.height = (baseDims.h*textScale*dy) + 'px';
+        bboxEl.style.left   = (pos.x*dx) + 'px';
+        bboxEl.style.top    = (pos.y*dy) + 'px';
+      } else {
+        bboxEl.style.display='none';
       }
     }
 
-    function initCanvas(kn, group){
-      const wrap    = document.getElementById(`wrap-${kn.id}`);
-      const view    = document.getElementById(`view-${kn.id}`);
-      const overlay = document.getElementById(`loading-${kn.id}`);
-      const bbox    = document.getElementById(`bbox-${kn.id}`);
-      const handles = bbox.querySelectorAll('.handle');
-      const vCtx    = view.getContext('2d');
-      const full    = document.createElement('canvas');
-      const fCtx    = full.getContext('2d');
+    /* EVENTS */
 
-      Object.assign(kn, { _view:view, _vCtx:vCtx, _full:full, _fCtx:fCtx,
-                         _overlay:overlay, _bbox:bbox, _handles:handles });
-
-      function showOverlay(on){
-        overlay.style.visibility = on ? 'visible' : 'hidden';
-      }
-      function fit(){
-        const w = wrap.clientWidth;
-        const scale = kn._img.naturalWidth ? w / kn._img.naturalWidth : 1;
-        view.width  = kn._img.naturalWidth * scale;
-        view.height = kn._img.naturalHeight * scale;
-        full.width  = kn._img.naturalWidth;
-        full.height = kn._img.naturalHeight;
-      }
-      function toFull(cx,cy){
-        const r = view.getBoundingClientRect();
-        return {
-          x: (cx - r.left) * (full.width / r.width),
-          y: (cy - r.top ) * (full.height/ r.height)
-        };
-      }
-      function hitTest(x,y){
-        return x>=kn.pos.x && x<=kn.pos.x+kn.baseDims.w*kn.textScale
-            && y>=kn.pos.y && y<=kn.pos.y+kn.baseDims.h*kn.textScale;
-      }
-
-      function draw(){
-        fCtx.clearRect(0,0,full.width,full.height);
-        fCtx.drawImage(kn._img,0,0);
-        fCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
-        fCtx.fillStyle='#000'; fCtx.textBaseline='top';
-        fCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-
-        const s = view.width/full.width;
-        vCtx.setTransform(s,0,0,s,0,0);
-        vCtx.clearRect(0,0,full.width,full.height);
-        vCtx.drawImage(kn._img,0,0);
-        vCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
-        vCtx.fillStyle='#000'; vCtx.textBaseline='top';
-        vCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-        vCtx.setTransform(1,0,0,1,0,0);
-
-        const dx = view.width/full.width, dy=view.height/full.height;
-        if(kn.text && showBox[kn.size]){
-          bbox.style.display = 'block';
-          bbox.style.width  = (kn.baseDims.w*kn.textScale*dx)+'px';
-          bbox.style.height = (kn.baseDims.h*kn.textScale*dy)+'px';
-          bbox.style.left   = (kn.pos.x*dx)+'px';
-          bbox.style.top    = (kn.pos.y*dy)+'px';
-        } else {
-          bbox.style.display='none';
-        }
-      }
-      kn.draw = draw;
-
-      centerText(kn);
-      showOverlay(true);
-      loadImage(kn.src).then(img=>{
-        kn._img = img;
-        fit();
-        kn.baseDims = measure(kn);
-        kn.textScale = 1;
+    // Knife select
+    radios.forEach(r=>{
+      r.addEventListener('change', async e=>{
+        showOverlay(true);
+        dlBtn.disabled = true;
+        img = await loadImage(e.target.value);
+        fitInBox();
+        baseDims = measureBaseText();
+        textScale = 1;
+        pos.x = full.width/2 - baseDims.w/2;
+        pos.y = full.height/2 - baseDims.h/2;
         draw();
         showOverlay(false);
-      });
-      
-      // Pointer interactions code remains unchanged
-    }
-
-    // Align / Match
-    function alignGroup(size){
-      if(!lastActive || lastActive.size!==size) return;
-      selected.filter(k=>k.size===size).forEach(k=>{
-        if(k!==lastActive){
-          k.pos.x = lastActive.pos.x;
-          k.draw();
-        }
-      });
-    }
-    function matchSizeGroup(size){
-      if(!lastActive || lastActive.size!==size) return;
-      selected.filter(k=>k.size===size).forEach(k=>{
-        if(k!==lastActive){
-          k.textScale = lastActive.textScale;
-          k.draw();
-        }
-      });
-    }alignBigBtn.addEventListener('click', ()=>alignGroup('big'));
-    matchBigBtn.addEventListener('click', ()=>matchSizeGroup('big'));
-    alignSmallBtn.addEventListener('click', ()=>alignGroup('small'));
-    matchSmallBtn.addEventListener('click', ()=>matchSizeGroup('small'));
-
-    // Toggle Box
-    toggleBoxBigBtn.addEventListener('click', ()=>{
-      showBox.big = !showBox.big;
-      toggleBoxBigBtn.textContent = showBox.big ? 'Hide Box' : 'Show Box';
-      selected.filter(k=>k.size==='big').forEach(k=>{
-        k._bbox.style.display = (k.text && showBox.big) ? 'block' : 'none';
-      });
-    });
-    toggleBoxSmallBtn.addEventListener('click', ()=>{
-      showBox.small = !showBox.small;
-      toggleBoxSmallBtn.textContent = showBox.small ? 'Hide Box' : 'Show Box';
-      selected.filter(k=>k.size==='small').forEach(k=>{
-        k._bbox.style.display = (k.text && showBox.small) ? 'block' : 'none';
+        dlBtn.disabled = false;
       });
     });
 
-    // ZIP download
-    downloadZipBtn.addEventListener('click', ()=>{
-      const zip = new JSZip();
-      const knivesFolder = zip.folder('knives');
-      const textOnlyFold = zip.folder('text-only');
-      Promise.all(selected.map(kn=>{
-        return new Promise(res=>{
-          kn._full.toBlob(blob=>{
-            knivesFolder.file(`${kn.id}.png`, blob);
-            const t = document.createElement('canvas');
-            t.width = kn._full.width; t.height = kn._full.height;
-            const tCtx = t.getContext('2d');
-            tCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
-            tCtx.fillStyle = '#000'; tCtx.textBaseline = 'top';
-            tCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-            t.toBlob(tb=>{
-              textOnlyFold.file(`${kn.id}-text.png`, tb);
-              res();
-            });
-          });
-        });
-      })).then(()=>{
-        zip.generateAsync({type:'blob'}).then(content=>{
-          const url = URL.createObjectURL(content);
-          const a = document.createElement('a');
-          a.href = url; a.download = 'engravings.zip';
-          document.body.appendChild(a); a.click();
-          setTimeout(()=>{
-            URL.revokeObjectURL(url); a.remove();
-          },100);
-        });
+    // Text / font change
+    [txtInput,fontSel].forEach(el=>
+      el.addEventListener('input', ()=>{
+        baseDims = measureBaseText();
+        textScale = 1;
+        pos.x = full.width/2 - baseDims.w/2;
+        pos.y = full.height/2 - baseDims.h/2;
+        draw();
+      })
+    );
+
+    // Drag text (desktop)
+    view.addEventListener('pointerdown', e=>{
+      const f = toFullCoords(e.clientX, e.clientY);
+      if(!hitTest(f.x,f.y) || resizing || pinch) return;
+      dragging = true;
+      dragStart = { id: e.pointerId, dx: f.x - pos.x, dy: f.y - pos.y };
+      e.preventDefault();
+    });
+    window.addEventListener('pointermove', e=>{
+      if(!dragging || e.pointerId!==dragStart.id) return;
+      const f = toFullCoords(e.clientX, e.clientY);
+      pos.x = f.x - dragStart.dx;
+      pos.y = f.y - dragStart.dy;
+      draw();
+    });
+    ['pointerup','pointercancel'].forEach(evt=>
+      window.addEventListener(evt, e=>{
+        if(e.pointerId===dragStart.id) dragging=false;
+      })
+    );
+
+    // Resize via handles (desktop)
+    handles.forEach(h=>{
+      h.addEventListener('pointerdown', e=>{
+        e.stopPropagation();
+        resizing = true;
+        const box = bboxEl.getBoundingClientRect();
+        const center = toFullCoords(box.left+box.width/2, box.top+box.height/2);
+        const p0 = toFullCoords(e.clientX, e.clientY);
+        resizeStart = {
+          id: e.pointerId,
+          cx: center.x, cy: center.y,
+          scale: textScale,
+          d0: Math.hypot(p0.x-center.x, p0.y-center.y)
+        };
       });
     });
+    window.addEventListener('pointermove', e=>{
+      if(!resizing || e.pointerId!==resizeStart.id) return;
+      const p = toFullCoords(e.clientX, e.clientY);
+      const d = Math.hypot(p.x - resizeStart.cx, p.y - resizeStart.cy);
+      textScale = resizeStart.scale * (d / resizeStart.d0);
+      pos.x = resizeStart.cx - (baseDims.w*textScale)/2;
+      pos.y = resizeStart.cy - (baseDims.h*textScale)/2;
+      draw();
+    });
+    ['pointerup','pointercancel'].forEach(evt=>
+      window.addEventListener(evt, e=>{
+        if(e.pointerId===resizeStart.id) resizing=false;
+      })
+    );
 
-  })();
+    // Pinch‐zoom (mobile)
+    view.addEventListener('pointerdown', e=>{
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if(Object.keys(pointers).length === 2 && !dragging && !resizing){
+        pinch = true;
+        const [pA, pB] = Object.values(pointers);
+        const fA = toFullCoords(pA.x, pA.y);
+        const fB = toFullCoords(pB.x, pB.y);
+        pinchStart = {
+          scale: textScale,
+          cx: (fA.x + fB.x)/2,
+          cy: (fA.y + fB.y)/2,
+          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
+        };
+      }
+    });
+    view.addEventListener('pointermove', e=>{
+      if(!pinch || !(e.pointerId in pointers)) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      const [a,b] = Object.values(pointers);
+      const fA = toFullCoords(a.x, a.y);
+      const fB = toFullCoords(b.x, b.y);
+      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+      textScale = pinchStart.scale * (d1 / pinchStart.d0);
+      pos.x = pinchStart.cx - (baseDims.w*textScale)/2;
+      pos.y = pinchStart.cy - (baseDims.h*textScale)/2;
+      draw();
+    });
+    ['pointerup','pointercancel'].forEach(evt=>
+      view.addEventListener(evt, e=>{
+        delete pointers[e.pointerId];
+        if(Object.keys(pointers).length < 2) pinch = false;
+      })
+    );
+
+    // Toggle bounding‐box scaling
+    scaleBtn.addEventListener('click', ()=>{
+      boxVisible = !boxVisible;
+      scaleBtn.textContent = boxVisible ? 'Scale: On' : 'Scale: Off';
+      scaleBtn.classList.toggle('off', !boxVisible);
+      draw();
+    });
+
+    // Download
+    dlBtn.addEventListener('click', ()=>{
+      draw();
+      downloadCanvas(full,'preview.png');
+      // text‐only
+      const t = document.createElement('canvas');
+      t.width = full.width; t.height = full.height;
+      const tCtx = t.getContext('2d');
+      tCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
+      tCtx.fillStyle = '#000';
+      tCtx.textBaseline = 'top';
+      tCtx.fillText(txtInput.value, pos.x, pos.y);
+      downloadCanvas(t,'text-only.png');
+    });
   </script>
 </body>
 </html>
