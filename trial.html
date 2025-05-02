@@ -4,337 +4,602 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <title>Knife Engraving Customiser</title>
-  <link rel="icon" href="./favicon.ico" type="image/x-icon">
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
-  <!-- load all fonts at once -->
+  <!-- fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?
-      family=Montserrat:wght@400;700
-      &family=Lobster
-      &family=Roboto
-      &family=Chocolate+Classical+Sans
-      &family=LXGW+WenKai+Mono+TC
-      &family=Noto+Sans+HK
-      &family=Noto+Serif+TC
-      &display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 
-  <!-- JSZip for producing the ZIP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <!-- JSZip for ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
     :root {
       --accent: #d00024;
+      --gray: #888;
       --bg: #fafafa;
       --border: #ddd;
       --pad: 1rem;
       --radius: .5rem;
     }
-    * { box-sizing:border-box; margin:0; }
+    * { box-sizing: border-box; margin: 0; }
     body {
       font-family: Roboto, Arial, sans-serif;
-      background:var(--bg); color:#222;
+      background: var(--bg);
+      color: #222;
     }
-    h1,h2 { text-align:center; margin:1rem 0; }
+    h1,h2 { text-align: center; margin: 1rem 0; }
+    h3 { text-align: center; margin-bottom: 2rem; }
     .container {
-      max-width:1200px; margin:auto; padding:var(--pad);
-      display:flex; flex-direction:column; gap:var(--pad);
+      max-width: 1200px; margin: auto; padding: var(--pad);
+      display: flex; flex-direction: column; gap: var(--pad);
     }
     .section {
-      background:#fff; border:1px solid var(--border);
-      border-radius:var(--radius); padding:var(--pad);
+      background: #fff; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: var(--pad);
     }
     #product-picker {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-      gap:.75rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: .75rem;
     }
-    .product-option { text-align:center; }
+    .product-option { position: relative; }
     .product-option input {
-      position:absolute; opacity:0; cursor:pointer;
-      width:100%; height:100%;
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
     .product-option img {
-      width:100%; border:2px solid transparent;
-      border-radius:var(--radius);
+      width: 100%; border: 2px solid transparent;
+      border-radius: var(--radius); display: block;
     }
     .product-option input:checked+img {
-      border-color:var(--accent);
-    }
-    #editors { display:flex; flex-direction:column; gap:var(--pad); }
-    .editor {
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:var(--pad);
+      border-color: var(--accent);
     }
     .controls {
-      display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
-      margin-bottom:1rem;
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
     }
-    .controls label { font-size:.9rem; }
-    .canvas‐wrapper {
-      position:relative;
-      max-width:1168px;
-      margin:auto;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:#eaeaea;
-      touch-action:none;
+    .controls label { font-size: .9rem; margin-right: .25rem; }
+    .canvas-wrapper {
+      position: relative;
+      width: 100%; max-width: 1168px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #eaeaea;
+      touch-action: none;
+      margin: auto;
     }
-    canvas { display:block; width:100%; touch-action:none; }
-    .loading {
-      position:absolute; inset:0;
-      background:rgba(255,255,255,0.8);
-      display:flex; align-items:center; justify-content:center;
-      visibility:hidden; font-size:1.2rem; color:#555;
+    canvas {
+      display: block;
+      touch-action: none;
     }
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.85);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; color: #555;
+      visibility: hidden; z-index: 10;
+    }
+    .bbox {
+      position: absolute; border: 1px dashed #000;
+      pointer-events: none; display: none;
+    }
+    .handle {
+      position: absolute; width: 10px; height: 10px;
+      background: #fff; border: 1px solid #000;
+      pointer-events: auto;
+    }
+    .handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
+    .handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
+    .handle[data-handle="sw"] { bottom: -5px; left: -5px; cursor: nesw-resize; }
+    .handle[data-handle="se"] { bottom: -5px; right: -5px; cursor: nwse-resize; }
     button {
-      background:var(--accent); color:#fff; border:none;
-      padding:.6rem 1rem; border-radius:var(--radius);
-      cursor:pointer; font-weight:600;
+      background: var(--accent); color: #fff; border: none;
+      padding: .6rem 1rem; border-radius: var(--radius);
+      cursor: pointer; font-weight: 600;
     }
-    button[disabled] { opacity:.4; cursor:not-allowed; }
-    @media(max-width:600px){
-      .controls { flex-direction:column; align-items:flex-start; }
+    button[disabled] {
+      opacity: .4; cursor: not-allowed;
+    }
+    .scale-btn {
+      margin-top: 1rem;
+      background: var(--accent);
+      transition: background .2s;
+    }
+    .scale-btn.off {
+      background: var(--gray);
+    }
+    .shared-controls {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f9f9f9;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .text-right {
+      text-align: right;
+    }
+    .same-content {
+      margin-left: 1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    @media (max-width: 600px) {
+      .controls { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
   <h1>Knife Engraving Customiser</h1>
+  <h3>by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
   <div class="container">
-
-    <!-- 1. knife picker -->
+    <!-- 1. KNIFE SELECTION -->
     <div class="section">
       <h2>1. Choose your knives</h2>
       <div id="product-picker">
         <label class="product-option">
-          <input type="checkbox" value="chef.jpg"><img src="chef-thumb.jpg" alt="Chef">
+          <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
+          <img src="chef-thumb.jpg" alt="Chef knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" value="santoku.jpg"><img src="santoku-thumb.jpg" alt="Santoku">
+          <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
+          <img src="santoku-thumb.jpg" alt="Santoku knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" value="bread.jpg"><img src="bread-thumb.jpg" alt="Bread">
+          <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
+          <img src="bread-thumb.jpg" alt="Bread knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" value="chopper.jpg"><img src="chopper-thumb.jpg" alt="Chopper">
+          <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
+          <img src="chopper-thumb.jpg" alt="Chopper knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" value="utility.jpg"><img src="utility-thumb.jpg" alt="Utility">
+          <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
+          <img src="utility-thumb.jpg" alt="Utility knife">
         </label>
         <label class="product-option">
-          <input type="checkbox" value="paring.jpg"><img src="paring-thumb.jpg" alt="Paring">
+          <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
+          <img src="paring-thumb.jpg" alt="Paring knife">
         </label>
       </div>
     </div>
 
-    <!-- 2+3. dynamic editor per knife -->
-    <div id="editors"></div>
+    <!-- 2. SHARED CONTROLS FOR BIG KNIVES -->
+    <div class="section shared-controls" id="big-knives-controls" style="display: none;">
+      <h2>Big Knives Shared Settings (Santoku, Chef, Bread, Chopper)</h2>
+      <div class="controls">
+        <div>
+          <label for="big-font-size">Font Size:</label>
+          <input type="number" id="big-font-size" value="150" min="10" step="10">
+        </div>
+        <div>
+          <label for="big-align-right">Align Right:</label>
+          <input type="checkbox" id="big-align-right">
+        </div>
+      </div>
+    </div>
 
-    <!-- 4. ZIP download -->
-    <div class="section" style="text-align:center">
-      <button id="downloadZip" disabled>
-        Generate &amp; Download ZIP
-      </button>
+    <!-- 3. SHARED CONTROLS FOR SMALL KNIVES -->
+    <div class="section shared-controls" id="small-knives-controls" style="display: none;">
+      <h2>Small Knives Shared Settings (Utility, Paring)</h2>
+      <div class="controls">
+        <div>
+          <label for="small-font-size">Font Size:</label>
+          <input type="number" id="small-font-size" value="100" min="10" step="10">
+        </div>
+        <div>
+          <label for="small-align-right">Align Right:</label>
+          <input type="checkbox" id="small-align-right">
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. KNIFE CUSTOMIZATION SECTIONS -->
+    <div id="knife-sections"></div>
+
+    <!-- 5. DOWNLOAD ALL -->
+    <div class="section">
+      <div style="text-align: center;">
+        <button id="downloadAllBtn" disabled>Download All as ZIP</button>
+      </div>
     </div>
   </div>
 
   <script>
-  (function(){
-    const picker = document.getElementById('product-picker');
-    const editorsDiv = document.getElementById('editors');
-    const downloadZip = document.getElementById('downloadZip');
+    /* STATE */
+    const knives = {
+      big: ['santoku', 'chef', 'bread', 'chopper'],
+      small: ['utility', 'paring']
+    };
+    const state = {};
+    let sameContent = false;
 
-    // load image helper
-    function loadImage(src){
-      return new Promise(res=>{
-        const i=new Image();
-        i.crossOrigin='anonymous';
-        i.onload=()=>res(i);
-        i.src=src;
+    /* ELEMENTS */
+    const productPicker = document.getElementById('product-picker');
+    const bigControls = document.getElementById('big-knives-controls');
+    const smallControls = document.getElementById('small-knives-controls');
+    const knifeSections = document.getElementById('knife-sections');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+    /* HELPERS */
+    function loadImage(src) {
+      return new Promise(r => {
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        i.onload = () => r(i);
+        i.src = src;
       });
     }
 
-    // whenever selection changes, rebuild editors
-    picker.addEventListener('change', buildEditors);
+    function fitInBox(canvas, img, wrapper) {
+      const wrapW = wrapper.clientWidth;
+      const scale = wrapW / img.naturalWidth;
+      canvas.width = img.naturalWidth * scale;
+      canvas.height = img.naturalHeight * scale;
+      canvas.style.width = canvas.width + 'px';
+      canvas.style.height = canvas.height + 'px';
+      return scale;
+    }
 
-    async function buildEditors(){
-      editorsDiv.innerHTML = '';
-      const checked = Array.from(
-        picker.querySelectorAll('input:checked')
-      ).map(i=>i.value);
-      downloadZip.disabled = !checked.length;
+    function measureText(ctx, text, fontSize, font) {
+      ctx.font = `${fontSize}px ${font}`;
+      return { w: ctx.measureText(text).width, h: fontSize };
+    }
 
-      for(const src of checked){
-        const img = await loadImage(src);
-        const sec = document.createElement('div');
-        sec.className = 'section editor';
-        sec.innerHTML = `
-          <h2>${src.replace('.jpg','').toUpperCase()}</h2>
-          <div class="controls">
-            <label>Text: <input type="text" class="txt" placeholder="Enter engraving"></label>
-            <label>Font:
-              <select class="font">
-                <optgroup label="English">
-                  <option value="Montserrat">Montserrat</option>
-                  <option value="Roboto">Roboto</option>
-                  <option value="Lobster">Lobster</option>
-                  <option value="'Times New Roman',serif">Times New Roman</option>
-                  <option value="Courier New">Courier New</option>
-                  <option value="Arial">Arial</option>
-                </optgroup>
-                <optgroup label="Chinese">
-                  <option value="'Chocolate Classical Sans',sans-serif">Chocolate Classical Sans</option>
-                  <option value="'LXGW WenKai Mono TC',monospace">LXGW WenKai Mono TC</option>
-                  <option value="'Noto Sans HK',sans-serif">Noto Sans HK</option>
-                  <option value="'Noto Serif TC',serif">Noto Serif TC</option>
-                </optgroup>
-              </select>
-            </label>
+    function toFullCoords(canvas, wrapper, cx, cy) {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: (cx - r.left) * (wrapper.full.width / r.width),
+        y: (cy - r.top) * (wrapper.full.height / r.height)
+      };
+    }
+
+    function hitTest(fx, fy, pos, dims, scale) {
+      return fx >= pos.x && fx <= pos.x + dims.w * scale &&
+             fy >= pos.y && fy <= pos.y + dims.h * scale;
+    }
+
+    function createCanvasSection(knife) {
+      const isBig = knives.big.includes(knife);
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `
+        <h2>${knife.charAt(0).toUpperCase() + knife.slice(1)} Knife</h2>
+        <div class="controls">
+          <div>
+            <label for="text-${knife}">Text:</label>
+            <input type="text" id="text-${knife}" placeholder="Enter engraving">
+            <span class="same-content">
+              <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
+              <label for="same-content-${knife}">Use same text for all</label>
+            </span>
           </div>
-          <div class="canvas-wrapper">
-            <canvas></canvas>
-            <div class="loading">Loading…</div>
-          </div>`;
-        editorsDiv.appendChild(sec);
+          <div>
+            <label for="font-${knife}">Font:</label>
+            <select id="font-${knife}">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Lobster">Lobster</option>
+              <option value="'Times New Roman',serif">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
+          • Drag the text box to move.<br>
+          • Drag a corner to scale (desktop).<br>
+          • Pinch to zoom (mobile).
+        </p>
+        <div class="canvas-wrapper" id="wrapper-${knife}">
+          <canvas id="canvas-${knife}"></canvas>
+          <div class="loading-overlay" id="overlay-${knife}">Loading…</div>
+          <div class="bbox" id="bbox-${knife}">
+            <div class="handle" data-handle="nw"></div>
+            <div class="handle" data-handle="ne"></div>
+            <div class="handle" data-handle="sw"></div>
+            <div class="handle" data-handle="se"></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1rem;">
+          <button id="scale-${knife}" class="scale-btn">Scale: On</button>
+        </div>
+      `;
+      knifeSections.appendChild(section);
 
-        // grab elements & contexts
-        const canvas = sec.querySelector('canvas');
-        const ctx    = canvas.getContext('2d');
-        const full   = document.createElement('canvas');
-        const fCtx   = full.getContext('2d');
-        const overlay= sec.querySelector('.loading');
-        const txtIn  = sec.querySelector('.txt');
-        const fontSel= sec.querySelector('.font');
+      // Initialize state
+      state[knife] = {
+        img: null,
+        baseFont: isBig ? 150 : 100,
+        textScale: 1,
+        baseDims: { w: 0, h: 0 },
+        pos: { x: 0, y: 0 },
+        boxVisible: true,
+        dragging: false,
+        dragStart: {},
+        resizing: false,
+        resizeStart: {},
+        pointers: {},
+        pinch: false,
+        pinchStart: {},
+        view: document.getElementById(`canvas-${knife}`),
+        vCtx: document.getElementById(`canvas-${knife}`).getContext('2d'),
+        full: document.createElement('canvas'),
+        fCtx: document.createElement('canvas').getContext('2d'),
+        wrapper: document.getElementById(`wrapper-${knife}`),
+        overlay: document.getElementById(`overlay-${knife}`),
+        bbox: document.getElementById(`bbox-${knife}`),
+        scaleBtn: document.getElementById(`scale-${knife}`),
+        textInput: document.getElementById(`text-${knife}`),
+        fontSel: document.getElementById(`font-${knife}`),
+        sameContentChk: document.getElementById(`same-content-${knife}`)
+      };
+      state[knife].full.width = 0;
+      state[knife].full.height = 0;
+      state[knife].fCtx = state[knife].full.getContext('2d');
+    }
 
-        // state
-        const state = {
-          img, baseFont:150, textScale:1,
-          dim:{w:0,h:0}, pos:{x:0,y:0}
-        };
+    function draw(knife) {
+      const s = state[knife];
+      if (!s.img) return;
 
-        // fit canvas to wrapper width (~1168px max)
-        function fit(){
-          const wrap = sec.querySelector('.canvas-wrapper');
-          const W = wrap.clientWidth;
-          const scale = W / img.naturalWidth;
-          canvas.width  = img.naturalWidth * scale;
-          canvas.height = img.naturalHeight * scale;
-          full.width    = img.naturalWidth;
-          full.height   = img.naturalHeight;
-          canvas.style.width  = canvas.width + 'px';
-          canvas.style.height = canvas.height+ 'px';
+      // Apply shared settings
+      const isBig = knives.big.includes(knife);
+      const fontSizeInput = document.getElementById(isBig ? 'big-font-size' : 'small-font-size');
+      const alignRightChk = document.getElementById(isBig ? 'big-align-right' : 'small-align-right');
+      s.baseFont = parseInt(fontSizeInput.value) || (isBig ? 150 : 100);
+      const alignRight = alignRightChk.checked;
 
-          // start text right-aligned with 50px margin
-          state.dim = measure();
-          state.textScale = 1;
-          state.pos.x = full.width - 50;
-          state.pos.y = (full.height - state.dim.h)/2;
-        }
+      // Full-res
+      s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.fCtx.drawImage(s.img, 0, 0);
+      s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      s.fCtx.fillStyle = '#000';
+      s.fCtx.textBaseline = 'top';
+      s.fCtx.textAlign = alignRight ? 'right' : 'left';
+      const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x;
+      s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
-        // measure unscaled text
-        function measure(){
-          fCtx.font = `${state.baseFont}px ${fontSel.value}`;
-          return {
-            w: fCtx.measureText(txtIn.value).width,
-            h: state.baseFont
-          };
-        }
+      // Preview
+      const scale = s.view.width / s.full.width;
+      s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
+      s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.vCtx.drawImage(s.img, 0, 0);
+      s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      s.vCtx.fillStyle = '#000';
+      s.vCtx.textBaseline = 'top';
+      s.vCtx.textAlign = alignRight ? 'right' : 'left';
+      s.vCtx.fillText(s.textInput.value, textX, s.pos.y);
+      s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
-        // draw both full & preview
-        async function draw(){
-          overlay.style.visibility = 'visible';
-          // ensure font is loaded
-          await document.fonts.load(`${state.baseFont * state.textScale}px ${fontSel.value}`);
-
-          // 1) full-res
-          fCtx.clearRect(0,0,full.width,full.height);
-          fCtx.drawImage(img,0,0);
-          fCtx.font = `${state.baseFont*state.textScale}px ${fontSel.value}`;
-          fCtx.textBaseline = 'top';
-          fCtx.textAlign    = 'right';
-          fCtx.fillStyle    = '#000';
-          fCtx.fillText(txtIn.value, state.pos.x, state.pos.y);
-
-          // 2) preview
-          const s = canvas.width/full.width;
-          ctx.setTransform(s,0,0,s,0,0);
-          ctx.clearRect(0,0,full.width,full.height);
-          ctx.drawImage(img,0,0);
-          ctx.font = `${state.baseFont*state.textScale}px ${fontSel.value}`;
-          ctx.textBaseline = 'top';
-          ctx.textAlign    = 'right';
-          ctx.fillStyle    = '#000';
-          ctx.fillText(txtIn.value, state.pos.x, state.pos.y);
-          ctx.setTransform(1,0,0,1,0,0);
-
-          overlay.style.visibility = 'hidden';
-        }
-
-        // init
-        fit();
-        await draw();
-
-        // redraw on text or font change
-        txtIn.addEventListener('input', ()=>{
-          state.dim = measure();
-          state.textScale = 1;
-          state.pos.y = (full.height - state.dim.h)/2;
-          draw();
-        });
-        fontSel.addEventListener('change', ()=>{
-          state.dim = measure();
-          state.textScale = 1;
-          state.pos.y = (full.height - state.dim.h)/2;
-          draw();
-        });
-
-        // keep for ZIP
-        sec._state = state;
-        sec._full  = full;
+      // Bounding box
+      const dx = s.view.width / s.full.width;
+      const dy = s.view.height / s.full.height;
+      if (s.boxVisible && s.textInput.value) {
+        s.bbox.style.display = 'block';
+        s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
+        s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
+        s.bbox.style.left = (s.pos.x * dx) + 'px';
+        s.bbox.style.top = (s.pos.y * dy) + 'px';
+      } else {
+        s.bbox.style.display = 'none';
       }
     }
 
-    // ZIP download
-    downloadZip.addEventListener('click', async ()=>{
-      const zip = new JSZip();
-      for(const sec of editorsDiv.children){
-        const name = sec.querySelector('h2').textContent.toLowerCase();
-        const state = sec._state;
-        const full  = sec._full;
-        // ensure latest draw
-        await (state.draw?.() || Promise.resolve());
+    function updateDownloadButton() {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      downloadAllBtn.disabled = selected.length === 0;
+    }
 
-        // preview.png
-        const blobP = await new Promise(r=> full.toBlob(r,'image/png'));
-        zip.file(`${name}-preview.png`, blobP);
+    /* EVENTS */
+    productPicker.addEventListener('change', async e => {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      knifeSections.innerHTML = '';
+      bigControls.style.display = selected.some(k => knives.big.includes(k.dataset.name)) ? 'block' : 'none';
+      smallControls.style.display = selected.some(k => knives.small.includes(k.dataset.name)) ? 'block' : 'none';
+      updateDownloadButton();
 
-        // text-only.png
-        const textOnly = document.createElement('canvas');
-        textOnly.width  = full.width;
-        textOnly.height = full.height;
-        const tctx = textOnly.getContext('2d');
-        tctx.font = `${state.baseFont*state.textScale}px ${sec.querySelector('.font').value}`;
-        tctx.textBaseline = 'top';
-        tctx.textAlign = 'right';
-        tctx.fillStyle = '#000';
-        tctx.fillText(sec.querySelector('.txt').value, state.pos.x, state.pos.y);
-        const blobT = await new Promise(r=> textOnly.toBlob(r,'image/png'));
-        zip.file(`${name}-text-only.png`, blobT);
+      for (const input of selected) {
+        const knife = input.dataset.name;
+        createCanvasSection(knife);
+        const s = state[knife];
+        s.overlay.style.visibility = 'visible';
+        s.img = await loadImage(input.value);
+        s.full.width = s.img.naturalWidth;
+        s.full.height = s.img.naturalHeight;
+        fitInBox(s.view, s.img, s.wrapper);
+        s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+        s.textScale = 1;
+        s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+        s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
+        draw(knife);
+
+        // Text / Font / Same Content Events
+        s.textInput.addEventListener('input', () => {
+          if (sameContent) {
+            Object.keys(state).forEach(k => {
+              state[k].textInput.value = s.textInput.value;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+              state[k].textScale = 1;
+              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w / 2;
+              draw(k);
+            });
+          } else {
+            s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+            s.textScale = 1;
+            s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+            draw(knife);
+          }
+        });
+
+        s.fontSel.addEventListener('input', () => {
+          s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+          s.textScale = 1;
+          s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+          draw(knife);
+        });
+
+        s.sameContentChk.addEventListener('change', () => {
+          sameContent = s.sameContentChk.checked;
+          Object.keys(state).forEach(k => {
+            state[k].sameContentChk.checked = sameContent;
+            if (sameContent && k !== knife) {
+              state[k].textInput.value = s.textInput.value;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+              state[k].textScale = 1;
+              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w / 2;
+              draw(k);
+            }
+          });
+        });
+
+        // Drag Text
+        s.view.addEventListener('pointerdown', e => {
+          const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+          if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale) || s.resizing || s.pinch) return;
+          s.dragging = true;
+          s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
+          e.preventDefault();
+        });
+
+        window.addEventListener('pointermove', e => {
+          if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+          const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+          s.pos.x = f.x - s.dragStart.dx;
+          s.pos.y = f.y - s.dragStart.dy;
+          draw(knife);
+        });
+
+        ['pointerup', 'pointercancel'].forEach(evt =>
+          window.addEventListener(evt, e => {
+            if (e.pointerId === s.dragStart.id) s.dragging = false;
+          })
+        );
+
+        // Resize via Handles
+        s.bbox.querySelectorAll('.handle').forEach(h => {
+          h.addEventListener('pointerdown', e => {
+            e.stopPropagation();
+            s.resizing = true;
+            const box = s.bbox.getBoundingClientRect();
+            const center = toFullCoords(s.view, s, box.left + box.width / 2, box.top + box.height / 2);
+            const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
+            s.resizeStart = {
+              id: e.pointerId,
+              cx: center.x, cy: center.y,
+              scale: s.textScale,
+              d0: Math.hypot(p0.x - center.x, p0.y - center.y)
+            };
+          });
+        });
+
+        window.addEventListener('pointermove', e => {
+          if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+          const p = toFullCoords(s.view, s, e.clientX, e.clientY);
+          const d = Math.hypot(p.x - s.resizeStart.cx, p.y - s.resizeStart.cy);
+          s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
+          s.pos.x = s.resizeStart.cx - (s.baseDims.w * s.textScale) / 2;
+          s.pos.y = s.resizeStart.cy - (s.baseDims.h * s.textScale) / 2;
+          draw(knife);
+        });
+
+        ['pointerup', 'pointercancel'].forEach(evt =>
+          window.addEventListener(evt, e => {
+            if (e.pointerId === s.resizeStart.id) s.resizing = false;
+          })
+        );
+
+        // Pinch-zoom
+        s.view.addEventListener('pointerdown', e => {
+          s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+          if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
+            s.pinch = true;
+            const [pA, pB] = Object.values(s.pointers);
+            const fA = toFullCoords(s.view, s, pA.x, pA.y);
+            const fB = toFullCoords(s.view, s, pB.x, pB.y);
+            s.pinchStart = {
+              scale: s.textScale,
+              cx: (fA.x + fB.x) / 2,
+              cy: (fA.y + fB.y) / 2,
+              d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
+            };
+          }
+        });
+
+        s.view.addEventListener('pointermove', e => {
+          if (!s.pinch || !(e.pointerId in s.pointers)) return;
+          s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+          const [a, b] = Object.values(s.pointers);
+          const fA = toFullCoords(s.view, s, a.x, a.y);
+          const fB = toFullCoords(s.view, s, b.x, b.y);
+          const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+          s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
+          s.pos.x = s.pinchStart.cx - (s.baseDims.w * s.textScale) / 2;
+          s.pos.y = s.pinchStart.cy - (s.baseDims.h * s.textScale) / 2;
+          draw(knife);
+        });
+
+        ['pointerup', 'pointercancel'].forEach(evt =>
+          s.view.addEventListener(evt, e => {
+            delete s.pointers[e.pointerId];
+            if (Object.keys(s.pointers).length < 2) s.pinch = false;
+          })
+        );
+
+        // Scale Button
+        s.scaleBtn.addEventListener('click', () => {
+          s.boxVisible = !s.boxVisible;
+          s.scaleBtn.textContent = s.boxVisible ? 'Scale: On' : 'Scale: Off';
+          s.scaleBtn.classList.toggle('off', !s.boxVisible);
+          draw(knife);
+        });
+
+        s.overlay.style.visibility = 'hidden';
       }
-      const content = await zip.generateAsync({type:'blob'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(content);
-      a.download = 'knives.zip';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
     });
 
-    // initial build
-    buildEditors();
-  })();
+    // Shared Controls Events
+    ['big-font-size', 'small-font-size', 'big-align-right', 'small-align-right'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        Object.keys(state).forEach(knife => draw(knife));
+      });
+    });
+
+    // Download All
+    downloadAllBtn.addEventListener('click', async () => {
+      const zip = new JSZip();
+      for (const knife of Object.keys(state)) {
+        const s = state[knife];
+        draw(knife);
+
+        // Preview Image
+        const previewBlob = await new Promise(r => s.full.toBlob(r));
+        zip.file(`${knife}-preview.png`, previewBlob);
+
+        // Text-only Image
+        const t = document.createElement('canvas');
+        t.width = s.full.width;
+        t.height = s.full.height;
+        const tCtx = t.getContext('2d');
+        tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        tCtx.fillStyle = '#000';
+        tCtx.textBaseline = 'top';
+        tCtx.textAlign = document.getElementById(knives.big.includes(knife) ? 'big-align-right' : 'small-align-right').checked ? 'right' : 'left';
+        const textX = tCtx.textAlign === 'right' ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x;
+        tCtx.fillText(s.textInput.value, textX, s.pos.y);
+        const textBlob = await new Promise(r => t.toBlob(r));
+        zip.file(`${knife}-text-only.png`, textBlob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'knife-engravings.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 100);
+    });
   </script>
 </body>
 </html>
