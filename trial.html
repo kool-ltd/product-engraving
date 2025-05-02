@@ -107,19 +107,12 @@
     .scale-btn.off {
       background: var(--gray);
     }
-    .shared-controls {
-      margin: 1rem 0;
-      padding: 1rem;
-      background: #f9f9f9;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-    .text-right {
-      text-align: right;
-    }
     .same-content {
-      margin-left: 1rem;
-      display: flex; align-items: center; gap: .5rem;
+      display: block; margin-top: .5rem;
+    }
+    .shared-buttons {
+      margin: 1rem 0;
+      display: flex; gap: 1rem; flex-wrap: wrap;
     }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
@@ -161,40 +154,23 @@
       </div>
     </div>
 
-    <!-- 2. SHARED CONTROLS FOR BIG KNIVES -->
-    <div class="section shared-controls" id="big-knives-controls" style="display: none;">
-      <h2>Big Knives Shared Settings (Santoku, Chef, Bread, Chopper)</h2>
-      <div class="controls">
-        <div>
-          <label for="big-font-size">Font Size:</label>
-          <input type="number" id="big-font-size" value="150" min="10" step="10">
-        </div>
-        <div>
-          <label for="big-align-right">Align Right:</label>
-          <input type="checkbox" id="big-align-right">
-        </div>
+    <!-- 2. SHARED BUTTONS -->
+    <div class="section" id="shared-buttons" style="display: none;">
+      <h2>Shared Settings</h2>
+      <div class="shared-buttons" id="big-buttons" style="display: none;">
+        <button id="big-font-sync">Sync Big Knives Font Size</button>
+        <button id="big-align-toggle">Toggle Big Knives Right Alignment</button>
+      </div>
+      <div class="shared-buttons" id="small-buttons" style="display: none;">
+        <button id="small-font-sync">Sync Small Knives Font Size</button>
+        <button id="small-align-toggle">Toggle Small Knives Right Alignment</button>
       </div>
     </div>
 
-    <!-- 3. SHARED CONTROLS FOR SMALL KNIVES -->
-    <div class="section shared-controls" id="small-knives-controls" style="display: none;">
-      <h2>Small Knives Shared Settings (Utility, Paring)</h2>
-      <div class="controls">
-        <div>
-          <label for="small-font-size">Font Size:</label>
-          <input type="number" id="small-font-size" value="100" min="10" step="10">
-        </div>
-        <div>
-          <label for="small-align-right">Align Right:</label>
-          <input type="checkbox" id="small-align-right">
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. KNIFE CUSTOMIZATION SECTIONS -->
+    <!-- 3. KNIFE CUSTOMIZATION SECTIONS -->
     <div id="knife-sections"></div>
 
-    <!-- 5. DOWNLOAD ALL -->
+    <!-- 4. DOWNLOAD ALL -->
     <div class="section">
       <div style="text-align: center;">
         <button id="downloadAllBtn" disabled>Download All as ZIP</button>
@@ -210,11 +186,15 @@
     };
     const state = {};
     let sameContent = false;
+    let lastAdjusted = { big: null, small: null };
+    const alignRight = { big: true, small: true }; // Default: right-aligned
+    const sharedX = { big: null, small: null }; // Shared right-anchor x-position
 
     /* ELEMENTS */
     const productPicker = document.getElementById('product-picker');
-    const bigControls = document.getElementById('big-knives-controls');
-    const smallControls = document.getElementById('small-knives-controls');
+    const sharedButtons = document.getElementById('shared-buttons');
+    const bigButtons = document.getElementById('big-buttons');
+    const smallButtons = document.getElementById('small-buttons');
     const knifeSections = document.getElementById('knife-sections');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
 
@@ -266,10 +246,6 @@
           <div>
             <label for="text-${knife}">Text:</label>
             <input type="text" id="text-${knife}" placeholder="Enter engraving">
-            <span class="same-content">
-              <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
-              <label for="same-content-${knife}">Use same text for all</label>
-            </span>
           </div>
           <div>
             <label for="font-${knife}">Font:</label>
@@ -282,6 +258,10 @@
               <option value="Arial">Arial</option>
             </select>
           </div>
+        </div>
+        <div class="same-content">
+          <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
+          <label for="same-content-${knife}">Use same text for all</label>
         </div>
         <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
           • Drag the text box to move.<br>
@@ -340,12 +320,9 @@
       const s = state[knife];
       if (!s.img) return;
 
-      // Apply shared settings
       const isBig = knives.big.includes(knife);
-      const fontSizeInput = document.getElementById(isBig ? 'big-font-size' : 'small-font-size');
-      const alignRightChk = document.getElementById(isBig ? 'big-align-right' : 'small-align-right');
-      s.baseFont = parseInt(fontSizeInput.value) || (isBig ? 150 : 100);
-      const alignRight = alignRightChk.checked;
+      const alignShared = alignRight[isBig ? 'big' : 'small'];
+      const sharedXPos = sharedX[isBig ? 'big' : 'small'];
 
       // Full-res
       s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
@@ -353,8 +330,8 @@
       s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.fCtx.fillStyle = '#000';
       s.fCtx.textBaseline = 'top';
-      s.fCtx.textAlign = alignRight ? 'right' : 'left';
-      const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x;
+      s.fCtx.textAlign = 'right';
+      const textX = alignShared && sharedXPos !== null ? sharedXPos : s.pos.x + s.baseDims.w * s.textScale;
       s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
       // Preview
@@ -365,7 +342,7 @@
       s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.vCtx.fillStyle = '#000';
       s.vCtx.textBaseline = 'top';
-      s.vCtx.textAlign = alignRight ? 'right' : 'left';
+      s.vCtx.textAlign = 'right';
       s.vCtx.fillText(s.textInput.value, textX, s.pos.y);
       s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -376,7 +353,7 @@
         s.bbox.style.display = 'block';
         s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
         s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-        s.bbox.style.left = (s.pos.x * dx) + 'px';
+        s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
         s.bbox.style.top = (s.pos.y * dy) + 'px';
       } else {
         s.bbox.style.display = 'none';
@@ -388,12 +365,61 @@
       downloadAllBtn.disabled = selected.length === 0;
     }
 
+    function syncFontSize(type) {
+      const lastKnife = lastAdjusted[type];
+      if (!lastKnife || !state[lastKnife]) return;
+      const refState = state[lastKnife];
+      const effectiveFontSize = refState.baseFont * refState.textScale;
+      const knivesList = knives[type];
+      knivesList.forEach(knife => {
+        if (state[knife]) {
+          state[knife].baseFont = effectiveFontSize;
+          state[knife].textScale = 1;
+          state[knife].baseDims = measureText(state[knife].fCtx, state[knife].textInput.value || 'Sample', state[knife].baseFont, state[knife].fontSel.value);
+          state[knife].pos.x = state[knife].full.width / 2 - state[knife].baseDims.w;
+          draw(knife);
+        }
+      });
+    }
+
+    function toggleAlignment(type) {
+      alignRight[type] = !alignRight[type];
+      const knivesList = knives[type];
+      if (alignRight[type]) {
+        sharedX[type] = null; // Reset shared x-position
+        knivesList.forEach(knife => {
+          if (state[knife]) {
+            state[knife].pos.x = state[knife].full.width / 2 - state[knife].baseDims.w;
+            draw(knife);
+          }
+        });
+      } else {
+        // Find the rightmost x-position among selected knives
+        let maxX = null;
+        knivesList.forEach(knife => {
+          if (state[knife]) {
+            const rightX = state[knife].pos.x + state[knife].baseDims.w * state[knife].textScale;
+            if (maxX === null || rightX > maxX) maxX = rightX;
+          }
+        });
+        sharedX[type] = maxX;
+        knivesList.forEach(knife => {
+          if (state[knife]) {
+            state[knife].pos.x = sharedX[type] - state[knife].baseDims.w * state[knife].textScale;
+            draw(knife);
+          }
+        });
+      }
+      document.getElementById(`${type}-align-toggle`).textContent = `Toggle ${type.charAt(0).toUpperCase() + type.slice(1)} Knives Right Alignment (${alignRight[type] ? 'Default' : 'Shared'})`;
+    }
+
     /* EVENTS */
     productPicker.addEventListener('change', async e => {
       const selected = Array.from(productPicker.querySelectorAll('input:checked'));
       knifeSections.innerHTML = '';
-      bigControls.style.display = selected.some(k => knives.big.includes(k.dataset.name)) ? 'block' : 'none';
-      smallControls.style.display = selected.some(k => knives.small.includes(k.dataset.name)) ? 'block' : 'none';
+      bigButtons.style.display = selected.some(k => knives.big.includes(k.dataset.name)) ? 'block' : 'none';
+      smallButtons.style.display = selected.some(k => knives.small.includes(k.dataset.name)) ? 'block' : 'none';
+      sharedButtons.style.display = selected.length > 0 ? 'block' : 'none';
       updateDownloadButton();
 
       for (const input of selected) {
@@ -407,7 +433,7 @@
         fitInBox(s.view, s.img, s.wrapper);
         s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
         s.textScale = 1;
-        s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+        s.pos.x = s.full.width / 2 - s.baseDims.w;
         s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
         draw(knife);
 
@@ -417,22 +443,19 @@
             Object.keys(state).forEach(k => {
               state[k].textInput.value = s.textInput.value;
               state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-              state[k].textScale = 1;
-              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w / 2;
+              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
               draw(k);
             });
           } else {
             s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-            s.textScale = 1;
-            s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+            s.pos.x = s.full.width / 2 - s.baseDims.w;
             draw(knife);
           }
         });
 
         s.fontSel.addEventListener('input', () => {
           s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-          s.textScale = 1;
-          s.pos.x = s.full.width / 2 - s.baseDims.w / 2;
+          s.pos.x = s.full.width / 2 - s.baseDims.w;
           draw(knife);
         });
 
@@ -443,8 +466,7 @@
             if (sameContent && k !== knife) {
               state[k].textInput.value = s.textInput.value;
               state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-              state[k].textScale = 1;
-              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w / 2;
+              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
               draw(k);
             }
           });
@@ -464,7 +486,18 @@
           const f = toFullCoords(s.view, s, e.clientX, e.clientY);
           s.pos.x = f.x - s.dragStart.dx;
           s.pos.y = f.y - s.dragStart.dy;
+          const isBig = knives.big.includes(knife);
+          if (!alignRight[isBig ? 'big' : 'small']) {
+            sharedX[isBig ? 'big' : 'small'] = s.pos.x + s.baseDims.w * s.textScale;
+            (isBig ? knives.big : knives.small).forEach(k => {
+              if (k !== knife && state[k]) {
+                state[k].pos.x = sharedX[isBig ? 'big' : 'small'] - state[k].baseDims.w * state[k].textScale;
+                draw(k);
+              }
+            });
+          }
           draw(knife);
+          lastAdjusted[isBig ? 'big' : 'small'] = knife;
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -483,7 +516,8 @@
             const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
             s.resizeStart = {
               id: e.pointerId,
-              cx: center.x, cy: center.y,
+              cx: center.x,
+              cy: center.y,
               scale: s.textScale,
               d0: Math.hypot(p0.x - center.x, p0.y - center.y)
             };
@@ -495,9 +529,20 @@
           const p = toFullCoords(s.view, s, e.clientX, e.clientY);
           const d = Math.hypot(p.x - s.resizeStart.cx, p.y - s.resizeStart.cy);
           s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
-          s.pos.x = s.resizeStart.cx - (s.baseDims.w * s.textScale) / 2;
+          s.pos.x = s.resizeStart.cx - (s.baseDims.w * s.textScale);
           s.pos.y = s.resizeStart.cy - (s.baseDims.h * s.textScale) / 2;
+          const isBig = knives.big.includes(knife);
+          if (!alignRight[isBig ? 'big' : 'small']) {
+            sharedX[isBig ? 'big' : 'small'] = s.pos.x + s.baseDims.w * s.textScale;
+            (isBig ? knives.big : knives.small).forEach(k => {
+              if (k !== knife && state[k]) {
+                state[k].pos.x = sharedX[isBig ? 'big' : 'small'] - state[k].baseDims.w * state[k].textScale;
+                draw(k);
+              }
+            });
+          }
           draw(knife);
+          lastAdjusted[isBig ? 'big' : 'small'] = knife;
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -531,9 +576,20 @@
           const fB = toFullCoords(s.view, s, b.x, b.y);
           const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
           s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
-          s.pos.x = s.pinchStart.cx - (s.baseDims.w * s.textScale) / 2;
+          s.pos.x = s.pinchStart.cx - (s.baseDims.w * s.textScale);
           s.pos.y = s.pinchStart.cy - (s.baseDims.h * s.textScale) / 2;
+          const isBig = knives.big.includes(knife);
+          if (!alignRight[isBig ? 'big' : 'small']) {
+            sharedX[isBig ? 'big' : 'small'] = s.pos.x + s.baseDims.w * s.textScale;
+            (isBig ? knives.big : knives.small).forEach(k => {
+              if (k !== knife && state[k]) {
+                state[k].pos.x = sharedX[isBig ? 'big' : 'small'] - state[k].baseDims.w * state[k].textScale;
+                draw(k);
+              }
+            });
+          }
           draw(knife);
+          lastAdjusted[isBig ? 'big' : 'small'] = knife;
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -555,12 +611,11 @@
       }
     });
 
-    // Shared Controls Events
-    ['big-font-size', 'small-font-size', 'big-align-right', 'small-align-right'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => {
-        Object.keys(state).forEach(knife => draw(knife));
-      });
-    });
+    // Shared Button Events
+    document.getElementById('big-font-sync').addEventListener('click', () => syncFontSize('big'));
+    document.getElementById('small-font-sync').addEventListener('click', () => syncFontSize('small'));
+    document.getElementById('big-align-toggle').addEventListener('click', () => toggleAlignment('big'));
+    document.getElementById('small-align-toggle').addEventListener('click', () => toggleAlignment('small'));
 
     // Download All
     downloadAllBtn.addEventListener('click', async () => {
@@ -581,8 +636,10 @@
         tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
         tCtx.fillStyle = '#000';
         tCtx.textBaseline = 'top';
-        tCtx.textAlign = document.getElementById(knives.big.includes(knife) ? 'big-align-right' : 'small-align-right').checked ? 'right' : 'left';
-        const textX = tCtx.textAlign === 'right' ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x;
+        tCtx.textAlign = 'right';
+        const isBig = knives.big.includes(knife);
+        const textX = alignRight[isBig ? 'big' : 'small'] || sharedX[isBig ? 'big' : 'small'] === null ?
+                      s.pos.x + s.baseDims.w * s.textScale : sharedX[isBig ? 'big' : 'small'];
         tCtx.fillText(s.textInput.value, textX, s.pos.y);
         const textBlob = await new Promise(r => t.toBlob(r));
         zip.file(`${knife}-text-only.png`, textBlob);
