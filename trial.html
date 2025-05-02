@@ -39,12 +39,26 @@
       background: #fff; border: 1px solid var(--border);
       border-radius: var(--radius); padding: var(--pad);
     }
+    .knife-group {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .knife-group h3 {
+      margin-bottom: 1rem;
+      text-align: left;
+      font-size: 1.2rem;
+    }
     #product-picker {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .product-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: .75rem;
     }
-    .product-option { position: relative; }
+    .product-option { position: relative; text-align: center; }
     .product-option input {
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
@@ -54,6 +68,11 @@
     }
     .product-option input:checked+img {
       border-color: var(--accent);
+    }
+    .product-option span {
+      display: block;
+      font-size: .9rem;
+      margin-top: .25rem;
     }
     .controls {
       display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
@@ -93,17 +112,18 @@
     .handle[data-handle="sw"] { bottom: -5px; left: -5px; cursor: nesw-resize; }
     .handle[data-handle="se"] { bottom: -5px; right: -5px; cursor: nwse-resize; }
     button {
-      background: var(--accent); color: #fff; border: none;
-      padding: .6rem 1rem; border-radius: var(--radius);
-      cursor: pointer; font-weight: 600;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: .6rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 1rem .5rem 0 0;
     }
     button[disabled] {
       opacity: .4; cursor: not-allowed;
-    }
-    .scale-btn {
-      margin: 1rem .5rem 0 0;
-      background: var(--accent);
-      transition: background .2s;
     }
     .scale-btn.off {
       background: var(--gray);
@@ -128,30 +148,46 @@
     <div class="section">
       <h2>1. Choose your knives</h2>
       <div id="product-picker">
-        <label class="product-option">
-          <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
-          <img src="chef-thumb.jpg" alt="Chef knife">
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
-          <img src="santoku-thumb.jpg" alt="Santoku knife">
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
-          <img src="bread-thumb.jpg" alt="Bread knife">
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
-          <img src="chopper-thumb.jpg" alt="Chopper knife">
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
-          <img src="utility-thumb.jpg" alt="Utility knife">
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
-          <img src="paring-thumb.jpg" alt="Paring knife">
-        </label>
+        <div class="knife-group">
+          <h3>Big Knives</h3>
+          <div class="product-grid">
+            <label class="product-option">
+              <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
+              <img src="chef-thumb.jpg" alt="Chef knife">
+              <span>Chef Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
+              <img src="santoku-thumb.jpg" alt="Santoku knife">
+              <span>Santoku Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
+              <img src="bread-thumb.jpg" alt="Bread knife">
+              <span>Bread Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
+              <img src="chopper-thumb.jpg" alt="Chopper knife">
+              <span>Chopper Knife</span>
+            </label>
+          </div>
+        </div>
+        <div class="knife-group">
+          <h3>Small Knives</h3>
+          <div class="product-grid">
+            <label class="product-option">
+              <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
+              <img src="utility-thumb.jpg" alt="Utility knife">
+              <span>Utility Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
+              <img src="paring-thumb.jpg" alt="Paring knife">
+              <span>Paring Knife</span>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -174,8 +210,10 @@
     };
     const state = {};
     let sameContent = false;
+    let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
-    const alignRight = { big: true, small: true }; // Default: right-aligned
+    const syncFont = { big: true, small: true }; // Font sync on by default
+    const alignRight = { big: false, small: false }; // Shared alignment on by default
     const sharedX = { big: null, small: null }; // Shared right-anchor x-position
 
     /* ELEMENTS */
@@ -223,6 +261,7 @@
 
     function createCanvasSection(knife) {
       const isBig = knives.big.includes(knife);
+      const showSameContent = knife === firstSelectedKnife;
       const section = document.createElement('div');
       section.className = 'section';
       section.innerHTML = `
@@ -252,10 +291,12 @@
             </select>
           </div>
         </div>
-        <div class="same-content">
-          <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
-          <label for="same-content-${knife}">Use same text for all</label>
-        </div>
+        ${showSameContent ? `
+          <div class="same-content">
+            <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
+            <label for="same-content-${knife}">Use same text for all</label>
+          </div>
+        ` : ''}
         <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
           • Drag the text box to move.<br>
           • Drag a corner to scale (desktop).<br>
@@ -273,8 +314,8 @@
         </div>
         <div class="button-group">
           <button id="scale-${knife}" class="scale-btn">Scale: On</button>
-          <button id="font-sync-${knife}">Sync Font Size</button>
-          <button id="align-toggle-${knife}">Toggle Right Alignment (${alignRight[isBig ? 'big' : 'small'] ? 'Default' : 'Shared'})</button>
+          <button id="font-sync-${knife}">${syncFont[isBig ? 'big' : 'small'] ? 'Turn Off' : 'Turn On'} Font Sync</button>
+          <button id="align-toggle-${knife}">${alignRight[isBig ? 'big' : 'small'] ? 'Turn On' : 'Turn Off'} Shared Alignment</button>
         </div>
       `;
       knifeSections.appendChild(section);
@@ -306,7 +347,7 @@
         alignToggleBtn: document.getElementById(`align-toggle-${knife}`),
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
-        sameContentChk: document.getElementById(`same-content-${knife}`)
+        sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null
       };
       state[knife].full.width = 0;
       state[knife].full.height = 0;
@@ -365,16 +406,29 @@
     function syncFontSize(knife) {
       const isBig = knives.big.includes(knife);
       const type = isBig ? 'big' : 'small';
+      if (!syncFont[type]) return;
       const refState = state[knife];
       const effectiveFontSize = refState.baseFont * refState.textScale;
       const knivesList = knives[type];
       knivesList.forEach(k => {
-        if (state[k]) {
+        if (k !== knife && state[k]) {
           state[k].baseFont = effectiveFontSize;
           state[k].textScale = 1;
           state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
           state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
           draw(k);
+        }
+      });
+    }
+
+    function toggleFontSync(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      syncFont[type] = !syncFont[type];
+      const knivesList = knives[type];
+      knivesList.forEach(k => {
+        if (state[k]) {
+          state[k].fontSyncBtn.textContent = syncFont[type] ? 'Turn Off Font Sync' : 'Turn On Font Sync';
         }
       });
     }
@@ -390,7 +444,7 @@
           if (state[k]) {
             state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
             draw(k);
-            state[k].alignToggleBtn.textContent = `Toggle Right Alignment (Default)`;
+            state[k].alignToggleBtn.textContent = 'Turn On Shared Alignment';
           }
         });
       } else {
@@ -407,7 +461,7 @@
           if (state[k]) {
             state[k].pos.x = sharedX[type] - state[k].baseDims.w * state[k].textScale;
             draw(k);
-            state[k].alignToggleBtn.textContent = `Toggle Right Alignment (Shared)`;
+            state[k].alignToggleBtn.textContent = 'Turn Off Shared Alignment';
           }
         });
       }
@@ -422,6 +476,7 @@
     productPicker.addEventListener('change', async e => {
       const selected = Array.from(productPicker.querySelectorAll('input:checked'));
       knifeSections.innerHTML = '';
+      firstSelectedKnife = selected.length > 0 ? selected[0].dataset.name : null;
       updateDownloadButton();
 
       for (const input of selected) {
@@ -437,6 +492,13 @@
         s.textScale = 1;
         s.pos.x = s.full.width / 2 - s.baseDims.w;
         s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
+
+        // Initialize shared alignment
+        const isBig = knives.big.includes(knife);
+        const type = isBig ? 'big' : 'small';
+        if (!alignRight[type] && sharedX[type] !== null) {
+          s.pos.x = sharedX[type] - s.baseDims.w * s.textScale;
+        }
         draw(knife);
 
         // Text / Font / Same Content Events
@@ -445,36 +507,46 @@
             Object.keys(state).forEach(k => {
               state[k].textInput.value = s.textInput.value;
               state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
+              state[k].pos.x = alignRight[isBig ? 'big' : 'small'] ?
+                state[k].full.width / 2 - state[k].baseDims.w :
+                sharedX[isBig ? 'big' : 'small'] - state[k].baseDims.w * state[k].textScale;
               draw(k);
             });
           } else {
             s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-            s.pos.x = s.full.width / 2 - s.baseDims.w;
+            s.pos.x = alignRight[isBig ? 'big' : 'small'] ?
+              s.full.width / 2 - s.baseDims.w :
+              sharedX[isBig ? 'big' : 'small'] - s.baseDims.w * s.textScale;
             draw(knife);
           }
         });
 
         s.fontSel.addEventListener('input', () => {
           s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-          s.pos.x = s.full.width / 2 - s.baseDims.w;
+          s.pos.x = alignRight[isBig ? 'big' : 'small'] ?
+            s.full.width / 2 - s.baseDims.w :
+            sharedX[isBig ? 'big' : 'small'] - s.baseDims.w * s.textScale;
           draw(knife);
-          // Redraw after font load to ensure correct rendering
           document.fonts.ready.then(() => draw(knife));
         });
 
-        s.sameContentChk.addEventListener('change', () => {
-          sameContent = s.sameContentChk.checked;
-          Object.keys(state).forEach(k => {
-            state[k].sameContentChk.checked = sameContent;
-            if (sameContent && k !== knife) {
-              state[k].textInput.value = s.textInput.value;
-              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-              state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
-              draw(k);
+        if (s.sameContentChk) {
+          s.sameContentChk.addEventListener('change', () => {
+            sameContent = s.sameContentChk.checked;
+            if (sameContent) {
+              Object.keys(state).forEach(k => {
+                if (k !== knife) {
+                  state[k].textInput.value = s.textInput.value;
+                  state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+                  state[k].pos.x = alignRight[isBig ? 'big' : 'small'] ?
+                    state[k].full.width / 2 - state[k].baseDims.w :
+                    sharedX[isBig ? 'big' : 'small'] - state[k].baseDims.w * state[k].textScale;
+                  draw(k);
+                }
+              });
             }
           });
-        });
+        }
 
         // Drag Text
         s.view.addEventListener('pointerdown', e => {
@@ -502,6 +574,7 @@
           }
           draw(knife);
           lastAdjusted[isBig ? 'big' : 'small'] = knife;
+          syncFontSize(knife);
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -547,6 +620,7 @@
           }
           draw(knife);
           lastAdjusted[isBig ? 'big' : 'small'] = knife;
+          syncFontSize(knife);
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -594,6 +668,7 @@
           }
           draw(knife);
           lastAdjusted[isBig ? 'big' : 'small'] = knife;
+          syncFontSize(knife);
         });
 
         ['pointerup', 'pointercancel'].forEach(evt =>
@@ -612,7 +687,7 @@
         });
 
         // Sync Font Size Button
-        s.fontSyncBtn.addEventListener('click', () => syncFontSize(knife));
+        s.fontSyncBtn.addEventListener('click', () => toggleFontSync(knife));
 
         // Toggle Alignment Button
         s.alignToggleBtn.addEventListener('click', () => toggleAlignment(knife));
