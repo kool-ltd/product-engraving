@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>Knife Engraving Customiser (Multi-Knife)</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <!-- fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
+  <!-- JSZip for ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <style>
+    :root {
+      --accent: #d00024;
+      --gray: #888;
+      --bg: #fafafa;
+      --border: #ddd;
+      --pad: 1rem;
+      --radius: .5rem;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: #222;
+    }
+    h1,h2 { text-align:center; margin:1rem 0; }
+    .container {
+      max-width:1200px; margin:auto; padding:var(--pad);
+      display:flex; flex-direction:column; gap:var(--pad);
+    }
+    .section {
+      background:#fff; border:1px solid var(--border);
+      border-radius:var(--radius); padding:var(--pad);
+    }
+    #product-picker {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+      gap:.75rem;
+    }
+    .product-option { position:relative; text-align:center; }
+    .product-option input {
+      position:absolute; inset:0; opacity:0; cursor:pointer;
+    }
+    .product-option img {
+      width:100%; border:2px solid transparent;
+      border-radius:var(--radius); display:block;
+    }
+    .product-option input:checked+img {
+      border-color:var(--accent);
+    }
+    .controls {
+      display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
+    }
+    .controls label { font-size:.9rem; margin-right:.25rem; }
+    .controls input[type="text"] { padding:.25rem; }
+    #editors { display:flex; flex-direction:column; gap:var(--pad); }
+    .editor-section { border:1px solid var(--border); padding:var(--pad); border-radius:var(--radius); }
+    .canvas-wrapper {
+      position:relative; width:100%; max-width:600px; margin:auto;
+      border:1px solid var(--border); border-radius:var(--radius);
+      background:#eaeaea; touch-action:none;
+    }
+    canvas { display:block; touch-action:none; }
+    .loading { position:absolute; inset:0; background:rgba(255,255,255,0.8);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.2rem; visibility:hidden; }
+    .bbox {
+      position:absolute; border:1px dashed #000;
+      pointer-events:none; display:none;
+    }
+    .handle {
+      position:absolute; width:10px; height:10px;
+      background:#fff; border:1px solid #000; pointer-events:auto;
+    }
+    .handle[data-handle="nw"]{ top:-5px; left:-5px; cursor:nwse-resize; }
+    .handle[data-handle="ne"]{ top:-5px; right:-5px; cursor:nesw-resize; }
+    .handle[data-handle="sw"]{ bottom:-5px; left:-5px; cursor:nesw-resize; }
+    .handle[data-handle="se"]{ bottom:-5px; right:-5px; cursor:nwse-resize; }
+    button {
+      background:var(--accent); color:#fff; border:none;
+      padding:.6rem 1rem; border-radius:var(--radius);
+      cursor:pointer; font-weight:600;
+    }
+    button[disabled] { opacity:.4; cursor:not-allowed; }
+    .group-syncs { text-align:center; margin-top:1rem; }
+    .group-syncs button { margin:0 .5rem; }
+    @media(max-width:600px){
+      .controls { flex-direction:column; align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Knife Engraving Customiser</h1>
+  <div class="container">
+    <!-- 1. KNIFE PICKER -->
+    <div class="section">
+      <h2>1. Choose your knives</h2>
+      <div id="product-picker">
+        <label class="product-option">
+          <input type="checkbox" value="chef.jpg">
+          <img src="chef-thumb.jpg" alt="Chef knife">
+          <div>Chef</div>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" value="santoku.jpg">
+          <img src="santoku-thumb.jpg" alt="Santoku knife">
+          <div>Santoku</div>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" value="bread.jpg">
+          <img src="bread-thumb.jpg" alt="Bread knife">
+          <div>Bread</div>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" value="chopper.jpg">
+          <img src="chopper-thumb.jpg" alt="Chopper knife">
+          <div>Chopper</div>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" value="utility.jpg">
+          <img src="utility-thumb.jpg" alt="Utility knife">
+          <div>Utility</div>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" value="paring.jpg">
+          <img src="paring-thumb.jpg" alt="Paring knife">
+          <div>Paring</div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 2+3. EDITORS & PREVIEWS -->
+    <div id="editors"></div>
+
+    <!-- 4. GROUP SYNC -->
+    <div class="section group-syncs">
+      <button id="syncBigBtn" disabled>Sync Big Knives</button>
+      <button id="syncSmallBtn" disabled>Sync Small Knives</button>
+    </div>
+
+    <!-- 5. ZIP DOWNLOAD -->
+    <div class="section" style="text-align:center">
+      <button id="downloadZipBtn" disabled>Generate &amp; Download ZIP</button>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const bigNames = ['chef.jpg','santoku.jpg','bread.jpg','chopper.jpg'];
+    const smallNames = ['utility.jpg','paring.jpg'];
+    const picker = document.getElementById('product-picker');
+    const editorsDiv = document.getElementById('editors');
+    const syncBigBtn  = document.getElementById('syncBigBtn');
+    const syncSmallBtn= document.getElementById('syncSmallBtn');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
+    let editors = [];
+
+    // helpers
+    function loadImage(src){
+      return new Promise(res=>{
+        const i=new Image();
+        i.crossOrigin='anonymous';
+        i.onload=()=>res(i);
+        i.src=src;
+      });
+    }
+
+    function createEditor(src){
+      const name = src.replace('.jpg','');
+      // section
+      const sec = document.createElement('div');
+      sec.className='section editor-section';
+      sec.dataset.src = src;
+      sec.innerHTML = `
+        <h2>${name.charAt(0).toUpperCase()+name.slice(1)} Knife</h2>
+        <div class="controls">
+          <label>Text: <input type="text" class="engraveText" placeholder="Enter engraving"></label>
+          <label>Font:
+            <select class="fontSelect">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Lobster">Lobster</option>
+              <option value="'Times New Roman',serif">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </label>
+          <label><input type="checkbox" class="useSameText"> Use same content</label>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas></canvas>
+          <div class="loading">Loading…</div>
+          <div class="bbox">
+            <div class="handle" data-handle="nw"></div>
+            <div class="handle" data-handle="ne"></div>
+            <div class="handle" data-handle="sw"></div>
+            <div class="handle" data-handle="se"></div>
+          </div>
+        </div>
+      `;
+      editorsDiv.appendChild(sec);
+      return sec;
+    }
+
+    async function renderEditors(){
+      // clear
+      editorsDiv.innerHTML='';
+      editors = [];
+      const checked = Array.from(picker.querySelectorAll('input:checked')).map(i=>i.value);
+      // enable group buttons
+      syncBigBtn.disabled = !checked.some(v=> bigNames.includes(v));
+      syncSmallBtn.disabled = !checked.some(v=> smallNames.includes(v));
+      downloadZipBtn.disabled = checked.length===0;
+
+      for(let src of checked){
+        const sec = createEditor(src);
+        const img = await loadImage(src);
+        const view = sec.querySelector('canvas');
+        const vCtx = view.getContext('2d');
+        const full = document.createElement('canvas');
+        const fCtx = full.getContext('2d');
+        const overlay = sec.querySelector('.loading');
+        const bbox = sec.querySelector('.bbox');
+        const handles = sec.querySelectorAll('.handle');
+        const txtInput = sec.querySelector('.engraveText');
+        const fontSel  = sec.querySelector('.fontSelect');
+        const useSame  = sec.querySelector('.useSameText');
+        // state
+        const state = {
+          src, name:src.replace('.jpg',''),
+          img, view, vCtx, full, fCtx,
+          baseFont:150, textScale:1,
+          baseDims:{w:0,h:0}, pos:{x:0,y:0},
+          dragging:false, dragStart:{}, resizing:false, resizeStart:{},
+          pointers:{}, pinch:false, pinchStart:{},
+          useSame
+        };
+        // fit
+        function fit(){
+          const wrapW = sec.querySelector('.canvas-wrapper').clientWidth;
+          const scale = wrapW / img.naturalWidth;
+          view.width = img.naturalWidth*scale;
+          view.height= img.naturalHeight*scale;
+          full.width = img.naturalWidth;
+          full.height= img.naturalHeight;
+          view.style.width=view.width+'px';
+          view.style.height=view.height+'px';
+          // default right-aligned margin
+          const margin = 50;
+          state.baseDims = measureBaseText();
+          state.textScale = 1;
+          state.pos.x = full.width - margin;
+          state.pos.y = (full.height - state.baseDims.h)/2;
+        }
+        function measureBaseText(){
+          fCtx.font = `${state.baseFont}px ${fontSel.value}`;
+          return { w:fCtx.measureText(txtInput.value).width, h:state.baseFont };
+        }
+        function toFull(x,y){
+          const r=view.getBoundingClientRect();
+          return { x:(x-r.left)*(full.width/r.width), y:(y-r.top)*(full.height/r.height) };
+        }
+        function hitTest(fx,fy){
+          const w=state.baseDims.w*state.textScale, h=state.baseDims.h*state.textScale;
+          return fx>=state.pos.x-w && fx<=state.pos.x && fy>=state.pos.y && fy<=state.pos.y+h;
+        }
+        function draw(){
+          if(!state.img) return;
+          // full
+          fCtx.clearRect(0,0,full.width,full.height);
+          fCtx.drawImage(img,0,0);
+          fCtx.font = `${state.baseFont*state.textScale}px ${fontSel.value}`;
+          fCtx.fillStyle='#000'; fCtx.textBaseline='top';
+          fCtx.textAlign='right';
+          fCtx.fillText(txtInput.value, state.pos.x, state.pos.y);
+          // preview
+          const s=view.width/full.width;
+          vCtx.setTransform(s,0,0,s,0,0);
+          vCtx.clearRect(0,0,full.width,full.height);
+          vCtx.drawImage(img,0,0);
+          vCtx.font = `${state.baseFont*state.textScale}px ${fontSel.value}`;
+          vCtx.fillStyle='#000'; vCtx.textBaseline='top'; vCtx.textAlign='right';
+          vCtx.fillText(txtInput.value, state.pos.x, state.pos.y);
+          vCtx.setTransform(1,0,0,1,0,0);
+          // bbox
+          const dx=view.width/full.width, dy=view.height/full.height;
+          if(txtInput.value){
+            bbox.style.display='block';
+            const w=state.baseDims.w*state.textScale*dx, h=state.baseDims.h*state.textScale*dy;
+            bbox.style.width=w+'px'; bbox.style.height=h+'px';
+            // right-aligned: left = (pos.x*dx - w)
+            bbox.style.left=(state.pos.x*dx - w)+'px';
+            bbox.style.top=(state.pos.y*dy)+'px';
+          } else bbox.style.display='none';
+        }
+        // events
+        // initial load
+        overlay.style.visibility='visible';
+        setTimeout(()=>{
+          fit();
+          draw();
+          overlay.style.visibility='hidden';
+        },50);
+        // text/font
+        txtInput.addEventListener('input',()=>{
+          state.baseDims=measureBaseText();
+          state.textScale=1;
+          state.pos.y = (full.height-state.baseDims.h)/2;
+          draw();
+          if(useSame.checked) propagateText(state.name);
+        });
+        fontSel.addEventListener('change',()=>{
+          state.baseDims=measureBaseText();
+          state.textScale=1;
+          state.pos.y = (full.height-state.baseDims.h)/2;
+          draw();
+        });
+        // drag/resize/pinch (similar to original, but only vertical drag; horizontal fixed)
+        view.addEventListener('pointerdown', e=>{
+          const f=toFull(e.clientX,e.clientY);
+          if(!hitTest(f.x,f.y) || state.resizing || state.pinch) return;
+          state.dragging=true;
+          state.dragStart={id:e.pointerId, dy:f.y-state.pos.y};
+          e.preventDefault();
+          state.pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+        });
+        window.addEventListener('pointermove', e=>{
+          if(state.dragging && e.pointerId===state.dragStart.id){
+            const f=toFull(e.clientX,e.clientY);
+            state.pos.y = f.y - state.dragStart.dy;
+            draw();
+          }
+          if(state.resizing && e.pointerId===state.resizeStart.id){
+            const f=toFull(e.clientX,e.clientY);
+            const d = Math.hypot(f.x-state.resizeStart.cx, f.y-state.resizeStart.cy);
+            state.textScale = state.resizeStart.scale*(d/state.resizeStart.d0);
+            state.pos.y = state.resizeStart.cy - (state.baseDims.h*state.textScale)/2;
+            draw();
+          }
+          if(state.pinch && e.pointerId in state.pointers){
+            state.pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+            const [a,b] = Object.values(state.pointers);
+            const fA=toFull(a.x,a.y), fB=toFull(b.x,b.y);
+            const d1=Math.hypot(fA.x-fB.x,fA.y-fB.y);
+            state.textScale=state.pinchStart.scale*(d1/state.pinchStart.d0);
+            state.pos.y = state.pinchStart.cy - (state.baseDims.h*state.textScale)/2;
+            draw();
+          }
+        });
+        ['pointerup','pointercancel'].forEach(evt=>{
+          window.addEventListener(evt,e=>{
+            if(e.pointerId===state.dragStart.id) state.dragging=false;
+            if(e.pointerId===state.resizeStart.id) state.resizing=false;
+            delete state.pointers[e.pointerId];
+            if(Object.keys(state.pointers).length<2) state.pinch=false;
+          });
+        });
+        // resize handles
+        handles.forEach(h=>{
+          h.addEventListener('pointerdown', e=>{
+            e.stopPropagation();
+            state.resizing=true;
+            const rect=bbox.getBoundingClientRect();
+            const center=toFull(rect.left+rect.width/2, rect.top+rect.height/2);
+            const p0=toFull(e.clientX,e.clientY);
+            state.resizeStart={
+              id:e.pointerId, cx:center.x, cy:center.y,
+              scale:state.textScale,
+              d0:Math.hypot(p0.x-center.x,p0.y-center.y)
+            };
+          });
+        });
+        // pinch
+        view.addEventListener('pointerdown', e=>{
+          state.pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+          if(Object.keys(state.pointers).length===2 && !state.dragging && !state.resizing){
+            state.pinch=true;
+            const [pA,pB]=Object.values(state.pointers);
+            const fA=toFull(pA.x,pA.y), fB=toFull(pB.x,pB.y);
+            state.pinchStart={
+              scale:state.textScale,
+              cx:(fA.x+fB.x)/2, cy:(fA.y+fB.y)/2,
+              d0:Math.hypot(fA.x-fB.x,fA.y-fB.y)
+            };
+          }
+        });
+        // attach to list
+        editors.push(state);
+      }
+    }
+
+    // propagate text across editors when synced
+    function propagateText(srcName){
+      const src = editors.find(e=>e.name===srcName);
+      if(!src) return;
+      editors.forEach(e=>{
+        if(e!==src && e.useSame.checked){
+          e.view.parentElement.querySelector('.engraveText').value = src.txtInput;
+          e.txtInput = src.txtInput;
+          e.baseDims = e.fCtx.measureText(src.txtInput).width;
+          e.textScale = src.textScale;
+          e.pos.y = src.pos.y;
+          e.draw();
+        }
+      });
+    }
+
+    // group sync
+    syncBigBtn.addEventListener('click', ()=>{
+      const bigEditors = editors.filter(e=> bigNames.includes(e.src));
+      if(bigEditors.length<2) return;
+      const src = bigEditors[0];
+      bigEditors.slice(1).forEach(e=>{
+        e.textScale = src.textScale;
+        e.pos.y = src.pos.y;
+        e.fontSelect.value = src.fontSelect.value;
+        e.draw();
+      });
+    });
+    syncSmallBtn.addEventListener('click', ()=>{
+      const smallEditors = editors.filter(e=> smallNames.includes(e.src));
+      if(smallEditors.length<2) return;
+      const src = smallEditors[0];
+      smallEditors.slice(1).forEach(e=>{
+        e.textScale = src.textScale;
+        e.pos.y = src.pos.y;
+        e.fontSelect.value = src.fontSelect.value;
+        e.draw();
+      });
+    });
+
+    // ZIP download
+    downloadZipBtn.addEventListener('click', async ()=>{
+      const zip = new JSZip();
+      for(let e of editors){
+        e.draw();
+        // preview
+        const blobP = await new Promise(r=> e.full.toBlob(r,'image/png'));
+        zip.file(`${e.name}-preview.png`, blobP);
+        // text-only
+        const tcan = document.createElement('canvas');
+        tcan.width = e.full.width; tcan.height = e.full.height;
+        const tctx = tcan.getContext('2d');
+        tctx.font = `${e.baseFont*e.textScale}px ${e.fontSelect.value}`;
+        tctx.fillStyle='#000'; tctx.textBaseline='top'; tctx.textAlign='right';
+        tctx.fillText(e.view.parentElement.querySelector('.engraveText').value, e.pos.x, e.pos.y);
+        const blobT = await new Promise(r=> tcan.toBlob(r,'image/png'));
+        zip.file(`${e.name}-text-only.png`, blobT);
+      }
+      const content = await zip.generateAsync({type:"blob"});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = 'knives.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },100);
+    });
+
+    // re-render when selection changes
+    picker.addEventListener('change', renderEditors);
+  })();
+  </script>
+</body>
+</html>
