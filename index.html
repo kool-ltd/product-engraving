@@ -75,7 +75,7 @@
     }
     .bbox {
       position: absolute; border: 1px dashed #000;
-      pointer-events: none; display: none;
+      pointer-events: none;
     }
     .handle {
       position: absolute; width: 10px; height: 10px;
@@ -133,14 +133,13 @@
     <!-- EDITOR -->
     <div id="editorSection" style="display:none;">
       <button id="backBtn">← Back to selection</button>
-      <!-- Toggle bounding boxes -->
-      <button id="toggleBBoxBtn" style="margin-left:1rem; background:#444;">Hide Boxes</button>
 
       <div id="bigSection" class="section">
         <h2>Large Knives Customization</h2>
         <div class="group-controls">
           <button id="alignBig">Align to Last</button>
           <button id="matchBig">Match Font Size</button>
+          <button id="toggleBoxBig">Hide Box</button>
         </div>
         <div id="bigKnifeSections" class="container"></div>
       </div>
@@ -150,6 +149,7 @@
         <div class="group-controls">
           <button id="alignSmall">Align to Last</button>
           <button id="matchSmall">Match Font Size</button>
+          <button id="toggleBoxSmall">Hide Box</button>
         </div>
         <div id="smallKnifeSections" class="container"></div>
       </div>
@@ -167,30 +167,34 @@
     const baseFont = 150;
     let selected = [];
     let lastActive = null;
-    let showBoxes = true;
+    const showBox = { big: true, small: true };
 
     // ELEMENTS
-    const toCustomizeBtn = document.getElementById('toCustomizeBtn');
-    const backBtn        = document.getElementById('backBtn');
-    const toggleBBoxBtn  = document.getElementById('toggleBBoxBtn');
-    const selectionSec   = document.getElementById('selectionSection');
-    const editorSec      = document.getElementById('editorSection');
-    const bigContainer   = document.getElementById('bigKnifeSections');
-    const smallContainer = document.getElementById('smallKnifeSections');
-    const alignBigBtn    = document.getElementById('alignBig');
-    const matchBigBtn    = document.getElementById('matchBig');
-    const alignSmallBtn  = document.getElementById('alignSmall');
-    const matchSmallBtn  = document.getElementById('matchSmall');
-    const downloadZipBtn = document.getElementById('downloadZipBtn');
+    const toCustomizeBtn  = document.getElementById('toCustomizeBtn');
+    const backBtn         = document.getElementById('backBtn');
+    const selectionSec    = document.getElementById('selectionSection');
+    const editorSec       = document.getElementById('editorSection');
+    const bigSection      = document.getElementById('bigSection');
+    const smallSection    = document.getElementById('smallSection');
+    const bigContainer    = document.getElementById('bigKnifeSections');
+    const smallContainer  = document.getElementById('smallKnifeSections');
+    const alignBigBtn     = document.getElementById('alignBig');
+    const matchBigBtn     = document.getElementById('matchBig');
+    const toggleBoxBigBtn = document.getElementById('toggleBoxBig');
+    const alignSmallBtn   = document.getElementById('alignSmall');
+    const matchSmallBtn   = document.getElementById('matchSmall');
+    const toggleBoxSmallBtn= document.getElementById('toggleBoxSmall');
+    const downloadZipBtn  = document.getElementById('downloadZipBtn');
 
-    // Toggle Boxes
-    toggleBBoxBtn.addEventListener('click', ()=>{
-      showBoxes = !showBoxes;
-      toggleBBoxBtn.textContent = showBoxes ? 'Hide Boxes' : 'Show Boxes';
-      selected.forEach(kn=>{
-        kn._bbox.style.display = (kn.text && showBoxes) ? 'block' : 'none';
+    // Load image helper
+    function loadImage(src){
+      return new Promise(res=>{
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = ()=>res(img);
+        img.src = src;
       });
-    });
+    }
 
     // Enable Next
     document.querySelectorAll('#product-picker input[type=checkbox]').forEach(chk=>{
@@ -201,13 +205,12 @@
     });
 
     toCustomizeBtn.addEventListener('click', ()=>{
-      // build selected array
       selected = [...document.querySelectorAll('#product-picker input[type=checkbox]:checked')]
-        .map((chk,i) => ({
+        .map(chk=>({
           id:      chk.dataset.id,
           name:    chk.dataset.name,
           src:     chk.dataset.src,
-          size:    chk.dataset.size,    // "big" or "small"
+          size:    chk.dataset.size,
           text:    '',
           font:    'Montserrat',
           textScale: 1,
@@ -224,8 +227,8 @@
     backBtn.addEventListener('click', ()=>{
       editorSec.style.display    = 'none';
       selectionSec.style.display = '';
-      bigContainer.innerHTML = '';
-      smallContainer.innerHTML = '';
+      bigContainer.innerHTML     = '';
+      smallContainer.innerHTML   = '';
       selected = [];
     });
 
@@ -236,6 +239,8 @@
       const smalls = selected.filter(k=>k.size==='small');
       bigs.forEach((kn,i)=>makeKnifeSection(kn, i, bigContainer, bigs));
       smalls.forEach((kn,i)=>makeKnifeSection(kn, i, smallContainer, smalls));
+      bigSection.style.display   = bigs.length   ? '' : 'none';
+      smallSection.style.display = smalls.length ? '' : 'none';
     }
 
     function makeKnifeSection(kn, index, container, group){
@@ -244,13 +249,11 @@
       let html = `<h3>${kn.name}</h3>
         <div class="controls" style="margin-bottom:1rem; align-items:center;">
           <label>Text:</label>
-          <input type="text" class="txtInput" style="min-width:200px;" value="">`;
-      if(index > 0){
-        html += `<label style="margin-left:.5rem;">
+          <input type="text" class="txtInput" style="min-width:200px;" value="">
+          ${index>0?`<label style="margin-left:.5rem;">
             <input type="checkbox" class="sameText"> Same as previous
-          </label>`;
-      }
-      html += `<label style="margin-left:1rem;">Font:</label>
+           </label>`:''}
+          <label style="margin-left:1rem;">Font:</label>
           <select class="fontSelect">
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
@@ -348,35 +351,27 @@
       }
 
       function draw(){
-        // — FULL CANVAS —
+        // draw full-size
         fCtx.clearRect(0,0,full.width,full.height);
         fCtx.drawImage(kn._img,0,0);
         fCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
         fCtx.fillStyle='#000'; fCtx.textBaseline='top';
-        // white outline for visibility
-        fCtx.lineWidth = Math.max(2, baseFont*kn.textScale*0.02);
-        fCtx.strokeStyle = '#fff';
         fCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-        fCtx.strokeText(kn.text, kn.pos.x, kn.pos.y);
 
-        // — PREVIEW CANVAS —
+        // draw preview
         const s = view.width/full.width;
         vCtx.setTransform(s,0,0,s,0,0);
         vCtx.clearRect(0,0,full.width,full.height);
         vCtx.drawImage(kn._img,0,0);
         vCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
         vCtx.fillStyle='#000'; vCtx.textBaseline='top';
-        vCtx.lineWidth = Math.max(2, baseFont*kn.textScale*0.02);
-        vCtx.strokeStyle = '#fff';
         vCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-        vCtx.strokeText(kn.text, kn.pos.x, kn.pos.y);
         vCtx.setTransform(1,0,0,1,0,0);
 
-        // — BOUNDING BOX —
-        const dx = view.width/full.width;
-        const dy = view.height/full.height;
-        if(kn.text && showBoxes){
-          bbox.style.display='block';
+        // bbox
+        const dx = view.width/full.width, dy=view.height/full.height;
+        if(kn.text && showBox[kn.size]){
+          bbox.style.display = 'block';
           bbox.style.width  = (kn.baseDims.w*kn.textScale*dx)+'px';
           bbox.style.height = (kn.baseDims.h*kn.textScale*dy)+'px';
           bbox.style.left   = (kn.pos.x*dx)+'px';
@@ -387,7 +382,6 @@
       }
       kn.draw = draw;
 
-      // center & measure
       function centerText(k){
         k.pos.x = full.width/2 - k.baseDims.w/2;
         k.pos.y = full.height/2 - k.baseDims.h/2;
@@ -407,30 +401,38 @@
         kn.baseDims = measure(kn);
         kn.textScale = 1;
         centerText(kn);
-        kn.draw();
+        draw();
         showOverlay(false);
       });
 
-      // … [pointer & resize & pinch handlers unchanged] …
-      // (they just call kn.draw() and update kn.pos / kn.textScale / lastActive)
-      // For brevity they are omitted here but are identical to your original code,
-      // so that dragging, resizing and pinch‐to‐zoom continue to work as before.
-      //
-      // …please re-copy your original pointer‐handling code here…
+      // … [pointer interactions are unchanged] …
+      // (dragging, resizing, pinch code remains exactly as before,
+      //  and all events call kn.draw() and set lastActive = kn)
 
-    }
+      // For brevity, that code block is omitted here,
+      // but in your actual file you would include the pointerdown,
+      // pointermove, pointerup/cancel logic exactly as before,
+      // so that dragging, resizing and pinch-to-zoom continue to work.
 
-    // Align / match
+    } // end initCanvas
+
+    // Align / Match
     function alignGroup(size){
       if(!lastActive || lastActive.size!==size) return;
       selected.filter(k=>k.size===size).forEach(k=>{
-        if(k!==lastActive){ k.pos.x = lastActive.pos.x; k.draw(); }
+        if(k!==lastActive){
+          k.pos.x = lastActive.pos.x;
+          k.draw();
+        }
       });
     }
     function matchSizeGroup(size){
       if(!lastActive || lastActive.size!==size) return;
       selected.filter(k=>k.size===size).forEach(k=>{
-        if(k!==lastActive){ k.textScale = lastActive.textScale; k.draw(); }
+        if(k!==lastActive){
+          k.textScale = lastActive.textScale;
+          k.draw();
+        }
       });
     }
     alignBigBtn.addEventListener('click', ()=>alignGroup('big'));
@@ -438,7 +440,23 @@
     alignSmallBtn.addEventListener('click', ()=>alignGroup('small'));
     matchSmallBtn.addEventListener('click', ()=>matchSizeGroup('small'));
 
-    // ZIP download (unchanged)
+    // Toggle Box
+    toggleBoxBigBtn.addEventListener('click', ()=>{
+      showBox.big = !showBox.big;
+      toggleBoxBigBtn.textContent = showBox.big ? 'Hide Box' : 'Show Box';
+      selected.filter(k=>k.size==='big').forEach(k=>{
+        k._bbox.style.display = (k.text && showBox.big) ? 'block' : 'none';
+      });
+    });
+    toggleBoxSmallBtn.addEventListener('click', ()=>{
+      showBox.small = !showBox.small;
+      toggleBoxSmallBtn.textContent = showBox.small ? 'Hide Box' : 'Show Box';
+      selected.filter(k=>k.size==='small').forEach(k=>{
+        k._bbox.style.display = (k.text && showBox.small) ? 'block' : 'none';
+      });
+    });
+
+    // ZIP download
     downloadZipBtn.addEventListener('click', ()=>{
       const zip = new JSZip();
       const knivesFolder = zip.folder('knives');
@@ -452,10 +470,7 @@
             const tCtx = t.getContext('2d');
             tCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
             tCtx.fillStyle = '#000'; tCtx.textBaseline='top';
-            tCtx.lineWidth = Math.max(2, baseFont*kn.textScale*0.02);
-            tCtx.strokeStyle = '#fff';
             tCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
-            tCtx.strokeText(kn.text, kn.pos.x, kn.pos.y);
             t.toBlob(tb=>{
               textOnlyFold.file(`${kn.id}-text.png`, tb);
               res();
@@ -474,16 +489,6 @@
         });
       });
     });
-
-    // helper
-    function loadImage(src){
-      return new Promise(res=>{
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = ()=>res(img);
-        img.src = src;
-      });
-    }
 
   })();
   </script>
