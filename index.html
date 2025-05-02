@@ -2,14 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-  <title>Knife Engraving Customiser</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-
-  <!-- fonts -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
-
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Knife Engraving Customiser – Multi‐Set</title>
+  <link rel="icon" href="./favicon.ico">
   <style>
     :root {
       --accent: #d00024;
@@ -19,133 +14,102 @@
       --pad: 1rem;
       --radius: .5rem;
     }
-    * { box-sizing: border-box; margin: 0; }
+    * { box-sizing:border-box; margin:0; padding:0 }
     body {
       font-family: Roboto, Arial, sans-serif;
       background: var(--bg);
       color: #222;
+      line-height:1.4;
     }
-    h1,h2 { text-align:center; margin:1rem 0; }
-    h3 { text-align:center; margin-bottom:2rem; }
-    .container {
-      max-width:1200px; margin:auto; padding:var(--pad);
-      display:flex; flex-direction:column; gap:var(--pad);
-    }
-    .section {
-      background:#fff; border:1px solid var(--border);
-      border-radius:var(--radius); padding:var(--pad);
-    }
-    #product-picker {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-      gap:.75rem;
-    }
-    .product-option { position:relative; }
-    .product-option input {
-      position:absolute; inset:0; opacity:0; cursor:pointer;
-    }
+    h1,h2 { text-align:center; margin:1rem 0 }
+    .container { max-width:1000px; margin:0 auto; padding:var(--pad) }
+    .section { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:var(--pad); margin-bottom:var(--pad) }
+    #product-picker { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem }
+    .product-option { text-align:center }
+    .product-option input { display:none }
     .product-option img {
-      width:100%; border:2px solid transparent;
-      border-radius:var(--radius); display:block;
+      width:100%; border:2px solid transparent; border-radius:var(--radius); cursor:pointer
     }
     .product-option input:checked+img {
-      border-color:var(--accent);
+      border-color:var(--accent)
     }
-    .controls {
-      display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
+    .controls { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:center }
+    .controls label { margin-right:.25rem }
+    button, select, input[type=text] {
+      font-size:1rem;
     }
-    .controls label { font-size:.9rem; margin-right:.25rem; }
-
-    #canvas-wrapper {
-      position:relative;
-      width:100%; max-width:1168px;
-      /* no max-height or overflow:hidden: canvas can grow */
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:#eaeaea;
-      touch-action: none; /* capture all pointer gestures */
-      margin:auto;
+    button {
+      background:var(--accent); color:#fff; border:none; padding:.6rem 1rem;
+      border-radius:var(--radius); cursor:pointer; font-weight:600
     }
-
-    canvas {
-      display:block;
-      touch-action: none; /* ensure we get pinch/drag */
+    button[disabled] { opacity:.5; cursor:not-allowed }
+    .canvas-set { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem }
+    .canvas-wrapper {
+      position:relative; background:#eaeaea; border:1px solid var(--border);
+      border-radius:var(--radius); overflow:hidden;
+      touch-action:none
     }
-
-    #loadingOverlay {
-      position:absolute; inset:0;
-      background:rgba(255,255,255,0.85);
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.5rem; color:#555;
-      visibility:hidden; z-index:10;
-    }
-
-    #bbox {
-      position:absolute; border:1px dashed #000;
-      pointer-events:none; display:none;
+    .canvas-wrapper canvas { display:block; width:100%; height:auto; touch-action:none }
+    .loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.8); font-size:1.2rem; }
+    .bbox {
+      position:absolute; border:1px dashed #000; pointer-events:none; display:none
     }
     .handle {
-      position:absolute; width:10px; height:10px;
-      background:#fff; border:1px solid #000;
-      pointer-events:auto;
+      position:absolute; width:10px; height:10px; background:#fff; border:1px solid #000; pointer-events:auto;
     }
-    .handle[data-handle="nw"] { top:-5px; left:-5px; cursor:nwse-resize; }
-    .handle[data-handle="ne"] { top:-5px; right:-5px; cursor:nesw-resize; }
-    .handle[data-handle="sw"] { bottom:-5px; left:-5px; cursor:nesw-resize; }
-    .handle[data-handle="se"] { bottom:-5px; right:-5px; cursor:nwse-resize; }
-
-    button {
-      background:var(--accent); color:#fff; border:none;
-      padding:.6rem 1rem; border-radius:var(--radius);
-      cursor:pointer; font-weight:600;
+    .handle[data-handle="nw"] { top:-5px; left:-5px; cursor:nwse-resize }
+    .handle[data-handle="ne"] { top:-5px; right:-5px; cursor:nesw-resize }
+    .handle[data-handle="sw"] { bottom:-5px; left:-5px; cursor:nesw-resize }
+    .handle[data-handle="se"] { bottom:-5px; right:-5px; cursor:nwse-resize }
+    .edit-btn {
+      position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,.6); color:#fff; font-size:.8rem;
+      padding:.3rem .5rem; border-radius:3px; display:none; cursor:pointer;
     }
-    button[disabled] {
-      opacity:.4; cursor:not-allowed;
-    }
-    .scale-btn {
-      margin-top:1rem;
-      background: var(--accent);
-      transition:background .2s;
-    }
-    .scale-btn.off {
-      background: var(--gray);
-    }
+    .canvas-wrapper.active .edit-btn { display:block }
+    .canvas-wrapper.active { outline:2px solid var(--accent) }
+    .toggle-btn { margin-left:.5rem }
     @media(max-width:600px){
-      .controls { flex-direction:column; align-items:flex-start; }
+      .controls { flex-direction:column; align-items:stretch }
     }
   </style>
 </head>
 <body>
   <h1>Knife Engraving Customiser</h1>
-  <h3>by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
   <div class="container">
 
-    <!-- 1. KNIFE -->
-    <div class="section">
-      <h2>1. Choose your knife</h2>
+    <!-- STEP 1 -->
+    <div id="step1" class="section">
+      <h2>1. Which set did you buy?</h2>
       <div id="product-picker">
         <label class="product-option">
-          <input type="radio" name="product" value="chef.jpg">
-          <img src="chef-thumb.jpg" alt="Chef knife">
+          <input type="radio" name="set" value="set1">
+          <img src="utility-thumb.jpg" alt="Utility + Santoku">
+          <div>Utility + Santoku</div>
         </label>
         <label class="product-option">
-          <input type="radio" name="product" value="santoku.jpg">
-          <img src="santoku-thumb.jpg" alt="Santoku knife">
+          <input type="radio" name="set" value="set2">
+          <img src="chef-thumb.jpg" alt="Chef + Santoku + Utility + Paring">
+          <div>Chef + Santoku + Utility + Paring</div>
         </label>
         <label class="product-option">
-          <input type="radio" name="product" value="paring.jpg">
-          <img src="paring-thumb.jpg" alt="Paring knife">
+          <input type="radio" name="set" value="set3">
+          <img src="bread-thumb.jpg" alt="Bread Knife">
+          <div>Bread Knife</div>
         </label>
         <label class="product-option">
-          <input type="radio" name="product" value="utility.jpg">
-          <img src="utility-thumb.jpg" alt="Utility knife">
+          <input type="radio" name="set" value="set4">
+          <img src="chopper-thumb.jpg" alt="Chopper">
+          <div>Chopper</div>
         </label>
+      </div>
+      <div style="text-align:center; margin-top:1rem;">
+        <button id="toStep2" disabled>Next &raquo;</button>
       </div>
     </div>
 
-    <!-- 2. TEXT CONTROLS -->
-    <div class="section">
-      <h2>2. Customise text</h2>
+    <!-- STEP 2 -->
+    <div id="step2" class="section" style="display:none">
+      <h2>2. Customise Your Engraving</h2>
       <div class="controls">
         <div>
           <label for="engraveText">Text:</label>
@@ -154,297 +118,417 @@
         <div>
           <label for="fontSelect">Font:</label>
           <select id="fontSelect">
-            <option value="Montserrat">Montserrat</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Lobster">Lobster</option>
-            <option value="'Times New Roman',serif">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-            <option value="Arial">Arial</option>
+            <option>Montserrat</option>
+            <option>Roboto</option>
+            <option>Lobster</option>
+            <option>'Times New Roman',serif</option>
+            <option>Courier New</option>
+            <option>Arial</option>
           </select>
         </div>
-      </div>
-      <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
-        • Drag the text box to move.<br>
-        • Drag a corner to scale (desktop).<br>
-        • Pinch to zoom (mobile).
-      </p>
-    </div>
-
-    <!-- 3. PREVIEW & CONTROLS -->
-    <div class="section">
-      <h2>3. Preview & download</h2>
-      <div id="canvas-wrapper">
-        <canvas id="viewCanvas"></canvas>
-        <div id="loadingOverlay">Loading…</div>
-        <div id="bbox">
-          <div class="handle" data-handle="nw"></div>
-          <div class="handle" data-handle="ne"></div>
-          <div class="handle" data-handle="sw"></div>
-          <div class="handle" data-handle="se"></div>
+        <div>
+          <label><input type="checkbox" id="sameContent" checked> Same text on all knives</label>
+        </div>
+        <div>
+          <button id="scaleBtn" class="toggle-btn">Scale: On</button>
+          <button id="gridBtn"  class="toggle-btn">Grid: Off</button>
+        </div>
+        <div>
+          <button id="downloadAll" disabled>Download All (ZIP)</button>
         </div>
       </div>
-      <div style="text-align:center;margin-top:1rem;">
-        <button id="scaleBtn" class="scale-btn">Scale: On</button><br>
-        <button id="downloadBtn" disabled style="margin-top:1rem;">
-          Generate &amp; Download PNGs
-        </button>
-      </div>
+      <div id="canvasArea" class="canvas-set" style="margin-top:1rem"></div>
     </div>
-
   </div>
 
+  <!-- JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
   <script>
-    /* ELEMENTS & STATE */
-    const view     = document.getElementById('viewCanvas');
-    const vCtx     = view.getContext('2d');
-    const full     = document.createElement('canvas');
-    const fCtx     = full.getContext('2d');
-    const radios   = document.querySelectorAll('[name="product"]');
-    const txtInput = document.getElementById('engraveText');
-    const fontSel  = document.getElementById('fontSelect');
-    const dlBtn    = document.getElementById('downloadBtn');
-    const overlay  = document.getElementById('loadingOverlay');
-    const bboxEl   = document.getElementById('bbox');
-    const handles  = document.querySelectorAll('.handle');
-    const scaleBtn = document.getElementById('scaleBtn');
+  (function(){
+    // knife‐set definitions
+    const sets = {
+      set1: ['utility','santoku'],
+      set2: ['chef','santoku','utility','paring'],
+      set3: ['bread'],
+      set4: ['chopper']
+    };
+    // map name → image file
+    const images = {
+      chef:     'chef.jpg',
+      santoku:  'santoku.jpg',
+      paring:   'paring.jpg',
+      utility:  'utility.jpg',
+      bread:    'bread.jpg',
+      chopper:  'chopper.jpg'
+    };
+    // big vs small
+    const sizeClass = {
+      chef:    'big',
+      santoku: 'big',
+      bread:   'big',
+      chopper: 'big',
+      utility: 'small',
+      paring:  'small'
+    };
 
-    let img          = null;
-    let baseFont     = 150;
-    let textScale    = 1;
-    let baseDims     = {w:0,h:0};
-    let pos          = {x:0,y:0};
-    let boxVisible   = true;
+    // STATE
+    let chosenSet = null;
+    let products  = []; // {id,name,img,canvas,viewCtx,full,fullCtx,pos,baseDims,scale,wrapper,...}
+    let activeId  = null;
+    let scaleOn   = true;
+    let gridOn    = false;
 
-    let dragging=false, dragStart={};
-    let resizing=false, resizeStart={};
-    let pointers={}, pinch=false, pinchStart={};
+    // ELEMENTS
+    const step1       = document.getElementById('step1');
+    const step2       = document.getElementById('step2');
+    const toStep2Btn  = document.getElementById('toStep2');
+    const pickerRadios= document.querySelectorAll('[name="set"]');
+    const canvasArea  = document.getElementById('canvasArea');
+    const txtInput    = document.getElementById('engraveText');
+    const fontSelect  = document.getElementById('fontSelect');
+    const sameContent = document.getElementById('sameContent');
+    const scaleBtn    = document.getElementById('scaleBtn');
+    const gridBtn     = document.getElementById('gridBtn');
+    const downloadAll = document.getElementById('downloadAll');
 
-    /* HELPERS */
-    function showOverlay(on){
-      overlay.style.visibility = on? 'visible' : 'hidden';
+    // enable Next
+    pickerRadios.forEach(r=>{
+      r.addEventListener('change', ()=> toStep2Btn.disabled = false);
+    });
+    toStep2Btn.addEventListener('click', ()=> {
+      chosenSet = document.querySelector('[name="set"]:checked').value;
+      launchCustomiser();
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+    });
+
+    // INIT CUSTOMISER
+    async function launchCustomiser(){
+      canvasArea.innerHTML = '';
+      products = [];
+      const names = sets[chosenSet];
+      // build canvases
+      for(let i=0;i<names.length;i++){
+        const name = names[i];
+        const wrap= document.createElement('div');
+        wrap.className = 'canvas-wrapper';
+        wrap.dataset.id   = i;
+        wrap.dataset.name = name;
+        wrap.dataset.size = sizeClass[name];
+        wrap.innerHTML = `
+          <div class="loading">Loading…</div>
+          <canvas></canvas>
+          <div class="bbox">
+            <div class="handle" data-handle="nw"></div>
+            <div class="handle" data-handle="ne"></div>
+            <div class="handle" data-handle="sw"></div>
+            <div class="handle" data-handle="se"></div>
+          </div>
+          <button class="edit-btn">Edit</button>
+        `;
+        canvasArea.appendChild(wrap);
+
+        const img = await loadImage(images[name]);
+        const canvas = wrap.querySelector('canvas');
+        const vCtx   = canvas.getContext('2d');
+        // full‐res offscreen
+        const full   = document.createElement('canvas');
+        const fCtx   = full.getContext('2d');
+
+        // fit canvas
+        const scale = canvasArea.clientWidth / names.length / img.naturalWidth;
+        canvas.width  = img.naturalWidth * scale;
+        canvas.height = img.naturalHeight * scale;
+        full.width    = img.naturalWidth;
+        full.height   = img.naturalHeight;
+
+        wrap.querySelector('.loading').style.display='none';
+
+        // measure default
+        const baseFont = 150;
+        fCtx.font = `${baseFont}px ${fontSelect.value}`;
+        const measure = fCtx.measureText(txtInput.value||'');
+        const baseDims = { w: measure.width, h: baseFont };
+
+        // center
+        const pos = {
+          x: (full.width - baseDims.w)/2,
+          y: (full.height - baseDims.h)/2
+        };
+
+        products.push({ id:i,name,img,wrap,canvas,vCtx,full,fCtx,pos,baseDims,scale:1 });
+        attachEvents(products[i]);
+      }
+
+      activeId = 0;
+      setActive(0);
+      downloadAll.disabled = false;
+      drawAll();
     }
+
+    // loadImage helper
     function loadImage(src){
       return new Promise(r=>{
         const i = new Image();
-        i.crossOrigin = 'anonymous';
-        i.onload = ()=> r(i);
+        i.crossOrigin='anonymous';
+        i.onload = ()=>r(i);
         i.src = src;
       });
     }
-    function fitInBox(){
-      const wrapper = document.getElementById('canvas-wrapper');
-      const wrapW = wrapper.clientWidth;
-      const scale = wrapW / img.naturalWidth;
-      view.width  = img.naturalWidth * scale;
-      view.height = img.naturalHeight * scale;
-      full.width  = img.naturalWidth;
-      full.height = img.naturalHeight;
-      view.style.width  = view.width + 'px';
-      view.style.height = view.height + 'px';
+
+    // set which canvas is active (for per‐knife editing)
+    function setActive(id){
+      products.forEach(p=>p.wrap.classList.toggle('active', p.id===id));
+      activeId = id;
+      // sync controls to active
+      const P = products[id];
+      txtInput.value = txtInput.value || '';
+      fontSelect.value=fontSelect.value;
     }
-    function measureBaseText(){
-      fCtx.font = `${baseFont}px ${fontSel.value}`;
-      return { w:fCtx.measureText(txtInput.value).width, h:baseFont };
-    }
-    function toFullCoords(cx,cy){
-      const r = view.getBoundingClientRect();
-      return {
-        x: (cx - r.left) * (full.width  / r.width),
-        y: (cy - r.top ) * (full.height / r.height)
-      };
-    }
-    function hitTest(fx,fy){
-      return fx>=pos.x && fx<=pos.x+baseDims.w*textScale
-          && fy>=pos.y && fy<=pos.y+baseDims.h*textScale;
-    }
-    function downloadCanvas(can,name){
-      can.toBlob(b=>{
-        const url = URL.createObjectURL(b);
-        const a   = document.createElement('a');
-        a.href    = url;
-        a.download= name;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>{
-          URL.revokeObjectURL(url);
-          a.remove();
-        },100);
+
+    // attach pointer & handle events
+    function attachEvents(P){
+      const { wrap, canvas } = P;
+      const bbox = wrap.querySelector('.bbox');
+      const handles = wrap.querySelectorAll('.handle');
+      const editBtn = wrap.querySelector('.edit-btn');
+
+      // Edit‐button
+      editBtn.addEventListener('click', ()=> setActive(P.id));
+
+      // pointer events
+      let dragging=false, dragStart={};
+      let resizing=false, resStart={};
+      let pointers={}, pinch=false, pinchStart={};
+
+      // common helpers
+      function toFull(x,y){
+        const r = canvas.getBoundingClientRect();
+        return {
+          x:(x-r.left)*(P.full.width/r.width),
+          y:(y-r.top)*(P.full.height/r.height)
+        };
+      }
+      function hit(fx,fy){
+        const {x,y} = P.pos;
+        const w = P.baseDims.w*P.scale, h = P.baseDims.h*P.scale;
+        return fx>=x && fy>=y && fx<=x+w && fy<=y+h;
+      }
+
+      // start drag or start pinch
+      canvas.addEventListener('pointerdown', e=>{
+        canvas.setPointerCapture(e.pointerId);
+        pointers[e.pointerId] = { x:e.clientX,y:e.clientY };
+
+        // pinch?
+        if(Object.keys(pointers).length===2 && !resizing && !dragging){
+          pinch = true;
+          const pts = Object.values(pointers);
+          const A = toFull(pts[0].x,pts[0].y);
+          const B = toFull(pts[1].x,pts[1].y);
+          pinchStart = {
+            scale:P.scale,
+            cx:(A.x+B.x)/2,
+            cy:(A.y+B.y)/2,
+            d0: Math.hypot(A.x-B.x,A.y-B.y)
+          };
+          return;
+        }
+
+        // start dragging?
+        const F = toFull(e.clientX,e.clientY);
+        if(hit(F.x,F.y) && !resizing && !pinch){
+          dragging = true;
+          dragStart = { id:e.pointerId, dx:F.x-P.pos.x, dy:F.y-P.pos.y };
+          e.preventDefault();
+        }
+      });
+
+      canvas.addEventListener('pointermove', e=>{
+        // pinch
+        if(pinch && pointers[e.pointerId]){
+          pointers[e.pointerId] = { x:e.clientX,y:e.clientY };
+          const pts = Object.values(pointers);
+          const A = toFull(pts[0].x,pts[0].y);
+          const B = toFull(pts[1].x,pts[1].y);
+          const d1 = Math.hypot(A.x-B.x,A.y-B.y);
+          const newScale = pinchStart.scale * (d1/pinchStart.d0);
+          updateScale(P,newScale);
+          drawAll();
+          return;
+        }
+        // dragging
+        if(dragging && e.pointerId===dragStart.id){
+          const F = toFull(e.clientX,e.clientY);
+          let nx = F.x - dragStart.dx;
+          let ny = F.y - dragStart.dy;
+          // always sync x across same sizeClass
+          products.forEach(Q=>{
+            if(sizeClass[Q.name]===sizeClass[P.name]){
+              Q.pos.x = nx;
+            }
+          });
+          // individual y
+          if(sameContent.checked){
+            products.forEach(Q=>Q.pos.y = ny);
+          } else {
+            P.pos.y = ny;
+          }
+          drawAll();
+        }
+      });
+
+      ['pointerup','pointercancel'].forEach(evt=>{
+        canvas.addEventListener(evt,e=>{
+          delete pointers[e.pointerId];
+          if(pinch && Object.keys(pointers).length<2) pinch=false;
+          if(e.pointerId===dragStart.id) dragging=false;
+          if(e.pointerId===resStart.id) resizing=false;
+        });
+      });
+
+      // resize handles
+      handles.forEach(h=>{
+        h.addEventListener('pointerdown',e=>{
+          e.stopPropagation();
+          resizing=true;
+          const bb = bbox.getBoundingClientRect();
+          const center = toFull(bb.left+bb.width/2, bb.top+bb.height/2);
+          const p0 = toFull(e.clientX,e.clientY);
+          resStart = {
+            id:e.pointerId,
+            cx:center.x, cy:center.y,
+            scale:P.scale,
+            d0: Math.hypot(p0.x-center.x,p0.y-center.y)
+          };
+        });
+      });
+      canvas.addEventListener('pointermove', e=>{
+        if(!resizing || e.pointerId!==resStart.id) return;
+        const p = toFull(e.clientX,e.clientY);
+        const d = Math.hypot(p.x-resStart.cx,p.y-resStart.cy);
+        const newScale = resStart.scale * (d/resStart.d0);
+        updateScale(P,newScale);
+        drawAll();
       });
     }
-    function draw(){
-      if(!img) return;
-      // full‐res
-      fCtx.clearRect(0,0,full.width,full.height);
-      fCtx.drawImage(img,0,0);
-      fCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
-      fCtx.fillStyle = '#000';
-      fCtx.textBaseline='top';
-      fCtx.fillText(txtInput.value, pos.x, pos.y);
 
-      // preview
-      const s = view.width / full.width;
-      vCtx.setTransform(s,0,0,s,0,0);
-      vCtx.clearRect(0,0,full.width,full.height);
-      vCtx.drawImage(img,0,0);
-      vCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
-      vCtx.fillStyle = '#000';
-      vCtx.textBaseline='top';
-      vCtx.fillText(txtInput.value, pos.x, pos.y);
-      vCtx.setTransform(1,0,0,1,0,0);
-
-      // bounding box
-      const dx = view.width / full.width;
-      const dy = view.height/ full.height;
-      if(boxVisible && txtInput.value){
-        bboxEl.style.display='block';
-        bboxEl.style.width  = (baseDims.w*textScale*dx) + 'px';
-        bboxEl.style.height = (baseDims.h*textScale*dy) + 'px';
-        bboxEl.style.left   = (pos.x*dx) + 'px';
-        bboxEl.style.top    = (pos.y*dy) + 'px';
-      } else {
-        bboxEl.style.display='none';
+    // update a product's scale, and if sameContent, propagate
+    function updateScale(P,newScale){
+      P.scale = scaleOn ? newScale : 1;
+      if(sameContent.checked){
+        products.forEach(Q=>Q.scale = P.scale);
       }
     }
 
-    /* EVENTS */
-
-    // Knife select
-    radios.forEach(r=>{
-      r.addEventListener('change', async e=>{
-        showOverlay(true);
-        dlBtn.disabled = true;
-        img = await loadImage(e.target.value);
-        fitInBox();
-        baseDims = measureBaseText();
-        textScale = 1;
-        pos.x = full.width/2 - baseDims.w/2;
-        pos.y = full.height/2 - baseDims.h/2;
-        draw();
-        showOverlay(false);
-        dlBtn.disabled = false;
+    // draw all canvases
+    function drawAll(){
+      products.forEach(P=>{
+        const {canvas,vCtx,full,fCtx,pos,baseDims,scale,img,wrap} = P;
+        // full
+        fCtx.clearRect(0,0,full.width,full.height);
+        fCtx.drawImage(img,0,0);
+        fCtx.font = `${150*scale}px ${fontSelect.value}`;
+        fCtx.fillStyle='#000';
+        fCtx.textBaseline='top';
+        fCtx.fillText(txtInput.value, pos.x, pos.y);
+        // view
+        const s = canvas.width/full.width;
+        vCtx.setTransform(s,0,0,s,0,0);
+        vCtx.clearRect(0,0,full.width,full.height);
+        vCtx.drawImage(img,0,0);
+        // grid
+        if(gridOn){
+          const gs =  full.width/10;
+          vCtx.strokeStyle='rgba(0,0,0,.1)';
+          vCtx.lineWidth=1;
+          for(let x=0;x<full.width;x+=gs){
+            vCtx.beginPath(); vCtx.moveTo(x,0); vCtx.lineTo(x,full.height); vCtx.stroke();
+          }
+          for(let y=0;y<full.height;y+=gs){
+            vCtx.beginPath(); vCtx.moveTo(0,y); vCtx.lineTo(full.width,y); vCtx.stroke();
+          }
+        }
+        // text
+        vCtx.fillStyle='#000';
+        vCtx.font = `${150*scale}px ${fontSelect.value}`;
+        vCtx.fillText(txtInput.value, pos.x,pos.y);
+        vCtx.setTransform(1,0,0,1,0,0);
+        // bbox
+        const bbox = wrap.querySelector('.bbox');
+        if(txtInput.value){
+          const dx = canvas.width/full.width;
+          bbox.style.display='block';
+          bbox.style.left  = pos.x*dx+'px';
+          bbox.style.top   = pos.y*dx+'px';
+          bbox.style.width = (baseDims.w*scale*dx)+'px';
+          bbox.style.height= (baseDims.h*scale*dx)+'px';
+        } else {
+          bbox.style.display='none';
+        }
       });
-    });
+    }
 
-    // Text / font change
-    [txtInput,fontSel].forEach(el=>
+    // CONTROL EVENTS
+    [txtInput,fontSelect].forEach(el=>{
       el.addEventListener('input', ()=>{
-        baseDims = measureBaseText();
-        textScale = 1;
-        pos.x = full.width/2 - baseDims.w/2;
-        pos.y = full.height/2 - baseDims.h/2;
-        draw();
-      })
-    );
-
-    // Drag text (desktop)
-    view.addEventListener('pointerdown', e=>{
-      const f = toFullCoords(e.clientX, e.clientY);
-      if(!hitTest(f.x,f.y) || resizing || pinch) return;
-      dragging = true;
-      dragStart = { id: e.pointerId, dx: f.x - pos.x, dy: f.y - pos.y };
-      e.preventDefault();
-    });
-    window.addEventListener('pointermove', e=>{
-      if(!dragging || e.pointerId!==dragStart.id) return;
-      const f = toFullCoords(e.clientX, e.clientY);
-      pos.x = f.x - dragStart.dx;
-      pos.y = f.y - dragStart.dy;
-      draw();
-    });
-    ['pointerup','pointercancel'].forEach(evt=>
-      window.addEventListener(evt, e=>{
-        if(e.pointerId===dragStart.id) dragging=false;
-      })
-    );
-
-    // Resize via handles (desktop)
-    handles.forEach(h=>{
-      h.addEventListener('pointerdown', e=>{
-        e.stopPropagation();
-        resizing = true;
-        const box = bboxEl.getBoundingClientRect();
-        const center = toFullCoords(box.left+box.width/2, box.top+box.height/2);
-        const p0 = toFullCoords(e.clientX, e.clientY);
-        resizeStart = {
-          id: e.pointerId,
-          cx: center.x, cy: center.y,
-          scale: textScale,
-          d0: Math.hypot(p0.x-center.x, p0.y-center.y)
-        };
+        // re‐measure baseDims
+        products.forEach(P=>{
+          P.fCtx.font = `150px ${fontSelect.value}`;
+          const m = P.fCtx.measureText(txtInput.value);
+          P.baseDims = { w:m.width, h:150 };
+        });
+        // center all if first time
+        products.forEach(P=>{
+          P.pos.x = (P.full.width - P.baseDims.w)/2;
+          P.pos.y = (P.full.height - P.baseDims.h)/2;
+          if(sameContent.checked) { /* keep synced */ }
+        });
+        drawAll();
       });
     });
-    window.addEventListener('pointermove', e=>{
-      if(!resizing || e.pointerId!==resizeStart.id) return;
-      const p = toFullCoords(e.clientX, e.clientY);
-      const d = Math.hypot(p.x - resizeStart.cx, p.y - resizeStart.cy);
-      textScale = resizeStart.scale * (d / resizeStart.d0);
-      pos.x = resizeStart.cx - (baseDims.w*textScale)/2;
-      pos.y = resizeStart.cy - (baseDims.h*textScale)/2;
-      draw();
-    });
-    ['pointerup','pointercancel'].forEach(evt=>
-      window.addEventListener(evt, e=>{
-        if(e.pointerId===resizeStart.id) resizing=false;
-      })
-    );
 
-    // Pinch‐zoom (mobile)
-    view.addEventListener('pointerdown', e=>{
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      if(Object.keys(pointers).length === 2 && !dragging && !resizing){
-        pinch = true;
-        const [pA, pB] = Object.values(pointers);
-        const fA = toFullCoords(pA.x, pA.y);
-        const fB = toFullCoords(pB.x, pB.y);
-        pinchStart = {
-          scale: textScale,
-          cx: (fA.x + fB.x)/2,
-          cy: (fA.y + fB.y)/2,
-          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
-        };
-      }
-    });
-    view.addEventListener('pointermove', e=>{
-      if(!pinch || !(e.pointerId in pointers)) return;
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      const [a,b] = Object.values(pointers);
-      const fA = toFullCoords(a.x, a.y);
-      const fB = toFullCoords(b.x, b.y);
-      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
-      textScale = pinchStart.scale * (d1 / pinchStart.d0);
-      pos.x = pinchStart.cx - (baseDims.w*textScale)/2;
-      pos.y = pinchStart.cy - (baseDims.h*textScale)/2;
-      draw();
-    });
-    ['pointerup','pointercancel'].forEach(evt=>
-      view.addEventListener(evt, e=>{
-        delete pointers[e.pointerId];
-        if(Object.keys(pointers).length < 2) pinch = false;
-      })
-    );
-
-    // Toggle bounding‐box scaling
     scaleBtn.addEventListener('click', ()=>{
-      boxVisible = !boxVisible;
-      scaleBtn.textContent = boxVisible ? 'Scale: On' : 'Scale: Off';
-      scaleBtn.classList.toggle('off', !boxVisible);
-      draw();
+      scaleOn = !scaleOn;
+      scaleBtn.textContent = 'Scale: ' + (scaleOn?'On':'Off');
+    });
+    gridBtn.addEventListener('click', ()=>{
+      gridOn = !gridOn;
+      gridBtn.textContent = 'Grid: ' + (gridOn?'On':'Off');
+      drawAll();
     });
 
-    // Download
-    dlBtn.addEventListener('click', ()=>{
-      draw();
-      downloadCanvas(full,'preview.png');
-      // text‐only
-      const t = document.createElement('canvas');
-      t.width = full.width; t.height = full.height;
-      const tCtx = t.getContext('2d');
-      tCtx.font = `${baseFont*textScale}px ${fontSel.value}`;
-      tCtx.fillStyle = '#000';
-      tCtx.textBaseline = 'top';
-      tCtx.fillText(txtInput.value, pos.x, pos.y);
-      downloadCanvas(t,'text-only.png');
+    // DOWNLOAD ZIP
+    downloadAll.addEventListener('click', async ()=>{
+      const zip = new JSZip();
+      const folder = zip.folder('engravings');
+      // draw full‐res then collect blobs
+      const blobs = await Promise.all(products.map(P=>{
+        // draw once more
+        const {full,vCtx,fullCtx,pos,baseDims,scale,img} = P;
+        // we already drew fullCtx in drawAll, so:
+        return new Promise(r=>{
+          full.toBlob(b=>{
+            folder.file(`${P.name}.png`, b);
+            r();
+          });
+        });
+      }));
+      const content = await zip.generateAsync({type:'blob'});
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'knife-engravings.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{
+        URL.revokeObjectURL(url);
+        a.remove();
+      },1000);
     });
+
+  })();
   </script>
 </body>
 </html>
