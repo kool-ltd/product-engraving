@@ -24,7 +24,6 @@
       font-family: Roboto, Arial, sans-serif;
       background: var(--bg);
       color: #222;
-      line-height: 1.4;
     }
     h1,h2,h3 { text-align:center; margin:1rem 0; }
     .container {
@@ -40,7 +39,9 @@
       grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
       gap:.75rem;
     }
-    .product-option { display:flex; flex-direction:column; align-items:center; }
+    .product-option {
+      display:flex; flex-direction:column; align-items:center;
+    }
     .product-option input {
       margin-bottom:.5rem;
       cursor:pointer;
@@ -57,20 +58,16 @@
     button[disabled] {
       opacity:.4; cursor:not-allowed;
     }
-    #canvas-wrapper {
+    .canvas-wrapper {
       position:relative;
-      width:100%;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:#eaeaea;
-      touch-action: none;
-      margin:auto;
+      width:100%; border:1px solid var(--border);
+      border-radius:var(--radius); background:#eaeaea;
+      touch-action:none; margin:auto;
     }
     canvas {
-      display:block;
-      touch-action: none;
+      display:block; touch-action:none;
     }
-    #loadingOverlay {
+    .loadingOverlay {
       position:absolute; inset:0;
       background:rgba(255,255,255,0.85);
       display:flex; align-items:center; justify-content:center;
@@ -86,53 +83,47 @@
       background:#fff; border:1px solid #000;
       pointer-events:auto;
     }
-    .handle[data-handle="nw"] { top:-5px; left:-5px; cursor:nwse-resize; }
-    .handle[data-handle="ne"] { top:-5px; right:-5px; cursor:nesw-resize; }
-    .handle[data-handle="sw"] { bottom:-5px; left:-5px; cursor:nesw-resize; }
-    .handle[data-handle="se"] { bottom:-5px; right:-5px; cursor:nwse-resize; }
+    .handle[data-handle="nw"]{ top:-5px; left:-5px; cursor:nwse-resize;}
+    .handle[data-handle="ne"]{ top:-5px; right:-5px; cursor:nesw-resize;}
+    .handle[data-handle="sw"]{ bottom:-5px; left:-5px; cursor:nesw-resize;}
+    .handle[data-handle="se"]{ bottom:-5px; right:-5px; cursor:nwse-resize;}
     @media(max-width:600px){
       .controls { flex-direction:column; align-items:flex-start; }
     }
+    #backBtn { background:var(--gray); margin-bottom:1rem; }
   </style>
 </head>
 <body>
   <h1>Knife Engraving Customiser</h1>
-
   <div class="container">
 
     <!-- STEP 1: SELECT KNIVES -->
-    <div id="step1" class="section">
+    <div id="selectionSection" class="section">
       <h2>1. Which knives did you buy?</h2>
       <div id="product-picker">
         <label class="product-option">
           <input type="checkbox" value="chef.jpg" data-id="chef" data-name="Chef Knife" data-size="big">
-          <img src="chef-thumb.jpg" alt="Chef knife">
-          <span>Chef</span>
+          <img src="chef-thumb.jpg" alt="Chef knife"><span>Chef</span>
         </label>
         <label class="product-option">
           <input type="checkbox" value="santoku.jpg" data-id="santoku" data-name="Santoku Knife" data-size="big">
-          <img src="santoku-thumb.jpg" alt="Santoku knife">
-          <span>Santoku</span>
+          <img src="santoku-thumb.jpg" alt="Santoku knife"><span>Santoku</span>
         </label>
         <label class="product-option">
           <input type="checkbox" value="bread.jpg" data-id="bread" data-name="Bread Knife" data-size="big">
-          <img src="bread-thumb.jpg" alt="Bread knife">
-          <span>Bread</span>
+          <img src="bread-thumb.jpg" alt="Bread knife"><span>Bread</span>
         </label>
         <label class="product-option">
           <input type="checkbox" value="chopper.jpg" data-id="chopper" data-name="Chopper Knife" data-size="big">
-          <img src="chopper-thumb.jpg" alt="Chopper knife">
-          <span>Chopper</span>
+          <img src="chopper-thumb.jpg" alt="Chopper knife"><span>Chopper</span>
         </label>
         <label class="product-option">
           <input type="checkbox" value="utility.jpg" data-id="utility" data-name="Utility Knife" data-size="small">
-          <img src="utility-thumb.jpg" alt="Utility knife">
-          <span>Utility</span>
+          <img src="utility-thumb.jpg" alt="Utility knife"><span>Utility</span>
         </label>
         <label class="product-option">
           <input type="checkbox" value="paring.jpg" data-id="paring" data-name="Paring Knife" data-size="small">
-          <img src="paring-thumb.jpg" alt="Paring knife">
-          <span>Paring</span>
+          <img src="paring-thumb.jpg" alt="Paring knife"><span>Paring</span>
         </label>
       </div>
       <div style="text-align:center; margin-top:1rem;">
@@ -140,52 +131,41 @@
       </div>
     </div>
 
-    <!-- STEP 2: GLOBAL SETTINGS -->
-    <div id="settings" class="section" style="display:none;">
-      <h2>2. Settings</h2>
-      <div class="controls">
-        <label><input type="checkbox" id="useSameContent" checked> Use same text & font for all knives</label>
-      </div>
-      <div id="globalControls" class="controls" style="margin-top:1rem;">
-        <div>
-          <label for="globalText">Text:</label>
-          <input type="text" id="globalText" placeholder="Enter engraving">
+    <!-- EDITOR: SETTINGS + CANVASES -->
+    <div id="editorSection" style="display:none;">
+      <button id="backBtn">← Back to selection</button>
+      <div class="section">
+        <h2>Customize & Settings</h2>
+        <div class="controls">
+          <label><input type="checkbox" id="useSameContent" checked> Use same text & font for all knives</label>
         </div>
-        <div>
-          <label for="globalFont">Font:</label>
-          <select id="globalFont">
-            <option value="Montserrat">Montserrat</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Lobster">Lobster</option>
-            <option value="'Times New Roman',serif">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-            <option value="Arial">Arial</option>
-          </select>
+        <div id="globalControls" class="controls" style="margin-top:1rem;">
+          <div><label>Text:</label><input type="text" id="globalText" placeholder="Enter engraving"></div>
+          <div><label>Font:</label>
+            <select id="globalFont">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Lobster">Lobster</option>
+              <option value="'Times New Roman',serif">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </div>
+          <button id="alignBtn">Align Content</button>
         </div>
-        <button id="alignBtn">Align Content</button>
       </div>
-      <div style="text-align:center; margin-top:1rem;">
-        <button id="toEditorsBtn">Go to Editors</button>
-      </div>
-    </div>
-
-    <!-- STEP 3: EDITORS -->
-    <div id="customizerContainer" style="display:none;">
-      <h2>3. Customize Each Knife</h2>
       <div id="knifeSections" class="container"></div>
-      <div style="text-align:center; margin-top:1rem;">
+      <div style="text-align:center; margin:1rem 0;">
         <button id="downloadZipBtn">Generate & Download ZIP</button>
       </div>
     </div>
 
   </div>
 
-  <!-- JSZip for ZIP download -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
-
   <script>
   (function(){
-    // KNIFE DATA
+    const baseFont = 150;
     const ALL_KNIVES = [
       { id:"chef",    name:"Chef Knife",    src:"chef.jpg",    size:"big"   },
       { id:"santoku", name:"Santoku Knife", src:"santoku.jpg", size:"big"   },
@@ -194,228 +174,266 @@
       { id:"utility", name:"Utility Knife", src:"utility.jpg", size:"small" },
       { id:"paring",  name:"Paring Knife",  src:"paring.jpg",  size:"small" }
     ];
-    const baseFont = 150;
 
-    // ELEMENTS
+    let selected = [];
     const toCustomizeBtn = document.getElementById('toCustomizeBtn');
-    const toEditorsBtn   = document.getElementById('toEditorsBtn');
-    const downloadZipBtn = document.getElementById('downloadZipBtn');
-    const settingsEl     = document.getElementById('settings');
-    const customizerEl   = document.getElementById('customizerContainer');
+    const backBtn        = document.getElementById('backBtn');
+    const selectionSec   = document.getElementById('selectionSection');
+    const editorSec      = document.getElementById('editorSection');
     const knifeSections  = document.getElementById('knifeSections');
-    const useSameContent = document.getElementById('useSameContent');
+    const useSame        = document.getElementById('useSameContent');
     const globalText     = document.getElementById('globalText');
     const globalFont     = document.getElementById('globalFont');
     const alignBtn       = document.getElementById('alignBtn');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
 
-    let selectedKnifeObjs = [];
+    function loadImage(src){ return new Promise(r=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>r(i); i.src=src; }); }
 
-    // UTILS
-    function loadImage(src){
-      return new Promise(res=>{
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = ()=>res(img);
-        img.src = src;
-      });
-    }
-
-    // Step 1: enable Next when at least one checked
+    // enable Next when any knife selected
     document.querySelectorAll('#product-picker input[type=checkbox]').forEach(chk=>{
       chk.addEventListener('change', ()=>{
-        const any = [...document.querySelectorAll('#product-picker input[type=checkbox]')].some(c=>c.checked);
-        toCustomizeBtn.disabled = !any;
+        toCustomizeBtn.disabled = ![...document.querySelectorAll('#product-picker input[type=checkbox]')].some(c=>c.checked);
       });
     });
 
     toCustomizeBtn.addEventListener('click', ()=>{
-      settingsEl.style.display = '';
-      document.getElementById('step1').style.display = 'none';
+      selectionSec.style.display = 'none';
+      editorSec.style.display    = '';
+      initEditors();
       window.scrollTo(0,0);
     });
-
-    toEditorsBtn.addEventListener('click', () => {
-      settingsEl.style.display = 'none';
-      customizerEl.style.display = '';
-      initEditors();
+    backBtn.addEventListener('click', ()=>{
+      editorSec.style.display    = 'none';
+      selectionSec.style.display = '';
+      knifeSections.innerHTML = '';
+      selected = [];
     });
 
     function initEditors(){
-      // build selectedKnifeObjs
-      const checked = [...document.querySelectorAll('#product-picker input[type=checkbox]:checked')];
-      selectedKnifeObjs = checked.map(chk=>{
-        const id   = chk.dataset.id;
-        const data = ALL_KNIVES.find(k=>k.id===id);
-        return Object.assign({}, data, {
-          text: globalText.value,
-          font: globalFont.value,
-          textScale: 1,
-          baseDims: {w:0,h:0},
-          pos: {x:0,y:0},
+      // build selected array
+      selected = [...document.querySelectorAll('#product-picker input[type=checkbox]:checked')].map(chk=>{
+        const id = chk.dataset.id;
+        const def = ALL_KNIVES.find(k=>k.id===id);
+        return {
+          ...def,
+          text:   globalText.value,
+          font:   globalFont.value,
+          textScale:1,
+          baseDims:{w:0,h:0},
+          pos:{x:0,y:0},
           pointers:{}, pinch:false
-        });
+        };
       });
       knifeSections.innerHTML = '';
-      // for each knife, create section
-      selectedKnifeObjs.forEach(kn => {
-        const sec = document.createElement('div');
-        sec.className = 'section';
-        sec.innerHTML = `
-          <h3>${kn.name}</h3>
-          <div class="controls knife-controls" style="justify-content:center; gap:1rem; margin-bottom:1rem;">
-            ${!useSameContent.checked ? `
-            <div>
-              <label>Text:</label>
-              <input type="text" class="txtInput" value="${kn.text}">
-            </div>
-            <div>
-              <label>Font:</label>
-              <select class="fontSelect">
-                <option value="Montserrat">Montserrat</option>
-                <option value="Roboto">Roboto</option>
-                <option value="Lobster">Lobster</option>
-                <option value="'Times New Roman',serif">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Arial">Arial</option>
-              </select>
-            </div>` : ''}
-          </div>
-          <div id="wrap-${kn.id}" class="canvas-wrapper" style="position:relative;">
-            <canvas id="view-${kn.id}"></canvas>
-            <div id="loading-${kn.id}" class="loadingOverlay">Loading…</div>
-            <div id="bbox-${kn.id}" class="bbox">
-              <div class="handle" data-handle="nw"></div>
-              <div class="handle" data-handle="ne"></div>
-              <div class="handle" data-handle="sw"></div>
-              <div class="handle" data-handle="se"></div>
-            </div>
-          </div>`;
-        knifeSections.appendChild(sec);
-        // set fontSelect value
-        if(!useSameContent.checked){
-          const fsel = sec.querySelector('.fontSelect');
-          fsel.value = kn.font;
-        }
-      });
-      // after DOM created, initialize canvases
-      selectedKnifeObjs.forEach(kn => initCanvas(kn));
+      selected.forEach(kn=>makeSection(kn));
     }
 
-    function initCanvas(kn){
-      const view = document.getElementById(`view-${kn.id}`);
-      const wrap = document.getElementById(`wrap-${kn.id}`);
+    function makeSection(kn){
+      const sec = document.createElement('div');
+      sec.className = 'section';
+      sec.innerHTML = `
+        <h3>${kn.name}</h3>
+        <div class="controls localControls" style="justify-content:center; gap:1rem; margin-bottom:1rem;">
+          <div><label>Text:</label><input type="text" class="txtInput" value="${kn.text}"></div>
+          <div><label>Font:</label>
+            <select class="fontSelect">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Lobster">Lobster</option>
+              <option value="'Times New Roman',serif">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </div>
+        </div>
+        <div class="canvas-wrapper" id="wrap-${kn.id}">
+          <canvas id="view-${kn.id}"></canvas>
+          <div id="loading-${kn.id}" class="loadingOverlay">Loading…</div>
+          <div id="bbox-${kn.id}" class="bbox">
+            <div class="handle" data-handle="nw"></div>
+            <div class="handle" data-handle="ne"></div>
+            <div class="handle" data-handle="sw"></div>
+            <div class="handle" data-handle="se"></div>
+          </div>
+        </div>`;
+      knifeSections.appendChild(sec);
+      const txtInput = sec.querySelector('.txtInput');
+      const fontSel  = sec.querySelector('.fontSelect');
+      fontSel.value = kn.font;
+      initCanvas(kn, txtInput, fontSel);
+      updateLocalVisibility();
+    }
+
+    function updateLocalVisibility(){
+      const showLocal = !useSame.checked;
+      document.querySelectorAll('.localControls').forEach(el=>{
+        el.style.display = showLocal ? 'flex' : 'none';
+      });
+    }
+
+    useSame.addEventListener('change', ()=>{
+      updateLocalVisibility();
+      // if switching to same, override each knife
+      if(useSame.checked){
+        selected.forEach(kn=>{
+          kn.text = globalText.value;
+          kn.font = globalFont.value;
+          kn.textScale = 1;
+          if (kn._full) {
+            kn.baseDims = measureText(kn);
+            kn.pos.x = kn._full.width/2 - kn.baseDims.w/2;
+            kn.pos.y = kn._full.height/2 - kn.baseDims.h/2;
+          }
+          kn.draw();
+        });
+      }
+    });
+
+    globalText.addEventListener('input', ()=>{
+      if(!useSame.checked) return;
+      selected.forEach(kn=>{
+        kn.text = globalText.value;
+        kn.textScale = 1;
+        kn.baseDims = measureText(kn);
+        kn.pos.x = kn._full.width/2 - kn.baseDims.w/2;
+        kn.pos.y = kn._full.height/2 - kn.baseDims.h/2;
+        kn.draw();
+      });
+    });
+    globalFont.addEventListener('input', ()=>{
+      if(!useSame.checked) return;
+      selected.forEach(kn=>{
+        kn.font = globalFont.value;
+        kn.textScale = 1;
+        kn.baseDims = measureText(kn);
+        kn.pos.x = kn._full.width/2 - kn.baseDims.w/2;
+        kn.pos.y = kn._full.height/2 - kn.baseDims.h/2;
+        kn.draw();
+      });
+    });
+
+    alignBtn.addEventListener('click', ()=>{
+      ['big','small'].forEach(size=>{
+        const grp = selected.filter(k=>k.size===size);
+        if(grp.length<2) return;
+        const refX = grp[0].pos.x;
+        grp.slice(1).forEach(k=>{ k.pos.x = refX; });
+      });
+      selected.forEach(k=>k.draw());
+    });
+
+    function measureText(kn){
+      const ctx = kn._fCtx;
+      ctx.font = `${baseFont}px ${kn.font}`;
+      const w = ctx.measureText(kn.text).width;
+      return { w, h: baseFont };
+    }
+
+    function initCanvas(kn, txtInput, fontSel){
+      const wrap    = document.getElementById(`wrap-${kn.id}`);
+      const view    = document.getElementById(`view-${kn.id}`);
       const overlay = document.getElementById(`loading-${kn.id}`);
-      const bbox = document.getElementById(`bbox-${kn.id}`);
+      const bbox    = document.getElementById(`bbox-${kn.id}`);
       const handles = bbox.querySelectorAll('.handle');
-      const txtInput = wrap.parentElement.querySelector('.txtInput');
-      const fontSel  = wrap.parentElement.querySelector('.fontSelect');
+      const vCtx    = view.getContext('2d');
+      const full    = document.createElement('canvas');
+      const fCtx    = full.getContext('2d');
 
-      const vCtx = view.getContext('2d');
-      const full = document.createElement('canvas');
-      const fCtx = full.getContext('2d');
-
-      kn._view = view; kn._vCtx = vCtx;
-      kn._full = full; kn._fCtx = fCtx;
-      kn._overlay = overlay; kn._bbox = bbox; kn._handles = handles;
-      kn._txtInput = txtInput; kn._fontSel = fontSel;
+      kn._view    = view;
+      kn._vCtx    = vCtx;
+      kn._full    = full;
+      kn._fCtx    = fCtx;
+      kn._overlay = overlay;
+      kn._bbox    = bbox;
+      kn._handles = handles;
 
       function showOverlay(on){
-        overlay.style.visibility = on? 'visible':'hidden';
+        overlay.style.visibility = on ? 'visible' : 'hidden';
       }
       function fit(){
         const w = wrap.clientWidth;
-        const scale = w / kn._img.naturalWidth;
+        const scale = kn._img.naturalWidth ? w / kn._img.naturalWidth : 1;
         view.width  = kn._img.naturalWidth * scale;
         view.height = kn._img.naturalHeight * scale;
         full.width  = kn._img.naturalWidth;
         full.height = kn._img.naturalHeight;
       }
-      function measure(){
-        fCtx.font = `${baseFont}px ${kn.font}`;
-        const m = fCtx.measureText(kn.text);
-        return { w: m.width, h: baseFont };
-      }
       function toFull(cx,cy){
         const r = view.getBoundingClientRect();
         return {
-          x: (cx - r.left) * (full.width / r.width),
-          y: (cy - r.top ) * (full.height/ r.height)
+          x: (cx - r.left) * (full.width/r.width),
+          y: (cy - r.top ) * (full.height/r.height)
         };
       }
       function hitTest(x,y){
-        const bd = kn.baseDims;
-        return x>=kn.pos.x && x<=kn.pos.x+bd.w*kn.textScale
-            && y>=kn.pos.y && y<=kn.pos.y+bd.h*kn.textScale;
+        return x>=kn.pos.x && x<=kn.pos.x+kn.baseDims.w*kn.textScale
+            && y>=kn.pos.y && y<=kn.pos.y+kn.baseDims.h*kn.textScale;
       }
-
       function draw(){
-        // full
+        // full‐res
         fCtx.clearRect(0,0,full.width,full.height);
         fCtx.drawImage(kn._img,0,0);
         fCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
-        fCtx.fillStyle = '#000'; fCtx.textBaseline='top';
+        fCtx.fillStyle='#000'; fCtx.textBaseline='top';
         fCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
+
         // preview
         const s = view.width/full.width;
         vCtx.setTransform(s,0,0,s,0,0);
         vCtx.clearRect(0,0,full.width,full.height);
         vCtx.drawImage(kn._img,0,0);
         vCtx.font = `${baseFont*kn.textScale}px ${kn.font}`;
-        vCtx.fillStyle = '#000'; vCtx.textBaseline='top';
+        vCtx.fillStyle='#000'; vCtx.textBaseline='top';
         vCtx.fillText(kn.text, kn.pos.x, kn.pos.y);
         vCtx.setTransform(1,0,0,1,0,0);
+
         // bbox
-        const dx = view.width/full.width;
-        const dy = view.height/full.height;
-        if(kn.text && kn.showBox){
+        const dx = view.width/full.width, dy=view.height/full.height;
+        if(kn.text){
           bbox.style.display='block';
           bbox.style.width  = (kn.baseDims.w*kn.textScale*dx)+'px';
           bbox.style.height = (kn.baseDims.h*kn.textScale*dy)+'px';
           bbox.style.left   = (kn.pos.x*dx)+'px';
           bbox.style.top    = (kn.pos.y*dy)+'px';
-        } else bbox.style.display='none';
+        } else {
+          bbox.style.display='none';
+        }
       }
+      kn.draw = draw;
 
       // load image
       showOverlay(true);
       loadImage(kn.src).then(img=>{
         kn._img = img;
         fit();
-        kn.baseDims = measure();
+        kn.baseDims = measureText(kn);
         kn.textScale = 1;
         kn.pos.x = full.width/2 - kn.baseDims.w/2;
         kn.pos.y = full.height/2 - kn.baseDims.h/2;
-        kn.showBox = true;
         draw();
         showOverlay(false);
       });
 
-      // input bindings
-      if(txtInput){
-        txtInput.addEventListener('input', e=>{
-          kn.text = e.target.value;
-          kn.baseDims = measure();
-          kn.textScale = 1;
-          kn.pos.x = full.width/2 - kn.baseDims.w/2;
-          kn.pos.y = full.height/2 - kn.baseDims.h/2;
-          draw();
-        });
-      }
+      // local controls
+      txtInput.addEventListener('input', e=>{
+        kn.text = e.target.value;
+        kn.baseDims = measureText(kn);
+        kn.textScale = 1;
+        kn.pos.x = full.width/2 - kn.baseDims.w/2;
+        kn.pos.y = full.height/2 - kn.baseDims.h/2;
+        draw();
+      });
+      fontSel.addEventListener('input', e=>{
+        kn.font = e.target.value;
+        kn.baseDims = measureText(kn);
+        kn.textScale = 1;
+        kn.pos.x = full.width/2 - kn.baseDims.w/2;
+        kn.pos.y = full.height/2 - kn.baseDims.h/2;
+        draw();
+      });
 
-      if(fontSel){
-        fontSel.addEventListener('input', e=>{
-          kn.font = e.target.value;
-          kn.baseDims = measure();
-          kn.textScale = 1;
-          kn.pos.x = full.width/2 - kn.baseDims.w/2;
-          kn.pos.y = full.height/2 - kn.baseDims.h/2;
-          draw();
-        });
-      }
-
-      // pointer events for drag/resize/pinch
+      // drag/resize/pinch
       let dragging=false, dragStart={}, resizing=false, resizeStart={};
-
       view.addEventListener('pointerdown', e=>{
         const f = toFull(e.clientX,e.clientY);
         if(!hitTest(f.x,f.y) || resizing || kn.pinch) return;
@@ -425,18 +443,15 @@
       });
       window.addEventListener('pointermove', e=>{
         if(!dragging||e.pointerId!==dragStart.id) return;
-        const f = toFull(e.clientX,e.clientY);
-        kn.pos.x = f.x - dragStart.dx;
-        kn.pos.y = f.y - dragStart.dy;
+        const f=toFull(e.clientX,e.clientY);
+        kn.pos.x = f.x-dragStart.dx;
+        kn.pos.y = f.y-dragStart.dy;
         draw();
       });
       ['pointerup','pointercancel'].forEach(evt=>
-        window.addEventListener(evt,e=>{
-          if(e.pointerId===dragStart.id) dragging=false;
-        })
+        window.addEventListener(evt,e=>{ if(e.pointerId===dragStart.id) dragging=false; })
       );
 
-      // resize via handles
       handles.forEach(h=>{
         h.addEventListener('pointerdown', e=>{
           e.stopPropagation();
@@ -456,136 +471,60 @@
         if(!resizing||e.pointerId!==resizeStart.id) return;
         const p = toFull(e.clientX,e.clientY);
         const d = Math.hypot(p.x-resizeStart.cx, p.y-resizeStart.cy);
-        kn.textScale = resizeStart.scale * (d/resizeStart.d0);
+        kn.textScale = resizeStart.scale*(d/resizeStart.d0);
         kn.pos.x = resizeStart.cx - (kn.baseDims.w*kn.textScale)/2;
         kn.pos.y = resizeStart.cy - (kn.baseDims.h*kn.textScale)/2;
         draw();
       });
       ['pointerup','pointercancel'].forEach(evt=>
-        window.addEventListener(evt,e=>{
-          if(e.pointerId===resizeStart.id) resizing=false;
-        })
+        window.addEventListener(evt,e=>{ if(e.pointerId===resizeStart.id) resizing=false; })
       );
 
-      // pinch zoom
       view.addEventListener('pointerdown', e=>{
-        kn.pointers[e.pointerId] = { x:e.clientX,y:e.clientY };
+        kn.pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
         if(Object.keys(kn.pointers).length===2 && !dragging && !resizing){
-          kn.pinch=true;
+          kn.pinch = true;
           const [a,b] = Object.values(kn.pointers);
-          const fA=toFull(a.x,a.y), fB=toFull(b.x,b.y);
+          const fA = toFull(a.x,a.y), fB = toFull(b.x,b.y);
           kn.pinchStart = {
             scale: kn.textScale,
-            cx: (fA.x+fB.x)/2,
-            cy: (fA.y+fB.y)/2,
-            d0: Math.hypot(fA.x-fB.x, fA.y-fB.y)
+            cx: (fA.x+fB.x)/2, cy: (fA.y+fB.y)/2,
+            d0: Math.hypot(fA.x-fB.x,fA.y-fB.y)
           };
         }
       });
       view.addEventListener('pointermove', e=>{
         if(!kn.pinch||!(e.pointerId in kn.pointers)) return;
-        kn.pointers[e.pointerId] = { x:e.clientX,y:e.clientY };
+        kn.pointers[e.pointerId] = { x:e.clientX, y:e.clientY };
         const [a,b] = Object.values(kn.pointers);
-        const fA=toFull(a.x,a.y), fB=toFull(b.x,b.y);
+        const fA = toFull(a.x,a.y), fB = toFull(b.x,b.y);
         const d1 = Math.hypot(fA.x-fB.x,fA.y-fB.y);
-        kn.textScale = kn.pinchStart.scale * (d1/kn.pinchStart.d0);
+        kn.textScale = kn.pinchStart.scale*(d1/kn.pinchStart.d0);
         kn.pos.x = kn.pinchStart.cx - (kn.baseDims.w*kn.textScale)/2;
         kn.pos.y = kn.pinchStart.cy - (kn.baseDims.h*kn.textScale)/2;
         draw();
       });
       ['pointerup','pointercancel'].forEach(evt=>
-        view.addEventListener(evt,e=>{
-          delete kn.pointers[e.pointerId];
-          if(Object.keys(kn.pointers).length<2) kn.pinch=false;
-        })
+        view.addEventListener(evt,e=>{ delete kn.pointers[e.pointerId]; if(Object.keys(kn.pointers).length<2) kn.pinch=false; })
       );
-
-      // initial showBox
-      kn.showBox = true;
     }
 
-    // When useSameContent toggles, rebuild sections
-    useSameContent.addEventListener('change', ()=>{
-      document.getElementById('globalControls').style.display = useSameContent.checked ? 'flex' : 'none';
-    });
-
-    // Align Content
-    alignBtn.addEventListener('click', ()=>{
-      // for each size group, take first knife as reference
-      ['big','small'].forEach(size=>{
-        const group = selectedKnifeObjs.filter(k=>k.size===size);
-        if(group.length<2) return;
-        const refX = group[0].pos.x;
-        group.slice(1).forEach(k=>{ k.pos.x = refX; });
-      });
-      // redraw all
-      selectedKnifeObjs.forEach(k=>k._view && k._view.getContext && k._view.getContext('2d') && k._view && k._bbox && k._view && k._vCtx && k && k._img && k._full && k && (()=>{ 
-        // call each draw
-        k._view && k._vCtx && (function(){ 
-          // reuse draw logic
-          const draw = k._draw || function(){};
-          draw();
-        })();
-      })());
-      // simpler: just re-draw each
-      selectedKnifeObjs.forEach(k=>{
-        if(k._vCtx) { k._vCtx.clearRect(0,0,1,1); /* trigger draw via stored draw fn? */}
-      });
-      // Instead, call each draw stored
-      selectedKnifeObjs.forEach(k=>{
-        if(k._vCtx) k._vCtx && k._vCtx.canvas && k._vCtx; // no-op
-      });
-      // Actually, better: we stored draw closure? For time, reload each:
-      selectedKnifeObjs.forEach(k=>{ k._view && k._vCtx && k._full && k._fCtx && k._img && (()=>{ 
-        // inline draw:
-        const view = k._view, full=k._full, vCtx=k._vCtx, fCtx=k._fCtx, img=k._img, bbox=k._bbox;
-        // full
-        fCtx.clearRect(0,0,full.width,full.height);
-        fCtx.drawImage(img,0,0);
-        fCtx.font = `${baseFont*k.textScale}px ${k.font}`;
-        fCtx.fillStyle='#000'; fCtx.textBaseline='top';
-        fCtx.fillText(k.text, k.pos.x, k.pos.y);
-        // preview
-        const s = view.width/full.width;
-        vCtx.setTransform(s,0,0,s,0,0);
-        vCtx.clearRect(0,0,full.width,full.height);
-        vCtx.drawImage(img,0,0);
-        vCtx.font = `${baseFont*k.textScale}px ${k.font}`;
-        vCtx.fillStyle='#000'; vCtx.textBaseline='top';
-        vCtx.fillText(k.text, k.pos.x, k.pos.y);
-        vCtx.setTransform(1,0,0,1,0,0);
-        // bbox
-        const dx = view.width/full.width, dy=view.height/full.height;
-        if(k.showBox){
-          bbox.style.display='block';
-          bbox.style.width=(k.baseDims.w*k.textScale*dx)+'px';
-          bbox.style.height=(k.baseDims.h*k.textScale*dy)+'px';
-          bbox.style.left=(k.pos.x*dx)+'px';
-          bbox.style.top=(k.pos.y*dy)+'px';
-        }
-      })(); });
-    });
-
-    // Download ZIP
-    downloadZipBtn.addEventListener('click', () => {
+    // ZIP download
+    downloadZipBtn.addEventListener('click', ()=>{
       const zip = new JSZip();
       const folder = zip.folder('engravings');
-      const promises = selectedKnifeObjs.map(k => {
-        // full-res engraving
-        const c = k._full;
-        return new Promise(res => {
-          c.toBlob(blob => {
-            folder.file(`${k.id}.png`, blob);
+      Promise.all(selected.map(kn=>{
+        return new Promise(res=>{
+          kn._full.toBlob(blob=>{
+            folder.file(`${kn.id}.png`, blob);
             res();
           });
         });
-      });
-      Promise.all(promises).then(()=>{
+      })).then(()=>{
         zip.generateAsync({type:'blob'}).then(content=>{
           const url = URL.createObjectURL(content);
           const a = document.createElement('a');
-          a.href = url;
-          a.download = 'engravings.zip';
+          a.href = url; a.download = 'engravings.zip';
           document.body.appendChild(a);
           a.click();
           setTimeout(()=>{
@@ -595,47 +534,6 @@
         });
       });
     });
-
-    // Update global content to all when input
-    globalText.addEventListener('input', ()=> {
-      selectedKnifeObjs.forEach(k => {
-        k.text = globalText.value;
-        if(k._txtInput) k._txtInput.value = k.text;
-        k.baseDims = k._fCtx ? (()=>{
-          k._fCtx.font = `${baseFont}px ${k.font}`;
-          const m = k._fCtx.measureText(k.text);
-          return { w:m.width, h:baseFont };
-        })() : k.baseDims;
-        k.textScale=1;
-        if(k._full){
-          k.pos.x = k._full.width/2 - k.baseDims.w/2;
-          k.pos.y = k._full.height/2 - k.baseDims.h/2;
-        }
-        k._full && k._vCtx && k._fCtx && k._img && (()=>{/* redraw inline as above */})();
-      });
-      // force re-draw each
-      selectedKnifeObjs.forEach(k=>{
-        if(k._vCtx) k._vCtx.clearRect(0,0,1,1);
-      });
-    });
-    globalFont.addEventListener('input', ()=> {
-      selectedKnifeObjs.forEach(k => {
-        k.font = globalFont.value;
-        if(k._fontSel) k._fontSel.value = k.font;
-        k.baseDims = k._fCtx ? (()=>{
-          k._fCtx.font = `${baseFont}px ${k.font}`;
-          const m = k._fCtx.measureText(k.text);
-          return { w:m.width, h:baseFont };
-        })() : k.baseDims;
-        k.textScale=1;
-        if(k._full){
-          k.pos.x = k._full.width/2 - k.baseDims.w/2;
-          k.pos.y = k._full.height/2 - k.baseDims.h/2;
-        }
-        k._full && k._vCtx && k._fCtx && k._img && (()=>{/* redraw inline as above */})();
-      });
-    });
-
   })();
   </script>
 </body>
