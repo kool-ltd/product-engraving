@@ -136,15 +136,16 @@
       text-align: center;
       margin-top: 1rem;
     }
-    .preview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    .preview-list {
+      display: flex;
+      flex-direction: column;
       gap: 1rem;
     }
     .preview-item {
       text-align: center;
     }
     .preview-item img {
+      width: 100%;
       max-width: 100%;
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -205,7 +206,7 @@
     </div>
 
     <!-- Page 2: Big Knives Customization -->
-    <div id="page-2" class="page section">
+    <div id="page-2" class="page">
       <div id="big-knife-content"></div>
       <div class="navigation">
         <button id="back-2">Back</button>
@@ -214,7 +215,7 @@
     </div>
 
     <!-- Page 3: Small Knives Customization -->
-    <div id="page-3" class="page section">
+    <div id="page-3" class="page">
       <div id="small-knife-content"></div>
       <div class="navigation">
         <button id="back-3">Back</button>
@@ -225,7 +226,7 @@
     <!-- Page 4: Preview and Download -->
     <div id="page-4" class="page section">
       <h2>Preview All Knives</h2>
-      <div id="preview-content" class="preview-grid"></div>
+      <div id="preview-content" class="preview-list"></div>
       <div class="navigation">
         <button id="back-4">Back</button>
         <button id="download-all">Download</button>
@@ -343,9 +344,9 @@
           </div>
         ` : ''}
         <p style="font-size:.8rem;color:#666;margin-top:.5rem;">
-          • Drag anywhere to move.<br>
+          • Drag anywhere to move text.<br>
           • Drag a corner to scale (desktop).<br>
-          • Pinch to zoom (mobile).
+          • Pinch to zoom text (mobile).
         </p>
         <div class="canvas-wrapper" id="wrapper-${knife}">
           <canvas id="canvas-${knife}"></canvas>
@@ -637,7 +638,8 @@
 
       // Drag Anywhere on Canvas
       s.view.addEventListener('pointerdown', e => {
-        if (s.resizing || s.pinch) return;
+        s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (s.resizing || Object.keys(s.pointers).length > 1) return;
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
         s.dragging = true;
         s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
