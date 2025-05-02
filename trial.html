@@ -6,9 +6,10 @@
   <title>Knife Engraving Customiser</title>
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
-  <!-- fonts -->
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK&family=Noto+Serif+TC&display=swap" rel="stylesheet">
 
   <!-- JSZip for ZIP download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -100,7 +101,7 @@
       opacity: .4; cursor: not-allowed;
     }
     .scale-btn {
-      margin-top: 1rem;
+      margin: 1rem .5rem 0 0;
       background: var(--accent);
       transition: background .2s;
     }
@@ -110,12 +111,12 @@
     .same-content {
       display: block; margin-top: .5rem;
     }
-    .shared-buttons {
-      margin: 1rem 0;
-      display: flex; gap: 1rem; flex-wrap: wrap;
+    .button-group {
+      text-align: center; margin-top: 1rem;
     }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
+      .button-group { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
     }
   </style>
 </head>
@@ -154,23 +155,10 @@
       </div>
     </div>
 
-    <!-- 2. SHARED BUTTONS -->
-    <div class="section" id="shared-buttons" style="display: none;">
-      <h2>Shared Settings</h2>
-      <div class="shared-buttons" id="big-buttons" style="display: none;">
-        <button id="big-font-sync">Sync Big Knives Font Size</button>
-        <button id="big-align-toggle">Toggle Big Knives Right Alignment</button>
-      </div>
-      <div class="shared-buttons" id="small-buttons" style="display: none;">
-        <button id="small-font-sync">Sync Small Knives Font Size</button>
-        <button id="small-align-toggle">Toggle Small Knives Right Alignment</button>
-      </div>
-    </div>
-
-    <!-- 3. KNIFE CUSTOMIZATION SECTIONS -->
+    <!-- 2. KNIFE CUSTOMIZATION SECTIONS -->
     <div id="knife-sections"></div>
 
-    <!-- 4. DOWNLOAD ALL -->
+    <!-- 3. DOWNLOAD ALL -->
     <div class="section">
       <div style="text-align: center;">
         <button id="downloadAllBtn" disabled>Download All as ZIP</button>
@@ -192,9 +180,6 @@
 
     /* ELEMENTS */
     const productPicker = document.getElementById('product-picker');
-    const sharedButtons = document.getElementById('shared-buttons');
-    const bigButtons = document.getElementById('big-buttons');
-    const smallButtons = document.getElementById('small-buttons');
     const knifeSections = document.getElementById('knife-sections');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
 
@@ -250,12 +235,20 @@
           <div>
             <label for="font-${knife}">Font:</label>
             <select id="font-${knife}">
-              <option value="Montserrat">Montserrat</option>
-              <option value="Roboto">Roboto</option>
-              <option value="Lobster">Lobster</option>
-              <option value="'Times New Roman',serif">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-              <option value="Arial">Arial</option>
+              <optgroup label="English">
+                <option value="Montserrat">Montserrat</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Lobster">Lobster</option>
+                <option value="'Times New Roman',serif">Times New Roman</option>
+                <option value="'Courier New',monospace">Courier New</option>
+                <option value="Arial,sans-serif">Arial</option>
+              </optgroup>
+              <optgroup label="Chinese">
+                <option value="'Chocolate Classical Sans',sans-serif">Chocolate Classical Sans</option>
+                <option value="'LXGW WenKai Mono TC',monospace">LXGW WenKai Mono TC</option>
+                <option value="'Noto Sans HK',sans-serif">Noto Sans Hong Kong</option>
+                <option value="'Noto Serif TC',serif">Noto Serif Traditional Chinese</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -278,8 +271,10 @@
             <div class="handle" data-handle="se"></div>
           </div>
         </div>
-        <div style="text-align:center;margin-top:1rem;">
+        <div class="button-group">
           <button id="scale-${knife}" class="scale-btn">Scale: On</button>
+          <button id="font-sync-${knife}">Sync Font Size</button>
+          <button id="align-toggle-${knife}">Toggle Right Alignment (${alignRight[isBig ? 'big' : 'small'] ? 'Default' : 'Shared'})</button>
         </div>
       `;
       knifeSections.appendChild(section);
@@ -307,6 +302,8 @@
         overlay: document.getElementById(`overlay-${knife}`),
         bbox: document.getElementById(`bbox-${knife}`),
         scaleBtn: document.getElementById(`scale-${knife}`),
+        fontSyncBtn: document.getElementById(`font-sync-${knife}`),
+        alignToggleBtn: document.getElementById(`align-toggle-${knife}`),
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
         sameContentChk: document.getElementById(`same-content-${knife}`)
@@ -321,7 +318,7 @@
       if (!s.img) return;
 
       const isBig = knives.big.includes(knife);
-      const alignShared = alignRight[isBig ? 'big' : 'small'];
+      const alignShared = !alignRight[isBig ? 'big' : 'small'];
       const sharedXPos = sharedX[isBig ? 'big' : 'small'];
 
       // Full-res
@@ -365,61 +362,66 @@
       downloadAllBtn.disabled = selected.length === 0;
     }
 
-    function syncFontSize(type) {
-      const lastKnife = lastAdjusted[type];
-      if (!lastKnife || !state[lastKnife]) return;
-      const refState = state[lastKnife];
+    function syncFontSize(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      const refState = state[knife];
       const effectiveFontSize = refState.baseFont * refState.textScale;
       const knivesList = knives[type];
-      knivesList.forEach(knife => {
-        if (state[knife]) {
-          state[knife].baseFont = effectiveFontSize;
-          state[knife].textScale = 1;
-          state[knife].baseDims = measureText(state[knife].fCtx, state[knife].textInput.value || 'Sample', state[knife].baseFont, state[knife].fontSel.value);
-          state[knife].pos.x = state[knife].full.width / 2 - state[knife].baseDims.w;
-          draw(knife);
+      knivesList.forEach(k => {
+        if (state[k]) {
+          state[k].baseFont = effectiveFontSize;
+          state[k].textScale = 1;
+          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+          state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
+          draw(k);
         }
       });
     }
 
-    function toggleAlignment(type) {
+    function toggleAlignment(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
       alignRight[type] = !alignRight[type];
       const knivesList = knives[type];
       if (alignRight[type]) {
         sharedX[type] = null; // Reset shared x-position
-        knivesList.forEach(knife => {
-          if (state[knife]) {
-            state[knife].pos.x = state[knife].full.width / 2 - state[knife].baseDims.w;
-            draw(knife);
+        knivesList.forEach(k => {
+          if (state[k]) {
+            state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
+            draw(k);
+            state[k].alignToggleBtn.textContent = `Toggle Right Alignment (Default)`;
           }
         });
       } else {
         // Find the rightmost x-position among selected knives
         let maxX = null;
-        knivesList.forEach(knife => {
-          if (state[knife]) {
-            const rightX = state[knife].pos.x + state[knife].baseDims.w * state[knife].textScale;
+        knivesList.forEach(k => {
+          if (state[k]) {
+            const rightX = state[k].pos.x + state[k].baseDims.w * state[k].textScale;
             if (maxX === null || rightX > maxX) maxX = rightX;
           }
         });
         sharedX[type] = maxX;
-        knivesList.forEach(knife => {
-          if (state[knife]) {
-            state[knife].pos.x = sharedX[type] - state[knife].baseDims.w * state[knife].textScale;
-            draw(knife);
+        knivesList.forEach(k => {
+          if (state[k]) {
+            state[k].pos.x = sharedX[type] - state[k].baseDims.w * state[k].textScale;
+            draw(k);
+            state[k].alignToggleBtn.textContent = `Toggle Right Alignment (Shared)`;
           }
         });
       }
-      document.getElementById(`${type}-align-toggle`).textContent = `Toggle ${type.charAt(0).toUpperCase() + type.slice(1)} Knives Right Alignment (${alignRight[type] ? 'Default' : 'Shared'})`;
     }
+
+    /* FONT LOADING */
+    document.fonts.ready.then(() => {
+      Object.keys(state).forEach(knife => draw(knife)); // Redraw all canvases after fonts load
+    });
 
     /* EVENTS */
     productPicker.addEventListener('change', async e => {
       const selected = Array.from(productPicker.querySelectorAll('input:checked'));
       knifeSections.innerHTML = '';
-      bigButtons.style.display = selected.some(k => knives.big.includes(k.dataset.name)) ? 'block' : 'none';
-      smallButtons.style.display = selected.some(k => knives.small.includes(k.dataset.name)) ? 'block' : 'none';
-      sharedButtons.style.display = selected.length > 0 ? 'block' : 'none';
       updateDownloadButton();
 
       for (const input of selected) {
@@ -457,6 +459,8 @@
           s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
           s.pos.x = s.full.width / 2 - s.baseDims.w;
           draw(knife);
+          // Redraw after font load to ensure correct rendering
+          document.fonts.ready.then(() => draw(knife));
         });
 
         s.sameContentChk.addEventListener('change', () => {
@@ -607,15 +611,15 @@
           draw(knife);
         });
 
+        // Sync Font Size Button
+        s.fontSyncBtn.addEventListener('click', () => syncFontSize(knife));
+
+        // Toggle Alignment Button
+        s.alignToggleBtn.addEventListener('click', () => toggleAlignment(knife));
+
         s.overlay.style.visibility = 'hidden';
       }
     });
-
-    // Shared Button Events
-    document.getElementById('big-font-sync').addEventListener('click', () => syncFontSize('big'));
-    document.getElementById('small-font-sync').addEventListener('click', () => syncFontSize('small'));
-    document.getElementById('big-align-toggle').addEventListener('click', () => toggleAlignment('big'));
-    document.getElementById('small-align-toggle').addEventListener('click', () => toggleAlignment('small'));
 
     // Download All
     downloadAllBtn.addEventListener('click', async () => {
