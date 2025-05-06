@@ -281,7 +281,7 @@
     let sameContent = false;
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
-    const syncFont = { big: true, small: true }; // Font sync on by default
+    const syncFont = { big: true, small: true }; // Font sync state
     const alignRight = { big: false, small: false }; // Shared alignment on by default
     const sharedXPercent = { big: 0.9, small: 0.9 }; // Shared right-anchor as 90% of canvas width
     let isNavigating = false; // Prevent rapid navigation
@@ -504,7 +504,7 @@
       }
     }
 
-    function syncFont(knife) {
+    function synchronizeFont(knife) {
       const isBig = knives.big.includes(knife);
       const type = isBig ? 'big' : 'small';
       if (!syncFont[type]) return;
@@ -745,7 +745,7 @@
           s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
         draw(knife);
         document.fonts.ready.then(() => draw(knife));
-        syncFont(knife); // Sync font type
+        synchronizeFont(knife); // Sync font type and size
       });
 
       if (s.sameContentChk) {
@@ -792,7 +792,7 @@
         }
         draw(knife);
         lastAdjusted[type] = knife;
-        syncFont(knife);
+        synchronizeFont(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
@@ -838,7 +838,7 @@
         }
         draw(knife);
         lastAdjusted[type] = knife;
-        syncFont(knife);
+        synchronizeFont(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
@@ -886,7 +886,7 @@
         }
         draw(knife);
         lastAdjusted[type] = knife;
-        syncFont(knife);
+        synchronizeFont(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
