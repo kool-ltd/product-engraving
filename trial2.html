@@ -117,48 +117,20 @@
     button[disabled] {
       opacity: .4; cursor: not-allowed;
     }
+    .scale-btn, .font-sync-btn, .align-btn {
+      padding: 0.4rem .8rem;
+      width: 140px;
+      border-radius: 9999px;
+      background: var(--accent);
+    }
+    .scale-btn.off, .font-sync-btn.off, .align-btn.off {
+      background: var(--gray);
+    }
     .same-content {
       display: block; margin-top: .5rem;
     }
     .button-group {
-      display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem;
-    }
-    .toggle-switch {
-      display: flex; align-items: center; gap: 0.5rem;
-      width: 140px;
-      padding: 0.4rem 0.8rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-radius: var(--radius);
-    }
-    .toggle-switch input {
-      display: none;
-    }
-    .toggle-track {
-      position: relative;
-      width: 40px;
-      height: 20px;
-      background: var(--gray);
-      border-radius: 9999px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .toggle-track::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      background: #fff;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: transform 0.2s;
-    }
-    .toggle-switch input:checked + .toggle-track {
-      background: var(--accent);
-    }
-    .toggle-switch input:checked + .toggle-track::after {
-      transform: translateX(20px);
+      text-align: center; margin-top: 1rem;
     }
     .knife-section {
       border: 1px solid var(--border);
@@ -216,10 +188,7 @@
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
       .button-group, .navigation { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
-      .toggle-switch { width: 120px; }
-      .toggle-track { width: 36px; height: 18px; }
-      .toggle-track::after { width: 14px; height: 14px; top: 2px; left: 2px; }
-      .toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }
+      .scale-btn, .font-sync-btn, .align-btn { width: 120px; }
     }
   </style>
 </head>
@@ -313,7 +282,7 @@
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
     const syncFont = { big: true, small: true }; // Font sync state
-    const alignRight = { big: true, small: true }; // Centered alignment on by default
+    const alignRight = { big: false, small: false }; // Shared alignment on by default
     const sharedXPercent = { big: 0.9, small: 0.9 }; // Shared right-anchor as 90% of canvas width
     let isNavigating = false; // Prevent rapid navigation
 
@@ -394,7 +363,6 @@
 
     function createCanvasSection(knife) {
       const isBig = knives.big.includes(knife);
-      const type = isBig ? 'big' : 'small';
       const showSameContent = knife === firstSelectedKnife;
       const section = document.createElement('div');
       section.className = 'knife-section';
@@ -447,21 +415,9 @@
           </div>
         </div>
         <div class="button-group">
-          <label class="toggle-switch">
-            <input type="checkbox" id="scale-${knife}" checked>
-            <span class="toggle-track"></span>
-            <span class="toggle-label">Scale Handles: On</span>
-          </label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="font-sync-${knife}" ${syncFont[type] ? 'checked' : ''}>
-            <span class="toggle-track"></span>
-            <span class="toggle-label">Font Sync: ${syncFont[type] ? 'On' : 'Off'}</span>
-          </label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="align-toggle-${knife}" ${alignRight[type] ? 'checked' : ''}>
-            <span class="toggle-track"></span>
-            <span class="toggle-label">Auto Align: ${alignRight[type] ? 'On' : 'Off'}</span>
-          </label>
+          <button id="scale-${knife}" class="scale-btn">Scale Handles</button>
+          <button id="font-sync-${knife}" class="font-sync-btn">${syncFont[isBig ? 'big' : 'small'] ? 'Font Sync' : 'Font Sync Off'}</button>
+          <button id="align-toggle-${knife}" class="align-btn">${alignRight[isBig ? 'big' : 'small'] ? 'Auto Align' : 'Auto Align Off'}</button>
         </div>
       `;
       if (isBig) {
@@ -492,9 +448,9 @@
         wrapper: document.getElementById(`wrapper-${knife}`),
         overlay: document.getElementById(`overlay-${knife}`),
         bbox: document.getElementById(`bbox-${knife}`),
-        scaleToggle: document.getElementById(`scale-${knife}`),
-        fontSyncToggle: document.getElementById(`font-sync-${knife}`),
-        alignToggle: document.getElementById(`align-toggle-${knife}`),
+        scaleBtn: document.getElementById(`scale-${knife}`),
+        fontSyncBtn: document.getElementById(`font-sync-${knife}`),
+        alignToggleBtn: document.getElementById(`align-toggle-${knife}`),
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
         sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null
@@ -578,8 +534,8 @@
       const knivesList = knives[type];
       knivesList.forEach(k => {
         if (state[k]) {
-          const label = state[k].fontSyncToggle.nextElementSibling.nextElementSibling;
-          label.textContent = `Font Sync: ${syncFont[type] ? 'On' : 'Off'}`;
+          state[k].fontSyncBtn.textContent = syncFont[type] ? 'Font Sync' : 'Font Sync Off';
+          state[k].fontSyncBtn.classList.toggle('off', !syncFont[type]);
           if (syncFont[type] && lastAdjusted[type]) {
             // Apply the last adjusted knife's font settings
             const ref = state[lastAdjusted[type]];
@@ -608,8 +564,8 @@
           if (state[k]) {
             state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w / 2;
             draw(k);
-            const label = state[k].alignToggle.nextElementSibling.nextElementSibling;
-            label.textContent = 'Auto Align: On';
+            state[k].alignToggleBtn.textContent = 'Auto Align';
+            state[k].alignToggleBtn.classList.remove('off');
           }
         });
       } else {
@@ -620,8 +576,8 @@
           if (state[k]) {
             state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
             draw(k);
-            const label = state[k].alignToggle.nextElementSibling.nextElementSibling;
-            label.textContent = 'Auto Align: Off';
+            state[k].alignToggleBtn.textContent = 'Auto Align Off';
+            state[k].alignToggleBtn.classList.add('off');
           }
         });
       }
@@ -815,7 +771,7 @@
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
         if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale) || s.resizing) return;
         s.dragging = true;
-        s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.dragStart.dy };
+        s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
         e.preventDefault();
       });
 
@@ -940,23 +896,19 @@
         })
       );
 
-      // Scale Toggle
-      s.scaleToggle.addEventListener('change', () => {
-        s.boxVisible = s.scaleToggle.checked;
-        const label = s.scaleToggle.nextElementSibling.nextElementSibling;
-        label.textContent = `Scale Handles: ${s.boxVisible ? 'On' : 'Off'}`;
+      // Scale Button
+      s.scaleBtn.addEventListener('click', () => {
+        s.boxVisible = !s.boxVisible;
+        s.scaleBtn.textContent = s.boxVisible ? 'Scale Handles' : 'Scale Handles Off';
+        s.scaleBtn.classList.toggle('off', !s.boxVisible);
         draw(knife);
       });
 
-      // Font Sync Toggle
-      s.fontSyncToggle.addEventListener('change', () => {
-        toggleFontSync(knife);
-      });
+      // Sync Font Button
+      s.fontSyncBtn.addEventListener('click', () => toggleFontSync(knife));
 
-      // Align Toggle
-      s.alignToggle.addEventListener('change', () => {
-        toggleAlignment(knife);
-      });
+      // Toggle Alignment Button
+      s.alignToggleBtn.addEventListener('click', () => toggleAlignment(knife));
 
       s.overlay.style.visibility = 'hidden';
     }
@@ -982,9 +934,9 @@
         tCtx.textBaseline = 'top';
         tCtx.textAlign = 'right';
         const type = knives.big.includes(knife) ? 'big' : 'small';
-        const textX = alignRight[type] ?
-          s.pos.x + s.baseDims.w * s.textScale :
-          s.full.width * sharedXPercent[type];
+        const textX = alignRight[type] || sharedXPercent[type] === null ?
+                      s.pos.x + s.baseDims.w * s.textScale :
+                      s.full.width * sharedXPercent[type];
         tCtx.fillText(s.textInput.value, textX, s.pos.y);
         const textBlob = await new Promise(r => t.toBlob(r));
         zip.file(`${knife}-text-only.png`, textBlob);
