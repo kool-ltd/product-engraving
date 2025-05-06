@@ -117,7 +117,7 @@
     button[disabled] {
       opacity: .4; cursor: not-allowed;
     }
-    .scale-btn.off {
+    button.off {
       background: var(--gray);
     }
     .same-content {
@@ -275,7 +275,7 @@
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
     const syncFont = { big: true, small: true }; // Font sync on by default
-    const alignRight = { big: false, small: false }; // Shared alignment on by default
+    const alignRight = { big: false, small: false }; // Auto alignment on by default
     const sharedXPercent = { big: 0.9, small: 0.9 }; // Shared right-anchor as 90% of canvas width
     let isNavigating = false; // Prevent rapid navigation
 
@@ -408,9 +408,9 @@
           </div>
         </div>
         <div class="button-group">
-          <button id="scale-${knife}" class="scale-btn">Scale: On</button>
-          <button id="font-sync-${knife}">${syncFont[isBig ? 'big' : 'small'] ? 'Turn Off' : 'Turn On'} Font Sync</button>
-          <button id="align-toggle-${knife}">${alignRight[isBig ? 'big' : 'small'] ? 'Turn On' : 'Turn Off'} Shared Alignment</button>
+          <button id="scale-${knife}" class="scale-btn">Scale Handles</button>
+          <button id="font-sync-${knife}" class="${syncFont[isBig ? 'big' : 'small'] ? '' : 'off'}">Size Sync</button>
+          <button id="align-toggle-${knife}" class="${alignRight[isBig ? 'big' : 'small'] ? 'off' : ''}">Auto Alignment</button>
         </div>
       `;
       if (isBig) {
@@ -509,9 +509,7 @@
           state[k].baseFont = effectiveFontSize;
           state[k].textScale = 1;
           state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-          state[k].pos.x = alignRight[type] ?
-            state[k].full.width / 2 - state[k].baseDims.w :
-            state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+          // Do not update pos.x or pos.y to preserve current position
           draw(k);
         }
       });
@@ -524,7 +522,8 @@
       const knivesList = knives[type];
       knivesList.forEach(k => {
         if (state[k]) {
-          state[k].fontSyncBtn.textContent = syncFont[type] ? 'Turn Off Font Sync' : 'Turn On Font Sync';
+          state[k].fontSyncBtn.textContent = 'Size Sync';
+          state[k].fontSyncBtn.classList.toggle('off', !syncFont[type]);
         }
       });
     }
@@ -534,27 +533,19 @@
       const type = isBig ? 'big' : 'small';
       alignRight[type] = !alignRight[type];
       const knivesList = knives[type];
-      if (alignRight[type]) {
-        sharedXPercent[type] = 0.9; // Reset to default
-        knivesList.forEach(k => {
-          if (state[k]) {
-            state[k].pos.x = state[k].full.width / 2 - state[k].baseDims.w;
-            draw(k);
-            state[k].alignToggleBtn.textContent = 'Turn On Shared Alignment';
-          }
-        });
-      } else {
-        // Set sharedXPercent based on the current knife's right edge
+      if (!alignRight[type]) {
+        // Set sharedXPercent based on the current knife's right edge, but don't move others
         const s = state[knife];
         sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
-        knivesList.forEach(k => {
-          if (state[k]) {
-            state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
-            draw(k);
-            state[k].alignToggleBtn.textContent = 'Turn Off Shared Alignment';
-          }
-        });
       }
+      // Update button labels and classes without repositioning text
+      knivesList.forEach(k => {
+        if (state[k]) {
+          state[k].alignToggleBtn.textContent = 'Auto Alignment';
+          state[k].alignToggleBtn.classList.toggle('off', alignRight[type]);
+          draw(k); // Redraw to apply sharedXPercent if auto alignment is on
+        }
+      });
     }
 
     async function generatePreviews() {
@@ -703,14 +694,14 @@
             state[k].textInput.value = s.textInput.value;
             state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
             state[k].pos.x = alignRight[type] ?
-              state[k].full.width / 2 - state[k].baseDims.w :
+              state[k].pos.x : // Preserve position if centered
               state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
             draw(k);
           });
         } else {
           s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
           s.pos.x = alignRight[type] ?
-            s.full.width / 2 - s.baseDims.w :
+            s.pos.x : // Preserve position if centered
             s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
           draw(knife);
         }
@@ -719,7 +710,7 @@
       s.fontSel.addEventListener('input', () => {
         s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
         s.pos.x = alignRight[type] ?
-          s.full.width / 2 - s.baseDims.w :
+          s.pos.x : // Preserve position if centered
           s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
         draw(knife);
         document.fonts.ready.then(() => draw(knife));
@@ -734,7 +725,7 @@
                 state[k].textInput.value = s.textInput.value;
                 state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
                 state[k].pos.x = alignRight[type] ?
-                  state[k].full.width / 2 - state[k].baseDims.w :
+                  state[k].pos.x : // Preserve position if centered
                   state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
                 draw(k);
               }
@@ -876,7 +867,7 @@
       // Scale Button
       s.scaleBtn.addEventListener('click', () => {
         s.boxVisible = !s.boxVisible;
-        s.scaleBtn.textContent = s.boxVisible ? 'Scale: On' : 'Scale: Off';
+        s.scaleBtn.textContent = 'Scale Handles';
         s.scaleBtn.classList.toggle('off', !s.boxVisible);
         draw(knife);
       });
