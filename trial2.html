@@ -338,6 +338,14 @@
              fy >= pos.y && fy <= pos.y + dims.h * scale;
     }
 
+    function hasBigKnives(selected) {
+      return selected.some(input => knives.big.includes(input.dataset.name));
+    }
+
+    function hasSmallKnives(selected) {
+      return selected.some(input => knives.small.includes(input.dataset.name));
+    }
+
     function switchPage(from, to) {
       if (isNavigating) return;
       isNavigating = true;
@@ -590,39 +598,79 @@
       if (selected.length === 0) return;
       bigKnifeContent.innerHTML = '';
       smallKnifeContent.innerHTML = '';
-      // Clear existing state to prevent duplicates
       Object.keys(state).forEach(knife => delete state[knife]);
       firstSelectedKnife = selected[0].dataset.name;
-      switchPage(1, 2);
-      for (const input of selected) {
-        const knife = input.dataset.name;
-        if (knives.big.includes(knife)) {
-          await initializeKnife(knife);
+
+      const hasBig = hasBigKnives(selected);
+      const hasSmall = hasSmallKnives(selected);
+
+      if (hasBig) {
+        switchPage(1, 2);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.big.includes(knife)) {
+            await initializeKnife(knife);
+          }
+        }
+      } else if (hasSmall) {
+        switchPage(1, 3);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.small.includes(knife)) {
+            await initializeKnife(knife);
+          }
         }
       }
     });
 
     back2Btn.addEventListener('click', () => switchPage(2, 1));
+
     next2Btn.addEventListener('click', async () => {
       if (isNavigating) return;
       const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-      switchPage(2, 3);
-      for (const input of selected) {
-        const knife = input.dataset.name;
-        if (knives.small.includes(knife) && !state[knife]) {
-          await initializeKnife(knife);
+      const hasSmall = hasSmallKnives(selected);
+      if (hasSmall) {
+        switchPage(2, 3);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.small.includes(knife) && !state[knife]) {
+            await initializeKnife(knife);
+          }
         }
+      } else {
+        switchPage(2, 4);
+        await generatePreviews();
       }
     });
 
-    back3Btn.addEventListener('click', () => switchPage(3, 2));
-    next3Btn.addEventListener('click', () => {
-      if (isNavigating) return;
-      switchPage(3, 4);
-      generatePreviews();
+    back3Btn.addEventListener('click', () => {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      const hasBig = hasBigKnives(selected);
+      if (hasBig) {
+        switchPage(3, 2);
+      } else {
+        switchPage(3, 1);
+      }
     });
 
-    back4Btn.addEventListener('click', () => switchPage(4, 3));
+    next3Btn.addEventListener('click', async () => {
+      if (isNavigating) return;
+      switchPage(3, 4);
+      await generatePreviews();
+    });
+
+    back4Btn.addEventListener('click', () => {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      const hasSmall = hasSmallKnives(selected);
+      const hasBig = hasBigKnives(selected);
+      if (hasSmall) {
+        switchPage(4, 3);
+      } else if (hasBig) {
+        switchPage(4, 2);
+      } else {
+        switchPage(4, 1);
+      }
+    });
 
     /* KNIFE INITIALIZATION */
     async function initializeKnife(knife) {
@@ -863,9 +911,9 @@
         tCtx.textBaseline = 'top';
         tCtx.textAlign = 'right';
         const type = knives.big.includes(knife) ? 'big' : 'small';
-        const textX = alignRight[type] || sharedXPercent[type] === null ?
-                      s.pos.x + s.baseDims.w * s.textScale :
-                      s.full.width * sharedXPercent[type];
+        const textX = alignRight[type] ?
+          s.pos.x + s.baseDims.w * s.textScale :
+          s.full.width * sharedXPercent[type];
         tCtx.fillText(s.textInput.value, textX, s.pos.y);
         const textBlob = await new Promise(r => t.toBlob(r));
         zip.file(`${knife}-text-only.png`, textBlob);
