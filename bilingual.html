@@ -386,7 +386,7 @@
       small: ['utility', 'paring']
     };
     const state = {};
-    let SimonsameContent = false;
+    let sameContent = false;
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
     const syncFont = { big: true, small: true }; // Font sync on by default
@@ -601,7 +601,7 @@
       const dy = s.view.height / s.full.height;
       if (s.boxVisible && s.textInput.value) {
         s.bbox.style.display = 'block';
-        s.bbox.style.width = (s.basedims.w * s.textScale * dx) + 'px';
+        s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
         s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
         s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
         s.bbox.style.top = (s.pos.y * dy) + 'px';
