@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>Knife Engraving Customiser</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK&family=Noto+Serif+TC&display=swap" rel="stylesheet">
+
+  <!-- JSZip for ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --accent: #d00024;
+      --gray: #888;
+      --bg: #fafafa;
+      --border: #ddd;
+      --pad: 1rem;
+      --radius: .5rem;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: Roboto, 'Noto Sans HK', Arial, sans-serif;
+      background: var(--bg);
+      color: #222;
+    }
+    h1,h2,h3 { text-align: center; margin: 1rem 0; }
+    h3 { margin-bottom: 2rem; }
+    .container {
+      max-width: 1200px; margin: auto; padding: var(--pad);
+      display: flex; flex-direction: column; gap: var(--pad);
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    .section {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: var(--pad);
+    }
+    #product-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: .75rem;
+    }
+    .product-option { position: relative; text-align: center; }
+    .product-option input {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .product-option img {
+      width: 100%; border: 2px solid transparent;
+      border-radius: var(--radius); display: block;
+    }
+    .product-option input:checked+img {
+      border-color: var(--accent);
+    }
+    .product-option span {
+      display: block;
+      font-size: .9rem;
+      margin-top: .25rem;
+    }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+    }
+    .controls label { font-size: .9rem; margin-right: .25rem; }
+    .canvas-wrapper {
+      position: relative;
+      width: 100%; max-width: 1168px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #eaeaea;
+      touch-action: none;
+      margin: auto;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.85);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; color: #555;
+      visibility: hidden; z-index: 10;
+    }
+    .bbox {
+      position: absolute; border: 1px dashed #000;
+      pointer-events: none; display: none;
+    }
+    .handle {
+      position: absolute; width: 10px; height: 10px;
+      background: #fff; border: 1px solid #000;
+      pointer-events: auto;
+    }
+    .handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
+    .handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
+    .handle[data-handle="sw"] { bottom: -5px; left: -5px; cursor: nesw-resize; }
+    .handle[data-handle="se"] { bottom: -5px; right: -5px; cursor: nwse-resize; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: .6rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 1rem .5rem 0 0;
+    }
+    button[disabled] {
+      opacity: .4; cursor: not-allowed;
+    }
+    button.off {
+      background: var(--gray);
+    }
+    .same-content {
+      display: block; margin-top: .5rem;
+    }
+    .button-group {
+      text-align: center; margin-top: 1rem;
+    }
+    .knife-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--pad);
+      margin-bottom: 1rem;
+    }
+    .navigation {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .preview-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .preview-item {
+      text-align: center;
+    }
+    .preview-item img {
+      width: 100%;
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .preview-item span {
+      display: block;
+      font-size: .9rem;
+      margin-top: .5rem;
+    }
+    .preview-description {
+      text-align: center;
+      font-size: .9rem;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: var(--radius);
+    }
+    @media (max-width: 600px) {
+      .controls { flex-direction: column; align-items: flex-start; }
+      .button-group, .navigation { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Knife Engraving Customiser</h1>
+  <h3 id="subtitle">by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
+  <div class="container">
+    <!-- Page 1: Knife Selection -->
+    <div id="page-1" class="page section active">
+      <div style="text-align: center; margin-bottom: 1rem;">
+        <button id="lang-toggle">中文</button>
+      </div>
+      <h2 data-i18n="chooseKnives">Choose your knives</h2>
+      <div id="product-picker">
+        <label class="product-option">
+          <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
+          <img src="chef-thumb.jpg" alt="Chef knife">
+          <span data-i18n="chefKnife">Chef Knife</span>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
+          <img src="santoku-thumb.jpg" alt="Santoku knife">
+          <span data-i18n="santokuKnife">Santoku Knife</span>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
+          <img src="bread-thumb.jpg" alt="Bread knife">
+          <span data-i18n="breadKnife">Bread Knife</span>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
+          <img src="chopper-thumb.jpg" alt="Chopper knife">
+          <span data-i18n="chopperKnife">Chopper Knife</span>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
+          <img src="utility-thumb.jpg" alt="Utility knife">
+          <span data-i18n="utilityKnife">Utility Knife</span>
+        </label>
+        <label class="product-option">
+          <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
+          <img src="paring-thumb.jpg" alt="Paring knife">
+          <span data-i18n="paringKnife">Paring Knife</span>
+        </label>
+      </div>
+      <div class="navigation">
+        <button id="next-1" data-i18n="next">Next</button>
+      </div>
+    </div>
+
+    <!-- Page 2: Big Knives Customization -->
+    <div id="page-2" class="page">
+      <div id="big-knife-content"></div>
+      <div class="navigation">
+        <button id="back-2" data-i18n="back">Back</button>
+        <button id="next-2" data-i18n="next">Next</button>
+      </div>
+    </div>
+
+    <!-- Page 3: Small Knives Customization -->
+    <div id="page-3" class="page">
+      <div id="small-knife-content"></div>
+      <div class="navigation">
+        <button id="back-3" data-i18n="back">Back</button>
+        <button id="next-3" data-i18n="preview">Preview</button>
+      </div>
+    </div>
+
+    <!-- Page 4: Preview and Download -->
+    <div id="page-4" class="page section">
+      <h2 data-i18n="previewAllKnives">Preview All Knives</h2>
+      <div class="preview-description" data-i18n="previewDescription">Click any image to enlarge</div>
+      <div id="preview-content" class="preview-list"></div>
+      <div class="navigation">
+        <button id="back-4" data-i18n="back">Back</button>
+        <button id="download-all" data-i18n="download">Download</button>
+      </div>
+    </div>
+
+    <!-- Modal for Enlarged Image -->
+    <div id="modal" class="modal">
+      <img id="modal-image" src="" alt="Enlarged preview">
+    </div>
+  </div>
+
+  <script>
+    /* TRANSLATIONS */
+    const translations = {
+      en: {
+        title: "Knife Engraving Customiser",
+        subtitle: "by", // Text before the logo
+        subtitleAfter: "", // Text after the logo
+        chooseKnives: "Choose your knives",
+        next: "Next",
+        back: "Back",
+        preview: "Preview",
+        previewAllKnives: "Preview All Knives",
+        previewDescription: "Click any image to enlarge",
+        download: "Download",
+        chefKnife: "Chef Knife",
+        santokuKnife: "Santoku Knife",
+        breadKnife: "Bread Knife",
+        chopperKnife: "Chopper Knife",
+        utilityKnife: "Utility Knife",
+        paringKnife: "Paring Knife",
+        textLabel: "Text:",
+        textPlaceholder: "Enter engraving",
+        fontLabel: "Font:",
+        sameContentLabel: "Use same text for all",
+        instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
+        scaleHandles: "Show Handles",
+        sizeSync: "Sync Size",
+        autoAlignment: "Auto Align",
+        loading: "Loading…",
+        knife: "Knife",
+        english: "English",
+        chinese: "Chinese"
+      },
+      "zh-hk": {
+        title: "刀具刻字定制器",
+        subtitle: "由", // Text before the logo
+        subtitleAfter: "提供", // Text after the logo
+        chooseKnives: "選擇您的刀具",
+        next: "下一步",
+        back: "返回",
+        preview: "預覽",
+        previewAllKnives: "預覽所有刀具",
+        previewDescription: "點擊任何圖片放大",
+        download: "下載",
+        chefKnife: "主廚刀",
+        santokuKnife: "三德刀",
+        breadKnife: "麵包刀",
+        chopperKnife: "砍刀",
+        utilityKnife: "多用途刀",
+        paringKnife: "削皮刀",
+        textLabel: "文字：",
+        textPlaceholder: "輸入刻字",
+        fontLabel: "字體：",
+        sameContentLabel: "所有刀具使用相同文字",
+        instructions: "• 拖動文字以移動。<br>• 拖動角落以縮放（桌面）。<br>• 捏合以縮放和移動文字（手機）。",
+        scaleHandles: "顯示控制",
+        sizeSync: "同步尺寸",
+        autoAlignment: "自動對齊",
+        loading: "載入中…",
+        knife: "刀",
+        english: "英文",
+        chinese: "中文"
+      }
+    };
+
+    /* LANGUAGE TOGGLE */
+    let currentLang = 'en'; // Default language
+
+    function updateLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      const langToggleBtn = document.getElementById('lang-toggle');
+      if (langToggleBtn) {
+        langToggleBtn.textContent = lang === 'en' ? translations['zh-hk'].chinese : translations.en.english;
+      }
+
+      // Update static elements
+      document.getElementById('title').textContent = translations[lang].title;
+      const subtitle = document.getElementById('subtitle');
+      subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          if (el.tagName === 'INPUT' && el.type === 'text') {
+            el.placeholder = translations[lang][key];
+          } else {
+            el.textContent = translations[lang][key];
+          }
+        }
+      });
+
+      // Update dynamic elements (re-render knife sections)
+      bigKnifeContent.innerHTML = '';
+      smallKnifeContent.innerHTML = '';
+      const selectedKnives = Object.keys(state);
+      selectedKnives.forEach(knife => {
+        createCanvasSection(knife);
+        initializeKnife(knife); // Re-initialize to re-attach event listeners
+      });
+
+      // Update previews if on page 4
+      if (pages[4].classList.contains('active')) {
+        generatePreviews();
+      }
+    }
+
+    // Initialize language toggle
+    document.addEventListener('click', e => {
+      if (e.target.id === 'lang-toggle') {
+        updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
+      }
+    });
+
+    /* STATE */
+    const knives = {
+      big: ['santoku', 'chef', 'bread', 'chopper'],
+      small: ['utility', 'paring']
+    };
+    const state = {};
+    let SimonsameContent = false;
+    let firstSelectedKnife = null;
+    let lastAdjusted = { big: null, small: null };
+    const syncFont = { big: true, small: true }; // Font sync on by default
+    const alignRight = { big: false, small: false }; // Auto alignment on by default
+    const sharedXPercent = { big: 0.9, small: 0.9 }; // Shared right-anchor as 90% of canvas width
+    let isNavigating = false; // Prevent rapid navigation
+
+    /* ELEMENTS */
+    const pages = {
+      1: document.getElementById('page-1'),
+      2: document.getElementById('page-2'),
+      3: document.getElementById('page-3'),
+      4: document.getElementById('page-4')
+    };
+    const productPicker = document.getElementById('product-picker');
+    const bigKnifeContent = document.getElementById('big-knife-content');
+    const smallKnifeContent = document.getElementById('small-knife-content');
+    const previewContent = document.getElementById('preview-content');
+    const next1Btn = document.getElementById('next-1');
+    const back2Btn = document.getElementById('back-2');
+    const next2Btn = document.getElementById('next-2');
+    const back3Btn = document.getElementById('back-3');
+    const next3Btn = document.getElementById('next-3');
+    const back4Btn = document.getElementById('back-4');
+    const downloadBtn = document.getElementById('download-all');
+    const modal = document.getElementById('modal');
+    const modalImage = document.getElementById('modal-image');
+
+    /* HELPERS */
+    function loadImage(src) {
+      return new Promise(r => {
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        i.onload = () => r(i);
+        i.src = src;
+      });
+    }
+
+    function fitInBox(canvas, img, wrapper) {
+      const wrapW = wrapper.clientWidth;
+      const scale = wrapW / img.naturalWidth;
+      canvas.width = img.naturalWidth * scale;
+      canvas.height = img.naturalHeight * scale;
+      canvas.style.width = canvas.width + 'px';
+      canvas.style.height = canvas.height + 'px';
+      return scale;
+    }
+
+    function measureText(ctx, text, fontSize, font) {
+      ctx.font = `${fontSize}px ${font}`;
+      return { w: ctx.measureText(text).width, h: fontSize };
+    }
+
+    function toFullCoords(canvas, wrapper, cx, cy) {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: (cx - r.left) * (wrapper.full.width / r.width),
+        y: (cy - r.top) * (wrapper.full.height / r.height)
+      };
+    }
+
+    function hitTest(fx, fy, pos, dims, scale) {
+      return fx >= pos.x && fx <= pos.x + dims.w * scale &&
+             fy >= pos.y && fy <= pos.y + dims.h * scale;
+    }
+
+    function hasBigKnives(selected) {
+      return selected.some(input => knives.big.includes(input.dataset.name));
+    }
+
+    function hasSmallKnives(selected) {
+      return selected.some(input => knives.small.includes(input.dataset.name));
+    }
+
+    function switchPage(from, to) {
+      if (isNavigating) return;
+      isNavigating = true;
+      pages[from].classList.remove('active');
+      pages[to].classList.add('active');
+      setTimeout(() => { isNavigating = false; }, 100); // Debounce navigation
+    }
+
+    function createCanvasSection(knife) {
+      const isBig = knives.big.includes(knife);
+      const showSameContent = knife === firstSelectedKnife;
+      const section = document.createElement('div');
+      section.className = 'knife-section';
+      section.innerHTML = `
+        <h3 data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</h3>
+        <div class="controls">
+          <div>
+            <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
+            <input type="text" id="text-${knife}" placeholder="${translations[currentLang].textPlaceholder}">
+          </div>
+          <div>
+            <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
+            <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
+              <optgroup label="${translations[currentLang].english}">
+                <option value="Montserrat">Montserrat</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Lobster">Lobster</option>
+                <option value="'Times New Roman',serif">Times New Roman</option>
+                <option value="'Courier New',monospace">Courier New</option>
+                <option value="Arial,sans-serif">Arial</option>
+              </optgroup>
+              <optgroup label="${translations[currentLang].chinese}">
+                <option value="'Chocolate Classical Sans',sans-serif">Chocolate Classical Sans</option>
+                <option value="'LXGW WenKai Mono TC',monospace">LXGW WenKai Mono TC</option>
+                <option value="'Noto Sans HK',sans-serif">Noto Sans Hong Kong</option>
+                <option value="'Noto Serif TC',serif">Noto Serif Traditional Chinese</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        ${showSameContent ? `
+          <div class="same-content">
+            <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
+            <label for="same-content-${knife}" data-i18n="sameContentLabel">${translations[currentLang].sameContentLabel}</label>
+          </div>
+        ` : ''}
+        <p style="font-size:.8rem;color:#666;margin-top:.5rem;" data-i18n="instructions">
+          ${translations[currentLang].instructions}
+        </p>
+        <div class="canvas-wrapper" id="wrapper-${knife}">
+          <canvas id="canvas-${knife}"></canvas>
+          <div class="loading-overlay" id="overlay-${knife}" data-i18n="loading">${translations[currentLang].loading}</div>
+          <div class="bbox" id="bbox-${knife}">
+            <div class="handle" data-handle="nw"></div>
+            <div class="handle" data-handle="ne"></div>
+            <div class="handle" data-handle="sw"></div>
+            <div class="handle" data-handle="se"></div>
+          </div>
+        </div>
+        <div class="button-group">
+          <button id="scale-${knife}" class="scale-btn" data-i18n="scaleHandles">${translations[currentLang].scaleHandles}</button>
+          <button id="font-sync-${knife}" class="${syncFont[isBig ? 'big' : 'small'] ? '' : 'off'}" data-i18n="sizeSync">${translations[currentLang].sizeSync}</button>
+          <button id="align-toggle-${knife}" class="${alignRight[isBig ? 'big' : 'small'] ? 'off' : ''}" data-i18n="autoAlignment">${translations[currentLang].autoAlignment}</button>
+        </div>
+      `;
+      if (isBig) {
+        bigKnifeContent.appendChild(section);
+      } else {
+        smallKnifeContent.appendChild(section);
+      }
+
+      // Initialize state
+      state[knife] = {
+        img: null,
+        baseFont: isBig ? 150 : 100,
+        textScale: 1,
+        baseDims: { w: 0, h: 0 },
+        pos: { x: 0, y: 0 },
+        boxVisible: true,
+        dragging: false,
+        dragStart: {},
+        resizing: false,
+        resizeStart: {},
+        pointers: {},
+        pinch: false,
+        pinchStart: {},
+        view: document.getElementById(`canvas-${knife}`),
+        vCtx: document.getElementById(`canvas-${knife}`).getContext('2d'),
+        full: document.createElement('canvas'),
+        fCtx: document.createElement('canvas').getContext('2d'),
+        wrapper: document.getElementById(`wrapper-${knife}`),
+        overlay: document.getElementById(`overlay-${knife}`),
+        bbox: document.getElementById(`bbox-${knife}`),
+        scaleBtn: document.getElementById(`scale-${knife}`),
+        fontSyncBtn: document.getElementById(`font-sync-${knife}`),
+        alignToggleBtn: document.getElementById(`align-toggle-${knife}`),
+        textInput: document.getElementById(`text-${knife}`),
+        fontSel: document.getElementById(`font-${knife}`),
+        sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null
+      };
+      state[knife].full.width = 0;
+      state[knife].full.height = 0;
+      state[knife].fCtx = state[knife].full.getContext('2d');
+    }
+
+    function draw(knife) {
+      const s = state[knife];
+      if (!s.img) return;
+
+      const isBig = knives.big.includes(knife);
+      const alignShared = !alignRight[isBig ? 'big' : 'small'];
+      const sharedX = alignShared ? s.full.width * sharedXPercent[isBig ? 'big' : 'small'] : null;
+
+      // Full-res
+      s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.fCtx.drawImage(s.img, 0, 0);
+      s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      s.fCtx.fillStyle = '#000';
+      s.fCtx.textBaseline = 'top';
+      s.fCtx.textAlign = 'right';
+      const textX = alignShared && sharedX !== null ? sharedX : s.pos.x + s.baseDims.w * s.textScale;
+      s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
+
+      // Preview
+      const scale = s.view.width / s.full.width;
+      s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
+      s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.vCtx.drawImage(s.img, 0, 0);
+      s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      s.vCtx.fillStyle = '#000';
+      s.vCtx.textBaseline = 'top';
+      s.vCtx.textAlign = 'right';
+      s.vCtx.fillText(s.textInput.value, textX, s.pos.y);
+      s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+      // Bounding box
+      const dx = s.view.width / s.full.width;
+      const dy = s.view.height / s.full.height;
+      if (s.boxVisible && s.textInput.value) {
+        s.bbox.style.display = 'block';
+        s.bbox.style.width = (s.basedims.w * s.textScale * dx) + 'px';
+        s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
+        s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
+        s.bbox.style.top = (s.pos.y * dy) + 'px';
+      } else {
+        s.bbox.style.display = 'none';
+      }
+    }
+
+    function syncFontSize(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      if (!syncFont[type]) return;
+      const refState = state[knife];
+      const effectiveFontSize = refState.baseFont * refState.textScale;
+      const knivesList = knives[type];
+      knivesList.forEach(k => {
+        if (k !== knife && state[k]) {
+          state[k].baseFont = effectiveFontSize;
+          state[k].textScale = 1;
+          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+          draw(k);
+        }
+      });
+    }
+
+    function toggleFontSync(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      syncFont[type] = !syncFont[type];
+      const knivesList = knives[type];
+      knivesList.forEach(k => {
+        if (state[k]) {
+          state[k].fontSyncBtn.textContent = translations[currentLang].sizeSync;
+          state[k].fontSyncBtn.classList.toggle('off', !syncFont[type]);
+        }
+      });
+    }
+
+    function toggleAlignment(knife) {
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      alignRight[type] = !alignRight[type];
+      const knivesList = knives[type];
+      if (!alignRight[type]) {
+        const s = state[knife];
+        sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+      }
+      knivesList.forEach(k => {
+        if (state[k]) {
+          state[k].alignToggleBtn.textContent = translations[currentLang].autoAlignment;
+          state[k].alignToggleBtn.classList.toggle('off', alignRight[type]);
+          draw(k);
+        }
+      });
+    }
+
+    async function generatePreviews() {
+      previewContent.innerHTML = '';
+      for (const knife of Object.keys(state)) {
+        const s = state[knife];
+        draw(knife);
+        const previewUrl = s.full.toDataURL('image/png');
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+          <img src="${previewUrl}" alt="${knife} preview" data-knife="${knife}">
+          <span data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</span>
+        `;
+        previewContent.appendChild(div);
+      }
+      previewContent.querySelectorAll('img').forEach(img => {
+        img.addEventListener('click', () => {
+          modalImage.src = img.src;
+          modal.style.display = 'flex';
+        });
+      });
+    }
+
+    /* MODAL */
+    modal.addEventListener('click', () => {
+      modal.style.display = 'none';
+      modalImage.src = '';
+    });
+
+    /* FONT LOADING */
+    document.fonts.ready.then(() => {
+      Object.keys(state).forEach(knife => draw(knife));
+    });
+
+    /* NAVIGATION */
+    next1Btn.addEventListener('click', async () => {
+      if (isNavigating) return;
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      if (selected.length === 0) return;
+      bigKnifeContent.innerHTML = '';
+      smallKnifeContent.innerHTML = '';
+      Object.keys(state).forEach(knife => delete state[knife]);
+      firstSelectedKnife = selected[0].dataset.name;
+
+      const hasBig = hasBigKnives(selected);
+      const hasSmall = hasSmallKnives(selected);
+
+      if (hasBig) {
+        switchPage(1, 2);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.big.includes(knife)) {
+            await initializeKnife(knife);
+          }
+        }
+      } else if (hasSmall) {
+        switchPage(1, 3);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.small.includes(knife)) {
+            await initializeKnife(knife);
+          }
+        }
+      }
+      next1Btn.textContent = translations[currentLang].next;
+    });
+
+    back2Btn.addEventListener('click', () => {
+      switchPage(2, 1);
+      back2Btn.textContent = translations[currentLang].back;
+    });
+
+    next2Btn.addEventListener('click', async () => {
+      if (isNavigating) return;
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      const hasSmall = hasSmallKnives(selected);
+      if (hasSmall) {
+        switchPage(2, 3);
+        for (const input of selected) {
+          const knife = input.dataset.name;
+          if (knives.small.includes(knife) && !state[knife]) {
+            await initializeKnife(knife);
+          }
+        }
+        next2Btn.textContent = translations[currentLang].next;
+      } else {
+        switchPage(2, 4);
+        await generatePreviews();
+        next2Btn.textContent = translations[currentLang].preview;
+      }
+    });
+
+    back3Btn.addEventListener('click', () => {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      const hasBig = hasBigKnives(selected);
+      if (hasBig) {
+        switchPage(3, 2);
+      } else {
+        switchPage(3, 1);
+      }
+      back3Btn.textContent = translations[currentLang].back;
+    });
+
+    next3Btn.addEventListener('click', async () => {
+      if (isNavigating) return;
+      switchPage(3, 4);
+      await generatePreviews();
+      next3Btn.textContent = translations[currentLang].preview;
+    });
+
+    back4Btn.addEventListener('click', () => {
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      const hasSmall = hasSmallKnives(selected);
+      const hasBig = hasBigKnives(selected);
+      if (hasSmall) {
+        switchPage(4, 3);
+      } else if (hasBig) {
+        switchPage(4, 2);
+      } else {
+        switchPage(4, 1);
+      }
+      back4Btn.textContent = translations[currentLang].back;
+    });
+
+    /* KNIFE INITIALIZATION */
+    async function initializeKnife(knife) {
+      createCanvasSection(knife);
+      const s = state[knife];
+      s.overlay.style.visibility = 'visible';
+      s.img = await loadImage(
+        productPicker.querySelector(`input[data-name="${knife}"]`).value
+      );
+      s.full.width = s.img.naturalWidth;
+      s.full.height = s.img.naturalHeight;
+      fitInBox(s.view, s.img, s.wrapper);
+      s.fontSel.value = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+      s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+      s.textScale = 1;
+
+      // Center text initially
+      const isBig = knives.big.includes(knife);
+      const type = isBig ? 'big' : 'small';
+      s.pos.x = alignRight[type] ?
+        s.full.width / 2 - s.baseDims.w :
+        s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+      s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
+
+      draw(knife);
+
+      // Text / Font / Same Content Events
+      s.textInput.addEventListener('input', () => {
+        if (sameContent) {
+          Object.keys(state).forEach(k => {
+            state[k].textInput.value = s.textInput.value;
+            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+            state[k].pos.x = alignRight[type] ?
+              state[k].pos.x :
+              state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+            draw(k);
+          });
+        } else {
+          s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+          s.pos.x = alignRight[type] ?
+            s.pos.x :
+            s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+          draw(knife);
+        }
+      });
+
+      s.fontSel.addEventListener('input', () => {
+        s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+        s.pos.x = alignRight[type] ?
+          s.pos.x :
+          s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+        draw(knife);
+        document.fonts.ready.then(() => draw(knife));
+      });
+
+      if (s.sameContentChk) {
+        s.sameContentChk.addEventListener('change', () => {
+          sameContent = s.sameContentChk.checked;
+          if (sameContent) {
+            Object.keys(state).forEach(k => {
+              if (k !== knife) {
+                state[k].textInput.value = s.textInput.value;
+                state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+                state[k].pos.x = alignRight[type] ?
+                  state[k].pos.x :
+                  state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+                draw(k);
+              }
+            });
+          }
+        });
+      }
+
+      // Drag Text
+      s.view.addEventListener('pointerdown', e => {
+        const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+        if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale) || s.resizing) return;
+        s.dragging = true;
+        s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
+        e.preventDefault();
+      });
+
+      window.addEventListener('pointermove', e => {
+        if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+        const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+        s.pos.x = f.x - s.dragStart.dx;
+        s.pos.y = f.y - s.dragStart.dy;
+        const type = isBig ? 'big' : 'small';
+        if (!alignRight[type]) {
+          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          knives[type].forEach(k => {
+            if (k !== knife && state[k]) {
+              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+              draw(k);
+            }
+          });
+        }
+        draw(knife);
+        lastAdjusted[type] = knife;
+        syncFontSize(knife);
+      });
+
+      ['pointerup', 'pointercancel'].forEach(evt =>
+        window.addEventListener(evt, e => {
+          if (e.pointerId === s.dragStart.id) s.dragging = false;
+        })
+      );
+
+      // Resize via Handles
+      s.bbox.querySelectorAll('.handle').forEach(h => {
+        h.addEventListener('pointerdown', e => {
+          e.stopPropagation();
+          s.resizing = true;
+          const box = s.bbox.getBoundingClientRect();
+          const center = toFullCoords(s.view, s, box.left + box.width / 2, box.top + box.height / 2);
+          const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
+          s.resizeStart = {
+            id: e.pointerId,
+            cx: center.x,
+            cy: center.y,
+            scale: s.textScale,
+            d0: Math.hypot(p0.x - center.x, p0.y - center.y)
+          };
+        });
+      });
+
+      window.addEventListener('pointermove', e => {
+        if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+        const p = toFullCoords(s.view, s, e.clientX, e.clientY);
+        const d = Math.hypot(p.x - s.resizeStart.cx, p.y - s.resizeStart.cy);
+        s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
+        s.pos.x = s.resizeStart.cx - (s.baseDims.w * s.textScale);
+        s.pos.y = s.resizeStart.cy - (s.baseDims.h * s.textScale) / 2;
+        const type = isBig ? 'big' : 'small';
+        if (!alignRight[type]) {
+          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          knives[type].forEach(k => {
+            if (k !== knife && state[k]) {
+              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+              draw(k);
+            }
+          });
+        }
+        draw(knife);
+        lastAdjusted[type] = knife;
+        syncFontSize(knife);
+      });
+
+      ['pointerup', 'pointercancel'].forEach(evt =>
+        window.addEventListener(evt, e => {
+          if (e.pointerId === s.resizeStart.id) s.resizing = false;
+        })
+      );
+
+      // Pinch-zoom with Movement
+      s.view.addEventListener('pointerdown', e => {
+        s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
+          s.pinch = true;
+          const [pA, pB] = Object.values(s.pointers);
+          const fA = toFullCoords(s.view, s, pA.x, pA.y);
+          const fB = toFullCoords(s.view, s, pB.x, pB.y);
+          s.pinchStart = {
+            scale: s.textScale,
+            cx: (fA.x + fB.x) / 2,
+            cy: (fA.y + fB.y) / 2,
+            d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
+          };
+        }
+      });
+
+      s.view.addEventListener('pointermove', e => {
+        if (!s.pinch || !(e.pointerId in s.pointers)) return;
+        s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        const [a, b] = Object.values(s.pointers);
+        const fA = toFullCoords(s.view, s, a.x, a.y);
+        const fB = toFullCoords(s.view, s, b.x, b.y);
+        const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+        s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
+        s.pos.x = (fA.x + fB.x) / 2 - (s.baseDims.w * s.textScale);
+        s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
+        const type = isBig ? 'big' : 'small';
+        if (!alignRight[type]) {
+          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          knives[type].forEach(k => {
+            if (k !== knife && state[k]) {
+              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+              draw(k);
+            }
+          });
+        }
+        draw(knife);
+        lastAdjusted[type] = knife;
+        syncFontSize(knife);
+      });
+
+      ['pointerup', 'pointercancel'].forEach(evt =>
+        s.view.addEventListener(evt, e => {
+          delete s.pointers[e.pointerId];
+          if (Object.keys(s.pointers).length < 2) s.pinch = false;
+        })
+      );
+
+      // Scale Button
+      s.scaleBtn.addEventListener('click', () => {
+        s.boxVisible = !s.boxVisible;
+        s.scaleBtn.textContent = translations[currentLang].scaleHandles;
+        s.scaleBtn.classList.toggle('off', !s.boxVisible);
+        draw(knife);
+      });
+
+      // Sync Font Size Button
+      s.fontSyncBtn.addEventListener('click', () => toggleFontSync(knife));
+
+      // Toggle Alignment Button
+      s.alignToggleBtn.addEventListener('click', () => toggleAlignment(knife));
+
+      s.overlay.style.visibility = 'hidden';
+    }
+
+    // Download All
+    downloadBtn.addEventListener('click', async () => {
+      const zip = new JSZip();
+      for (const knife of Object.keys(state)) {
+        const s = state[knife];
+        draw(knife);
+
+        // Preview Image
+        const previewBlob = await new Promise(r => s.full.toBlob(r));
+        zip.file(`${knife}-preview.png`, previewBlob);
+
+        // Text-only Image
+        const t = document.createElement('canvas');
+        t.width = s.full.width;
+        t.height = s.full.height;
+        const tCtx = t.getContext('2d');
+        tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        tCtx.fillStyle = '#000';
+        tCtx.textBaseline = 'top';
+        tCtx.textAlign = 'right';
+        const type = knives.big.includes(knife) ? 'big' : 'small';
+        const textX = alignRight[type] ?
+          s.pos.x + s.baseDims.w * s.textScale :
+          s.full.width * sharedXPercent[type];
+        tCtx.fillText(s.textInput.value, textX, s.pos.y);
+        const textBlob = await new Promise(r => t.toBlob(r));
+        zip.file(`${knife}-text-only.png`, textBlob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'knife-engravings.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 100);
+    });
+
+    // Set initial language
+    updateLanguage(currentLang);
+  </script>
+</body>
+</html>
