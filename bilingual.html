@@ -783,7 +783,6 @@ function debounceToggle(fn, id, icon) {
     lastToggleTime = now;
     console.log(`Toggling ${id}`);
     fn();
- società
     const buttons = document.querySelectorAll(`#${id}`);
     buttons.forEach(btn => {
       btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
@@ -967,7 +966,7 @@ back4Btn.addEventListener('click', () => {
 
 document.addEventListener('click', e => {
   if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
-    debounceToggle(toggleಠ_ಠZone, 'edit-zone', 'vignette')();
+    debounceToggle(toggleEditZone, 'edit-zone', 'vignette')(); // Fixed typo
   } else if (e.target.id === 'resize-controls' || e.target.closest('#resize-controls')) {
     debounceToggle(toggleResizeControls, 'resize-controls', 'format_shapes')();
   } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
