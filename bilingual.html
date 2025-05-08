@@ -94,12 +94,13 @@
     .bbox {
       position: absolute; border: 1px dashed #000;
       pointer-events: none; display: none;
-      z-index: 20; /* Ensure text handles are above overlay */
+      z-index: 30; /* Increased z-index for interactivity */
     }
     .handle {
       position: absolute; width: 10px; height: 10px;
       background: #fff; border: 1px solid #000;
       pointer-events: auto;
+      z-index: 31; /* Ensure handles are clickable */
     }
     .handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
     .handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
@@ -426,7 +427,7 @@
     let showEditZone = false; // Toggle edit zone overlay
     let showResizeControls = true; // Toggle resize handles
     let alignRight = false; // Auto alignment for all knives
-    const sharedXPercent = 0.9; // Shared right-anchor as 90% of canvas width
+    let sharedXPercent = 0.9; // Changed from const to let
     let isNavigating = false; // Prevent rapid navigation
 
     /* ELEMENTS */
@@ -447,10 +448,6 @@
     const next3Btn = document.getElementById('next-3');
     const back4Btn = document.getElementById('back-4');
     const downloadBtn = document.getElementById('download-all');
-    const editZoneBtn = document.querySelector('#page-2 #edit-zone, #page-3 #edit-zone');
-    const resizeControlsBtn = document.querySelector('#page-2 #resize-controls, #page-3 #resize-controls');
-    const syncFontsBtn = document.querySelector('#page-2 #sync-fonts, #page-3 #sync-fonts');
-    const autoAlignBtn = document.querySelector('#page-2 #auto-align, #page-3 #auto-align');
     const modal = document.getElementById('modal');
     const modalImage = document.getElementById('modal-image');
 
@@ -488,8 +485,9 @@
       };
     }
 
-    function hitTest(fx, fy, pos, dims, scale) {
-      return fx >= pos.x && fx <= pos.x + dims.w * scale &&
+    function hitTest(fx, fy, pos, dims, scale, textX) {
+      const x = textX - dims.w * scale; // Adjust for right-aligned text
+      return fx >= x && fx <= x + dims.w * scale &&
              fy >= pos.y && fy <= pos.y + dims.h * scale;
     }
 
@@ -602,17 +600,18 @@
       const s = state[knife];
       if (!s.img) return;
 
+      const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
+
       // Full-res
       s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.fCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
-        s.fCtx.drawImage(s.overlay, 0, 0);
+        s.fCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height); // Scale overlay
       }
       s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.fCtx.fillStyle = '#000';
       s.fCtx.textBaseline = 'top';
       s.fCtx.textAlign = 'right';
-      const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
       s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
       // Preview
@@ -621,7 +620,7 @@
       s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.vCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
-        s.vCtx.drawImage(s.overlay, 0, 0);
+        s.vCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height); // Scale overlay
       }
       s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.vCtx.fillStyle = '#000';
@@ -883,6 +882,12 @@
         s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
       s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
 
+      // Ensure font is loaded
+      document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
+        s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+        draw(knife);
+      });
+
       draw(knife);
 
       // Text / Font / Same Content Events
@@ -907,13 +912,16 @@
       });
 
       s.fontSel.addEventListener('input', () => {
-        s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-        s.pos.x = alignRight ?
-          s.pos.x :
-          s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
-        draw(knife);
-        syncFontAndSize(knife);
-        document.fonts.ready.then(() => draw(knife));
+        document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
+          s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+          s.pos.x = alignRight ?
+            s.pos.x :
+            s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
+          draw(knife);
+          syncFontAndSize(knife);
+        });
+        // Fallback redraw
+        setTimeout(() => draw(knife), 500);
       });
 
       if (s.sameContentChk) {
@@ -938,7 +946,9 @@
       // Drag Text
       s.view.addEventListener('pointerdown', e => {
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-        if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale) || s.resizing) return;
+        const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
+        if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale, textX) || s.resizing) return;
+        console.log(`Dragging started for ${knife}`);
         s.dragging = true;
         s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
         e.preventDefault();
@@ -946,6 +956,7 @@
 
       window.addEventListener('pointermove', e => {
         if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+        console.log(`Dragging ${knife}`);
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
         s.pos.x = f.x - s.dragStart.dx;
         s.pos.y = f.y - s.dragStart.dy;
@@ -965,7 +976,10 @@
 
       ['pointerup', 'pointercancel'].forEach(evt =>
         window.addEventListener(evt, e => {
-          if (e.pointerId === s.dragStart.id) s.dragging = false;
+          if (e.pointerId === s.dragStart.id) {
+            console.log(`Dragging stopped for ${knife}`);
+            s.dragging = false;
+          }
         })
       );
 
@@ -973,6 +987,7 @@
       s.bbox.querySelectorAll('.handle').forEach(h => {
         h.addEventListener('pointerdown', e => {
           e.stopPropagation();
+          console.log(`Resizing started for ${knife}`);
           s.resizing = true;
           const box = s.bbox.getBoundingClientRect();
           const center = toFullCoords(s.view, s, box.left + box.width / 2, box.top + box.height / 2);
@@ -989,6 +1004,7 @@
 
       window.addEventListener('pointermove', e => {
         if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+        console.log(`Resizing ${knife}`);
         const p = toFullCoords(s.view, s, e.clientX, e.clientY);
         const d = Math.hypot(p.x - s.resizeStart.cx, p.y - s.resizeStart.cy);
         s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
@@ -1010,7 +1026,10 @@
 
       ['pointerup', 'pointercancel'].forEach(evt =>
         window.addEventListener(evt, e => {
-          if (e.pointerId === s.resizeStart.id) s.resizing = false;
+          if (e.pointerId === s.resizeStart.id) {
+            console.log(`Resizing stopped for ${knife}`);
+            s.resizing = false;
+          }
         })
       );
 
@@ -1018,6 +1037,7 @@
       s.view.addEventListener('pointerdown', e => {
         s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
         if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
+          console.log(`Pinch started for ${knife}`);
           s.pinch = true;
           const [pA, pB] = Object.values(s.pointers);
           const fA = toFullCoords(s.view, s, pA.x, pA.y);
@@ -1033,6 +1053,7 @@
 
       s.view.addEventListener('pointermove', e => {
         if (!s.pinch || !(e.pointerId in s.pointers)) return;
+        console.log(`Pinching ${knife}`);
         s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
         const [a, b] = Object.values(s.pointers);
         const fA = toFullCoords(s.view, s, a.x, a.y);
@@ -1058,7 +1079,10 @@
       ['pointerup', 'pointercancel'].forEach(evt =>
         s.view.addEventListener(evt, e => {
           delete s.pointers[e.pointerId];
-          if (Object.keys(s.pointers).length < 2) s.pinch = false;
+          if (Object.keys(s.pointers).length < 2) {
+            console.log(`Pinch stopped for ${knife}`);
+            s.pinch = false;
+          }
         })
       );
 
