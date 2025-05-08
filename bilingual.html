@@ -31,10 +31,10 @@
       font-family: Roboto, 'Noto Sans HK', Arial, sans-serif;
       background: var(--bg);
       color: #222;
-      padding-bottom: 60px; /* Space for fixed nav bar */
+      padding-bottom: 60px;
     }
     h1,h2,h3 { text-align: center; margin: 1rem 0; }
-    h3 { margin-bottom: 2rem; }
+    h3 { margin-bottom: 1rem; }
     .container {
       max-width: 1200px; margin: auto; padding: var(--pad);
       display: flex; flex-direction: column; gap: var(--pad);
@@ -97,13 +97,13 @@
     .bbox {
       position: absolute; border: 1px dashed #000;
       pointer-events: none; display: none;
-      z-index: 30; /* Increased z-index for interactivity */
+      z-index: 30;
     }
     .handle {
       position: absolute; width: 10px; height: 10px;
       background: #fff; border: 1px solid #000;
       pointer-events: auto;
-      z-index: 31; /* Ensure handles are clickable */
+      z-index: 31;
     }
     .handle[data-handle="nw"] { top: -5px; left: -5px; cursor: nwse-resize; }
     .handle[data-handle="ne"] { top: -5px; right: -5px; cursor: nesw-resize; }
@@ -118,7 +118,7 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 1rem;
-      margin: 0 .5rem;
+      margin: 0 .25rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -130,7 +130,7 @@
       background: var(--gray);
     }
     .material-symbols-outlined {
-      font-size: 24px; /* Adjust icon size */
+      font-size: 24px;
       vertical-align: middle;
     }
     .same-content {
@@ -151,9 +151,11 @@
       padding: .5rem;
       display: flex;
       justify-content: center;
-      gap: .5rem;
+      gap: .25rem;
       z-index: 100;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      white-space: nowrap;
     }
     .preview-list {
       display: flex;
@@ -198,23 +200,39 @@
       max-height: 90%;
       border-radius: var(--radius);
     }
+    #lang-toggle {
+      float: right;
+      margin: 0 1rem 1rem 0;
+      padding: .5rem 1rem;
+    }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
-      .navigation { flex-direction: row; gap: .5rem; }
-      button { padding: .5rem .8rem; font-size: .9rem; }
-      .material-symbols-outlined { font-size: 20px; }
+      .navigation {
+        gap: .2rem;
+        padding: .3rem;
+      }
+      button {
+        padding: .4rem .6rem;
+        font-size: .9rem;
+      }
+      .material-symbols-outlined {
+        font-size: 20px;
+      }
+      #lang-toggle {
+        margin: 0 .5rem .5rem 0;
+        padding: .4rem .8rem;
+        font-size: .9rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1 id="title">Knife Engraving Customiser</h1>
   <h3 id="subtitle">by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
+  <button id="lang-toggle">中文</button>
   <div class="container">
     <!-- Page 1: Knife Selection -->
     <div id="page-1" class="page section active">
-      <div style="text-align: center; margin-bottom: 1rem;">
-        <button id="lang-toggle">中文</button>
-      </div>
       <h2 data-i18n="chooseKnives">Choose your knives</h2>
       <div id="product-picker">
         <label class="product-option">
@@ -417,7 +435,8 @@
     }
 
     document.addEventListener('click', e => {
-      if (e.target.id === 'lang-toggle') {
+      if (e.target.id === 'lang-toggle' || e.target.closest('#lang-toggle')) {
+        console.log('Language toggle clicked');
         updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
       }
     });
@@ -438,6 +457,8 @@
     let alignRight = false;
     let sharedXPercent = 0.9;
     let isNavigating = false;
+    let lastToggleTime = 0;
+    const toggleDebounce = 200; // ms
 
     /* ELEMENTS */
     const pages = {
@@ -597,11 +618,17 @@
         bbox: document.getElementById(`bbox-${knife}`),
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
-        sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null
+        sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
+        cacheCanvas: document.createElement('canvas'),
+        cacheCtx: document.createElement('canvas').getContext('2d'),
+        cacheValid: false
       };
       state[knife].full.width = 0;
       state[knife].full.height = 0;
       state[knife].fCtx = state[knife].full.getContext('2d');
+      state[knife].cacheCanvas.width = 0;
+      state[knife].cacheCanvas.height = 0;
+      state[knife].cacheCtx = state[knife].cacheCanvas.getContext('2d');
     }
 
     function draw(knife) {
@@ -610,24 +637,32 @@
 
       const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
 
-      s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
-      s.fCtx.drawImage(s.img, 0, 0);
-      if (showEditZone && s.overlay) {
-        s.fCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
+      // Cache base image and overlay if not valid
+      if (!s.cacheValid) {
+        s.cacheCanvas.width = s.full.width;
+        s.cacheCanvas.height = s.full.height;
+        s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
+        s.cacheCtx.drawImage(s.img, 0, 0);
+        if (showEditZone && s.overlay) {
+          s.cacheCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
+        }
+        s.cacheValid = true;
       }
+
+      // Full-res canvas
+      s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.fCtx.drawImage(s.cacheCanvas, 0, 0);
       s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.fCtx.fillStyle = '#000';
       s.fCtx.textBaseline = 'top';
       s.fCtx.textAlign = 'right';
       s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
+      // Preview canvas
       const scale = s.view.width / s.full.width;
       s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
       s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
-      s.vCtx.drawImage(s.img, 0, 0);
-      if (showEditZone && s.overlay) {
-        s.vCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
-      }
+      s.vCtx.drawImage(s.cacheCanvas, 0, 0);
       s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.vCtx.fillStyle = '#000';
       s.vCtx.textBaseline = 'top';
@@ -635,6 +670,7 @@
       s.vCtx.fillText(s.textInput.value, textX, s.pos.y);
       s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
+      // Bounding box
       const dx = s.view.width / s.full.width;
       const dy = s.view.height / s.full.height;
       if (s.boxVisible && s.textInput.value) {
@@ -646,6 +682,11 @@
       } else {
         s.bbox.style.display = 'none';
       }
+    }
+
+    function invalidateCache(knife) {
+      const s = state[knife];
+      s.cacheValid = false;
     }
 
     function syncFontAndSize(knife) {
@@ -662,19 +703,34 @@
           state[k].pos.x = alignRight ?
             state[k].pos.x :
             state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
+          invalidateCache(k);
           draw(k);
         }
       });
     }
 
+    function debounceToggle(fn, id, icon) {
+      return () => {
+        const now = Date.now();
+        if (now - lastToggleTime < toggleDebounce) return;
+        lastToggleTime = now;
+        console.log(`Toggling ${id}`);
+        fn();
+        const buttons = document.querySelectorAll(`#${id}`);
+        buttons.forEach(btn => {
+          btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+        });
+      };
+    }
+
     function toggleEditZone() {
       showEditZone = !showEditZone;
       Object.keys(state).forEach(knife => {
-        draw(knife);
+        invalidateCache(knife);
+        requestAnimationFrame(() => draw(knife));
       });
-      const editZoneButtons = document.querySelectorAll('#edit-zone');
-      editZoneButtons.forEach(btn => {
-        btn.innerHTML = '<span class="material-symbols-outlined">edit_square</span>';
+      const buttons = document.querySelectorAll('#edit-zone');
+      buttons.forEach(btn => {
         btn.classList.toggle('off', !showEditZone);
       });
     }
@@ -683,11 +739,10 @@
       showResizeControls = !showResizeControls;
       Object.keys(state).forEach(knife => {
         state[knife].boxVisible = showResizeControls;
-        draw(knife);
+        requestAnimationFrame(() => draw(knife));
       });
-      const resizeControlsButtons = document.querySelectorAll('#resize-controls');
-      resizeControlsButtons.forEach(btn => {
-        btn.innerHTML = '<span class="material-symbols-outlined">resize</span>';
+      const buttons = document.querySelectorAll('#resize-controls');
+      buttons.forEach(btn => {
         btn.classList.toggle('off', !showResizeControls);
       });
     }
@@ -698,9 +753,8 @@
         const refKnife = Object.keys(state)[0];
         syncFontAndSize(refKnife);
       }
-      const syncFontsButtons = document.querySelectorAll('#sync-fonts');
-      syncFontsButtons.forEach(btn => {
-        btn.innerHTML = '<span class="material-symbols-outlined">font_download</span>';
+      const buttons = document.querySelectorAll('#sync-fonts');
+      buttons.forEach(btn => {
         btn.classList.toggle('off', !syncFonts);
       });
     }
@@ -716,11 +770,11 @@
         state[knife].pos.x = alignRight ?
           state[knife].full.width / 2 - state[knife].baseDims.w :
           state[knife].full.width * sharedXPercent - state[knife].baseDims.w * state[knife].textScale;
-        draw(knife);
+        invalidateCache(knife);
+        requestAnimationFrame(() => draw(knife));
       });
-      const autoAlignButtons = document.querySelectorAll('#auto-align');
-      autoAlignButtons.forEach(btn => {
-        btn.innerHTML = '<span class="material-symbols-outlined">align_horizontal_right</span>';
+      const buttons = document.querySelectorAll('#auto-align');
+      buttons.forEach(btn => {
         btn.classList.toggle('off', alignRight);
       });
     }
@@ -839,14 +893,14 @@
     });
 
     document.addEventListener('click', e => {
-      if (e.target.id === 'edit-zone') {
-        toggleEditZone();
-      } else if (e.target.id === 'resize-controls') {
-        toggleResizeControls();
-      } else if (e.target.id === 'sync-fonts') {
-        toggleSyncFonts();
-      } else if (e.target.id === 'auto-align') {
-        toggleAlignment();
+      if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
+        debounceToggle(toggleEditZone, 'edit-zone', 'edit_square')();
+      } else if (e.target.id === 'resize-controls' || e.target.closest('#resize-controls')) {
+        debounceToggle(toggleResizeControls, 'resize-controls', 'resize')();
+      } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
+        debounceToggle(toggleSyncFonts, 'sync-fonts', 'font_download')();
+      } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
+        debounceToggle(toggleAlignment, 'auto-align', 'align_horizontal_right')();
       }
     });
 
@@ -865,6 +919,8 @@
       }
       s.full.width = s.img.naturalWidth;
       s.full.height = s.img.naturalHeight;
+      s.cacheCanvas.width = s.full.width;
+      s.cacheCanvas.height = s.full.height;
       fitInBox(s.view, s.img, s.wrapper);
       s.fontSel.value = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
       s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
@@ -896,6 +952,7 @@
             state[k].pos.x = alignRight ?
               state[k].pos.x :
               state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
+            invalidateCache(k);
             draw(k);
           });
         } else {
@@ -903,6 +960,7 @@
           s.pos.x = alignRight ?
             s.pos.x :
             s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
+          invalidateCache(knife);
           draw(knife);
         }
       });
@@ -913,6 +971,7 @@
           s.pos.x = alignRight ?
             s.pos.x :
             s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
+          invalidateCache(knife);
           draw(knife);
           syncFontAndSize(knife);
         });
@@ -930,6 +989,7 @@
               state[k].pos.x = alignRight ?
                 state[k].pos.x :
                 state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
+              invalidateCache(k);
               draw(k);
             });
           } else {
