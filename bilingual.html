@@ -74,6 +74,12 @@
       display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
     }
     .controls label { font-size: .9rem; margin-right: .25rem; }
+    .controls input[type="text"] {
+      width: 250px;
+      padding: .5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
     .canvas-wrapper {
       position: relative;
       width: 100%; max-width: 1168px;
@@ -132,6 +138,9 @@
     .material-symbols-outlined {
       font-size: 24px;
       vertical-align: middle;
+    }
+    #edit-zone .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1;
     }
     .same-content {
       display: block; margin-top: .5rem;
@@ -217,6 +226,10 @@
     }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
+      .controls input[type="text"] {
+        width: 100%;
+        max-width: 250px;
+      }
       .navigation {
         gap: .2rem;
         padding: .3rem;
@@ -292,7 +305,7 @@
         <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_center</span></button>
         <button id="next-2"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -305,7 +318,7 @@
         <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_center</span></button>
         <button id="next-3"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -452,7 +465,7 @@
       small: ['utility', 'paring']
     };
     const state = {};
-    let sameContent = false;
+    let sameContent = true;
     let sharedText = '';
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
@@ -565,10 +578,10 @@
                 <option value="Arial,sans-serif">Arial</option>
               </optgroup>
               <optgroup label="${translations[currentLang].chinese}">
-                <option value="'Chocolate Classical Sans',sans-serif">Chocolate Classical Sans</option>
-                <option value="'LXGW WenKai Mono TC',monospace">LXGW WenKai Mono TC</option>
-                <option value="'Noto Sans HK',sans-serif">Noto Sans Hong Kong</option>
-                <option value="'Noto Serif TC',serif">Noto Serif Traditional Chinese</option>
+                <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
+                <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
+                <option value="'Noto Sans HK',sans-serif">思源黑體/option>
+                <option value="'Noto Serif TC',serif">思源宋體</option>
               </optgroup>
             </select>
           </div>
@@ -624,6 +637,8 @@
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
         sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
+        cacheCanvas: document.createElement('canvas'),
+ವಿಡಿಓ: https://www.youtube.com/watch?v=OzZ8I4uY8jU&t=2s
         cacheCanvas: document.createElement('canvas'),
         cacheCtx: document.createElement('canvas').getContext('2d'),
         cacheValid: false
@@ -905,7 +920,7 @@
       } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
         debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
       } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
-        debounceToggle(toggleAlignment, 'auto-align', 'recenter')();
+        debounceToggle(toggleAlignment, 'auto-align', 'align_horizontal_center')();
       }
     });
 
