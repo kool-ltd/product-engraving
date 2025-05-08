@@ -28,6 +28,7 @@
       font-family: Roboto, 'Noto Sans HK', Arial, sans-serif;
       background: var(--bg);
       color: #222;
+      padding-bottom: 60px; /* Space for fixed nav bar */
     }
     h1,h2,h3 { text-align: center; margin: 1rem 0; }
     h3 { margin-bottom: 2rem; }
@@ -93,6 +94,7 @@
     .bbox {
       position: absolute; border: 1px dashed #000;
       pointer-events: none; display: none;
+      z-index: 20; /* Ensure text handles are above overlay */
     }
     .handle {
       position: absolute; width: 10px; height: 10px;
@@ -112,7 +114,7 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 1rem;
-      margin: 1rem .5rem 0 0;
+      margin: 0 .5rem;
     }
     button[disabled] {
       opacity: .4; cursor: not-allowed;
@@ -123,9 +125,6 @@
     .same-content {
       display: block; margin-top: .5rem;
     }
-    .button-group {
-      text-align: center; margin-top: 1rem;
-    }
     .knife-section {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -133,8 +132,17 @@
       margin-bottom: 1rem;
     }
     .navigation {
-      text-align: center;
-      margin-top: 1rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.9);
+      padding: .5rem;
+      display: flex;
+      justify-content: center;
+      gap: .5rem;
+      z-index: 100;
+      flex-wrap: wrap;
     }
     .preview-list {
       display: flex;
@@ -181,7 +189,8 @@
     }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
-      .button-group, .navigation { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+      .navigation { flex-direction: row; gap: .5rem; }
+      button { padding: .5rem .8rem; font-size: .9rem; }
     }
   </style>
 </head>
@@ -237,6 +246,10 @@
       <div id="big-knife-content"></div>
       <div class="navigation">
         <button id="back-2" data-i18n="back">Back</button>
+        <button id="edit-zone" data-i18n="editZone">Edit Zone</button>
+        <button id="resize-controls" data-i18n="resizeControls">Resize Controls</button>
+        <button id="sync-fonts" data-i18n="syncFonts">Sync Fonts</button>
+        <button id="auto-align" data-i18n="autoAlignment">Auto Align</button>
         <button id="next-2" data-i18n="next">Next</button>
       </div>
     </div>
@@ -246,6 +259,10 @@
       <div id="small-knife-content"></div>
       <div class="navigation">
         <button id="back-3" data-i18n="back">Back</button>
+        <button id="edit-zone" data-i18n="editZone">Edit Zone</button>
+        <button id="resize-controls" data-i18n="resizeControls">Resize Controls</button>
+        <button id="sync-fonts" data-i18n="syncFonts">Sync Fonts</button>
+        <button id="auto-align" data-i18n="autoAlignment">Auto Align</button>
         <button id="next-3" data-i18n="preview">Preview</button>
       </div>
     </div>
@@ -292,8 +309,9 @@
         fontLabel: "Font:",
         sameContentLabel: "Use same text for all",
         instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
-        scaleHandles: "Show Handles",
-        sizeSync: "Sync Size",
+        editZone: "Edit Zone",
+        resizeControls: "Resize Controls",
+        syncFonts: "Sync Fonts",
         autoAlignment: "Auto Align",
         loading: "Loading…",
         knife: "Knife",
@@ -322,8 +340,9 @@
         fontLabel: "字體：",
         sameContentLabel: "所有刀具使用相同文字",
         instructions: "• 拖動文字以移動。<br>• 拖動角落以縮放（桌面）。<br>• 捏合以縮放和移動文字（手機）。",
-        scaleHandles: "顯示控制",
-        sizeSync: "同步尺寸",
+        editZone: "編輯區域",
+        resizeControls: "調整控制",
+        syncFonts: "同步字體",
         autoAlignment: "自動對齊",
         loading: "載入中…",
         knife: "刀",
@@ -371,6 +390,19 @@
       if (pages[4].classList.contains('active')) {
         generatePreviews();
       }
+
+      // Update navigation buttons
+      updateNavigationButtons();
+    }
+
+    function updateNavigationButtons() {
+      const navButtons = document.querySelectorAll('.navigation button');
+      navButtons.forEach(btn => {
+        const key = btn.getAttribute('data-i18n');
+        if (key && translations[currentLang][key]) {
+          btn.textContent = translations[currentLang][key];
+        }
+      });
     }
 
     // Initialize language toggle
@@ -387,11 +419,14 @@
     };
     const state = {};
     let sameContent = false;
+    let sharedText = ''; // Store shared text when sameContent is enabled
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
-    const syncFont = { big: true, small: true }; // Font sync on by default
-    const alignRight = { big: false, small: false }; // Auto alignment on by default
-    const sharedXPercent = { big: 0.9, small: 0.9 }; // Shared right-anchor as 90% of canvas width
+    let syncFonts = true; // Sync both font size and family
+    let showEditZone = false; // Toggle edit zone overlay
+    let showResizeControls = true; // Toggle resize handles
+    let alignRight = false; // Auto alignment for all knives
+    const sharedXPercent = 0.9; // Shared right-anchor as 90% of canvas width
     let isNavigating = false; // Prevent rapid navigation
 
     /* ELEMENTS */
@@ -412,15 +447,20 @@
     const next3Btn = document.getElementById('next-3');
     const back4Btn = document.getElementById('back-4');
     const downloadBtn = document.getElementById('download-all');
+    const editZoneBtn = document.querySelector('#page-2 #edit-zone, #page-3 #edit-zone');
+    const resizeControlsBtn = document.querySelector('#page-2 #resize-controls, #page-3 #resize-controls');
+    const syncFontsBtn = document.querySelector('#page-2 #sync-fonts, #page-3 #sync-fonts');
+    const autoAlignBtn = document.querySelector('#page-2 #auto-align, #page-3 #auto-align');
     const modal = document.getElementById('modal');
     const modalImage = document.getElementById('modal-image');
 
     /* HELPERS */
     function loadImage(src) {
-      return new Promise(r => {
+      return new Promise((resolve, reject) => {
         const i = new Image();
         i.crossOrigin = 'anonymous';
-        i.onload = () => r(i);
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error(`Failed to load image: ${src}`));
         i.src = src;
       });
     }
@@ -470,7 +510,6 @@
     }
 
     function createCanvasSection(knife) {
-      const isBig = knives.big.includes(knife);
       const showSameContent = knife === firstSelectedKnife;
       const section = document.createElement('div');
       section.className = 'knife-section';
@@ -520,13 +559,8 @@
             <div class="handle" data-handle="se"></div>
           </div>
         </div>
-        <div class="button-group">
-          <button id="scale-${knife}" class="scale-btn" data-i18n="scaleHandles">${translations[currentLang].scaleHandles}</button>
-          <button id="font-sync-${knife}" class="${syncFont[isBig ? 'big' : 'small'] ? '' : 'off'}" data-i18n="sizeSync">${translations[currentLang].sizeSync}</button>
-          <button id="align-toggle-${knife}" class="${alignRight[isBig ? 'big' : 'small'] ? 'off' : ''}" data-i18n="autoAlignment">${translations[currentLang].autoAlignment}</button>
-        </div>
       `;
-      if (isBig) {
+      if (knives.big.includes(knife)) {
         bigKnifeContent.appendChild(section);
       } else {
         smallKnifeContent.appendChild(section);
@@ -535,11 +569,12 @@
       // Initialize state
       state[knife] = {
         img: null,
-        baseFont: isBig ? 150 : 100,
+        overlay: null, // Overlay image for edit zone
+        baseFont: knives.big.includes(knife) ? 150 : 100,
         textScale: 1,
         baseDims: { w: 0, h: 0 },
         pos: { x: 0, y: 0 },
-        boxVisible: true,
+        boxVisible: showResizeControls,
         dragging: false,
         dragStart: {},
         resizing: false,
@@ -552,11 +587,8 @@
         full: document.createElement('canvas'),
         fCtx: document.createElement('canvas').getContext('2d'),
         wrapper: document.getElementById(`wrapper-${knife}`),
-        overlay: document.getElementById(`overlay-${knife}`),
+        overlayEl: document.getElementById(`overlay-${knife}`),
         bbox: document.getElementById(`bbox-${knife}`),
-        scaleBtn: document.getElementById(`scale-${knife}`),
-        fontSyncBtn: document.getElementById(`font-sync-${knife}`),
-        alignToggleBtn: document.getElementById(`align-toggle-${knife}`),
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
         sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null
@@ -570,18 +602,17 @@
       const s = state[knife];
       if (!s.img) return;
 
-      const isBig = knives.big.includes(knife);
-      const alignShared = !alignRight[isBig ? 'big' : 'small'];
-      const sharedX = alignShared ? s.full.width * sharedXPercent[isBig ? 'big' : 'small'] : null;
-
       // Full-res
       s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.fCtx.drawImage(s.img, 0, 0);
+      if (showEditZone && s.overlay) {
+        s.fCtx.drawImage(s.overlay, 0, 0);
+      }
       s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.fCtx.fillStyle = '#000';
       s.fCtx.textBaseline = 'top';
       s.fCtx.textAlign = 'right';
-      const textX = alignShared && sharedX !== null ? sharedX : s.pos.x + s.baseDims.w * s.textScale;
+      const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
       s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
       // Preview
@@ -589,6 +620,9 @@
       s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
       s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.vCtx.drawImage(s.img, 0, 0);
+      if (showEditZone && s.overlay) {
+        s.vCtx.drawImage(s.overlay, 0, 0);
+      }
       s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.vCtx.fillStyle = '#000';
       s.vCtx.textBaseline = 'top';
@@ -610,51 +644,80 @@
       }
     }
 
-    function syncFontSize(knife) {
-      const isBig = knives.big.includes(knife);
-      const type = isBig ? 'big' : 'small';
-      if (!syncFont[type]) return;
+    function syncFontAndSize(knife) {
+      if (!syncFonts) return;
       const refState = state[knife];
       const effectiveFontSize = refState.baseFont * refState.textScale;
-      const knivesList = knives[type];
-      knivesList.forEach(k => {
-        if (k !== knife && state[k]) {
+      const fontFamily = refState.fontSel.value;
+      Object.keys(state).forEach(k => {
+        if (k !== knife) {
           state[k].baseFont = effectiveFontSize;
           state[k].textScale = 1;
+          state[k].fontSel.value = fontFamily;
           state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+          state[k].pos.x = alignRight ?
+            state[k].pos.x :
+            state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
           draw(k);
         }
       });
     }
 
-    function toggleFontSync(knife) {
-      const isBig = knives.big.includes(knife);
-      const type = isBig ? 'big' : 'small';
-      syncFont[type] = !syncFont[type];
-      const knivesList = knives[type];
-      knivesList.forEach(k => {
-        if (state[k]) {
-          state[k].fontSyncBtn.textContent = translations[currentLang].sizeSync;
-          state[k].fontSyncBtn.classList.toggle('off', !syncFont[type]);
-        }
+    function toggleEditZone() {
+      showEditZone = !showEditZone;
+      Object.keys(state).forEach(knife => {
+        draw(knife);
+      });
+      const editZoneButtons = document.querySelectorAll('#edit-zone');
+      editZoneButtons.forEach(btn => {
+        btn.textContent = translations[currentLang].editZone;
+        btn.classList.toggle('off', !showEditZone);
       });
     }
 
-    function toggleAlignment(knife) {
-      const isBig = knives.big.includes(knife);
-      const type = isBig ? 'big' : 'small';
-      alignRight[type] = !alignRight[type];
-      const knivesList = knives[type];
-      if (!alignRight[type]) {
-        const s = state[knife];
-        sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+    function toggleResizeControls() {
+      showResizeControls = !showResizeControls;
+      Object.keys(state).forEach(knife => {
+        state[knife].boxVisible = showResizeControls;
+        draw(knife);
+      });
+      const resizeControlsButtons = document.querySelectorAll('#resize-controls');
+      resizeControlsButtons.forEach(btn => {
+        btn.textContent = translations[currentLang].resizeControls;
+        btn.classList.toggle('off', !showResizeControls);
+      });
+    }
+
+    function toggleSyncFonts() {
+      syncFonts = !syncFonts;
+      if (syncFonts && Object.keys(state).length > 0) {
+        const refKnife = Object.keys(state)[0];
+        syncFontAndSize(refKnife);
       }
-      knivesList.forEach(k => {
-        if (state[k]) {
-          state[k].alignToggleBtn.textContent = translations[currentLang].autoAlignment;
-          state[k].alignToggleBtn.classList.toggle('off', alignRight[type]);
-          draw(k);
-        }
+      const syncFontsButtons = document.querySelectorAll('#sync-fonts');
+      syncFontsButtons.forEach(btn => {
+        btn.textContent = translations[currentLang].syncFonts;
+        btn.classList.toggle('off', !syncFonts);
+      });
+    }
+
+    function toggleAlignment() {
+      alignRight = !alignRight;
+      if (!alignRight && Object.keys(state).length > 0) {
+        const refKnife = Object.keys(state)[0];
+        const s = state[refKnife];
+        sharedXPercent = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+      }
+      Object.keys(state).forEach(knife => {
+        state[knife].pos.x = alignRight ?
+          state[knife].full.width / 2 - state[knife].baseDims.w :
+          state[knife].full.width * sharedXPercent - state[knife].baseDims.w * state[knife].textScale;
+        draw(knife);
+      });
+      const autoAlignButtons = document.querySelectorAll('#auto-align');
+      autoAlignButtons.forEach(btn => {
+        btn.textContent = translations[currentLang].autoAlignment;
+        btn.classList.toggle('off', alignRight);
       });
     }
 
@@ -721,12 +784,10 @@
           }
         }
       }
-      next1Btn.textContent = translations[currentLang].next;
     });
 
     back2Btn.addEventListener('click', () => {
       switchPage(2, 1);
-      back2Btn.textContent = translations[currentLang].back;
     });
 
     next2Btn.addEventListener('click', async () => {
@@ -741,11 +802,9 @@
             await initializeKnife(knife);
           }
         }
-        next2Btn.textContent = translations[currentLang].next;
       } else {
         switchPage(2, 4);
         await generatePreviews();
-        next2Btn.textContent = translations[currentLang].preview;
       }
     });
 
@@ -757,14 +816,12 @@
       } else {
         switchPage(3, 1);
       }
-      back3Btn.textContent = translations[currentLang].back;
     });
 
     next3Btn.addEventListener('click', async () => {
       if (isNavigating) return;
       switchPage(3, 4);
       await generatePreviews();
-      next3Btn.textContent = translations[currentLang].preview;
     });
 
     back4Btn.addEventListener('click', () => {
@@ -778,17 +835,35 @@
       } else {
         switchPage(4, 1);
       }
-      back4Btn.textContent = translations[currentLang].back;
+    });
+
+    /* GLOBAL BUTTONS */
+    document.addEventListener('click', e => {
+      if (e.target.id === 'edit-zone') {
+        toggleEditZone();
+      } else if (e.target.id === 'resize-controls') {
+        toggleResizeControls();
+      } else if (e.target.id === 'sync-fonts') {
+        toggleSyncFonts();
+      } else if (e.target.id === 'auto-align') {
+        toggleAlignment();
+      }
     });
 
     /* KNIFE INITIALIZATION */
     async function initializeKnife(knife) {
       createCanvasSection(knife);
       const s = state[knife];
-      s.overlay.style.visibility = 'visible';
+      s.overlayEl.style.visibility = 'visible';
       s.img = await loadImage(
         productPicker.querySelector(`input[data-name="${knife}"]`).value
       );
+      try {
+        s.overlay = await loadImage(`${knife}-overlay.png`);
+      } catch (e) {
+        console.warn(`Overlay image for ${knife} not found`);
+        s.overlay = null;
+      }
       s.full.width = s.img.naturalWidth;
       s.full.height = s.img.naturalHeight;
       fitInBox(s.view, s.img, s.wrapper);
@@ -796,12 +871,16 @@
       s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
       s.textScale = 1;
 
+      // Apply shared text if sameContent is enabled
+      if (sameContent && sharedText) {
+        s.textInput.value = sharedText;
+        s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+      }
+
       // Center text initially
-      const isBig = knives.big.includes(knife);
-      const type = isBig ? 'big' : 'small';
-      s.pos.x = alignRight[type] ?
+      s.pos.x = alignRight ?
         s.full.width / 2 - s.baseDims.w :
-        s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+        s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
       s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
 
       draw(knife);
@@ -809,29 +888,31 @@
       // Text / Font / Same Content Events
       s.textInput.addEventListener('input', () => {
         if (sameContent) {
+          sharedText = s.textInput.value;
           Object.keys(state).forEach(k => {
-            state[k].textInput.value = s.textInput.value;
+            state[k].textInput.value = sharedText;
             state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-            state[k].pos.x = alignRight[type] ?
+            state[k].pos.x = alignRight ?
               state[k].pos.x :
-              state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+              state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
             draw(k);
           });
         } else {
           s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-          s.pos.x = alignRight[type] ?
+          s.pos.x = alignRight ?
             s.pos.x :
-            s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+            s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
           draw(knife);
         }
       });
 
       s.fontSel.addEventListener('input', () => {
         s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-        s.pos.x = alignRight[type] ?
+        s.pos.x = alignRight ?
           s.pos.x :
-          s.full.width * sharedXPercent[type] - s.baseDims.w * s.textScale;
+          s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
         draw(knife);
+        syncFontAndSize(knife);
         document.fonts.ready.then(() => draw(knife));
       });
 
@@ -839,16 +920,17 @@
         s.sameContentChk.addEventListener('change', () => {
           sameContent = s.sameContentChk.checked;
           if (sameContent) {
+            sharedText = s.textInput.value;
             Object.keys(state).forEach(k => {
-              if (k !== knife) {
-                state[k].textInput.value = s.textInput.value;
-                state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-                state[k].pos.x = alignRight[type] ?
-                  state[k].pos.x :
-                  state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
-                draw(k);
-              }
+              state[k].textInput.value = sharedText;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+              state[k].pos.x = alignRight ?
+                state[k].pos.x :
+                state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
+              draw(k);
             });
+          } else {
+            sharedText = '';
           }
         });
       }
@@ -867,19 +949,18 @@
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
         s.pos.x = f.x - s.dragStart.dx;
         s.pos.y = f.y - s.dragStart.dy;
-        const type = isBig ? 'big' : 'small';
-        if (!alignRight[type]) {
-          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
-          knives[type].forEach(k => {
-            if (k !== knife && state[k]) {
-              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+        if (!alignRight) {
+          sharedXPercent = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          Object.keys(state).forEach(k => {
+            if (k !== knife) {
+              state[k].pos.x = state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
               draw(k);
             }
           });
         }
         draw(knife);
-        lastAdjusted[type] = knife;
-        syncFontSize(knife);
+        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+        syncFontAndSize(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
@@ -913,19 +994,18 @@
         s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
         s.pos.x = s.resizeStart.cx - (s.baseDims.w * s.textScale);
         s.pos.y = s.resizeStart.cy - (s.baseDims.h * s.textScale) / 2;
-        const type = isBig ? 'big' : 'small';
-        if (!alignRight[type]) {
-          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
-          knives[type].forEach(k => {
-            if (k !== knife && state[k]) {
-              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+        if (!alignRight) {
+          sharedXPercent = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          Object.keys(state).forEach(k => {
+            if (k !== knife) {
+              state[k].pos.x = state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
               draw(k);
             }
           });
         }
         draw(knife);
-        lastAdjusted[type] = knife;
-        syncFontSize(knife);
+        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+        syncFontAndSize(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
@@ -961,19 +1041,18 @@
         s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
         s.pos.x = (fA.x + fB.x) / 2 - (s.baseDims.w * s.textScale);
         s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
-        const type = isBig ? 'big' : 'small';
-        if (!alignRight[type]) {
-          sharedXPercent[type] = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
-          knives[type].forEach(k => {
-            if (k !== knife && state[k]) {
-              state[k].pos.x = state[k].full.width * sharedXPercent[type] - state[k].baseDims.w * state[k].textScale;
+        if (!alignRight) {
+          sharedXPercent = (s.pos.x + s.baseDims.w * s.textScale) / s.full.width;
+          Object.keys(state).forEach(k => {
+            if (k !== knife) {
+              state[k].pos.x = state[k].full.width * sharedXPercent - state[k].baseDims.w * state[k].textScale;
               draw(k);
             }
           });
         }
         draw(knife);
-        lastAdjusted[type] = knife;
-        syncFontSize(knife);
+        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+        syncFontAndSize(knife);
       });
 
       ['pointerup', 'pointercancel'].forEach(evt =>
@@ -983,21 +1062,7 @@
         })
       );
 
-      // Scale Button
-      s.scaleBtn.addEventListener('click', () => {
-        s.boxVisible = !s.boxVisible;
-        s.scaleBtn.textContent = translations[currentLang].scaleHandles;
-        s.scaleBtn.classList.toggle('off', !s.boxVisible);
-        draw(knife);
-      });
-
-      // Sync Font Size Button
-      s.fontSyncBtn.addEventListener('click', () => toggleFontSync(knife));
-
-      // Toggle Alignment Button
-      s.alignToggleBtn.addEventListener('click', () => toggleAlignment(knife));
-
-      s.overlay.style.visibility = 'hidden';
+      s.overlayEl.style.visibility = 'hidden';
     }
 
     // Download All
@@ -1020,10 +1085,9 @@
         tCtx.fillStyle = '#000';
         tCtx.textBaseline = 'top';
         tCtx.textAlign = 'right';
-        const type = knives.big.includes(knife) ? 'big' : 'small';
-        const textX = alignRight[type] ?
+        const textX = alignRight ?
           s.pos.x + s.baseDims.w * s.textScale :
-          s.full.width * sharedXPercent[type];
+          s.full.width * sharedXPercent;
         tCtx.fillText(s.textInput.value, textX, s.pos.y);
         const textBlob = await new Promise(r => t.toBlob(r));
         zip.file(`${knife}-text-only.png`, textBlob);
