@@ -194,16 +194,26 @@
       z-index: 1000;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: .5rem;
     }
     .modal img {
       max-width: 90%;
-      max-height: 90%;
+      max-height: 85%;
       border-radius: var(--radius);
     }
+    .modal span {
+      color: #fff;
+      font-size: 1rem;
+    }
     #lang-toggle {
-      float: right;
-      margin: 0 1rem 1rem 0;
+      display: none;
+      margin: 0 auto 1rem;
       padding: .5rem 1rem;
+      text-align: center;
+    }
+    #page-1.active ~ #lang-toggle {
+      display: block;
     }
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: flex-start; }
@@ -219,8 +229,11 @@
         font-size: 20px;
       }
       #lang-toggle {
-        margin: 0 .5rem .5rem 0;
+        margin: 0 auto .5rem;
         padding: .4rem .8rem;
+        font-size: .9rem;
+      }
+      .modal span {
         font-size: .9rem;
       }
     }
@@ -276,10 +289,10 @@
       <div id="big-knife-content"></div>
       <div class="navigation">
         <button id="back-2"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
-        <button id="edit-zone"><span class="material-symbols-outlined">select_all</span></button>
+        <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_right</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-2"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -289,10 +302,10 @@
       <div id="small-knife-content"></div>
       <div class="navigation">
         <button id="back-3"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
-        <button id="edit-zone"><span class="material-symbols-outlined">select_all</span></button>
+        <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_right</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-3"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -304,13 +317,14 @@
       <div id="preview-content" class="preview-list"></div>
       <div class="navigation">
         <button id="back-4"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
-        <button id="download-all" data-i18n="download">Download</button>
+        <button id="download-all"><span class="material-symbols-outlined">download_2</span></button>
       </div>
     </div>
 
     <!-- Modal for Enlarged Image -->
     <div id="modal" class="modal">
       <img id="modal-image" src="" alt="Enlarged preview">
+      <span data-i18n="modalClose">Click anywhere to close</span>
     </div>
   </div>
 
@@ -346,7 +360,8 @@
         loading: "Loading…",
         knife: "Knife",
         english: "English",
-        chinese: "Chinese"
+        chinese: "Chinese",
+        modalClose: "Click anywhere to close"
       },
       "zh-hk": {
         title: "刀具刻字定制器",
@@ -377,7 +392,8 @@
         loading: "載入中…",
         knife: "刀",
         english: "英文",
-        chinese: "中文"
+        chinese: "中文",
+        modalClose: "點擊任意位置關閉"
       }
     };
 
@@ -403,7 +419,8 @@
           } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' && 
                      el.id !== 'edit-zone' && el.id !== 'resize-controls' && 
                      el.id !== 'sync-fonts' && el.id !== 'auto-align' && 
-                     el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3') {
+                     el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' && 
+                     el.id !== 'download-all') {
             el.textContent = translations[lang][key];
           }
         }
@@ -420,18 +437,6 @@
       if (pages[4].classList.contains('active')) {
         generatePreviews();
       }
-
-      updateNavigationButtons();
-    }
-
-    function updateNavigationButtons() {
-      const navButtons = document.querySelectorAll('.navigation button');
-      navButtons.forEach(btn => {
-        const key = btn.getAttribute('data-i18n');
-        if (key && btn.id === 'download-all') {
-          btn.textContent = translations[currentLang][key];
-        }
-      });
     }
 
     document.addEventListener('click', e => {
@@ -894,13 +899,13 @@
 
     document.addEventListener('click', e => {
       if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
-        debounceToggle(toggleEditZone, 'edit-zone', 'edit_square')();
+        debounceToggle(toggleEditZone, 'edit-zone', 'vignette')();
       } else if (e.target.id === 'resize-controls' || e.target.closest('#resize-controls')) {
-        debounceToggle(toggleResizeControls, 'resize-controls', 'resize')();
+        debounceToggle(toggleResizeControls, 'resize-controls', 'format_shapes')();
       } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
-        debounceToggle(toggleSyncFonts, 'sync-fonts', 'font_download')();
+        debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
       } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
-        debounceToggle(toggleAlignment, 'auto-align', 'align_horizontal_right')();
+        debounceToggle(toggleAlignment, 'auto-align', 'recenter')();
       }
     });
 
