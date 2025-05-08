@@ -244,7 +244,14 @@
     }
 	  
     @media (max-width: 600px) {
-      .controls { flex-direction: column; align-items: flex-start; }
+      .controls { 
+        flex-direction: column; 
+        align-items: flex-start;
+        display: block; 
+      }
+      .controls div {
+        margin: 10px 0px;
+      }
       .controls input[type="text"] {
         width: 100%;
         max-width: 250px;
