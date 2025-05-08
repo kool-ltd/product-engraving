@@ -221,7 +221,7 @@
       padding: .5rem 1rem;
       text-align: center;
     }
-    #page-1.active ~ #lang-toggle {
+    #page-1.active #lang-toggle {
       display: block;
     }
     @media (max-width: 600px) {
@@ -255,10 +255,10 @@
 <body>
   <h1 id="title">Knife Engraving Customiser</h1>
   <h3 id="subtitle">by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
-  <button id="lang-toggle">中文</button>
   <div class="container">
     <!-- Page 1: Knife Selection -->
     <div id="page-1" class="page section active">
+      <button id="lang-toggle">中文</button>
       <h2 data-i18n="chooseKnives">Choose your knives</h2>
       <div id="product-picker">
         <label class="product-option">
@@ -578,7 +578,7 @@
                 <option value="Arial,sans-serif">Arial</option>
               </optgroup>
               <optgroup label="${translations[currentLang].chinese}">
-                <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
+		            <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
                 <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
                 <option value="'Noto Sans HK',sans-serif">思源黑體/option>
                 <option value="'Noto Serif TC',serif">思源宋體</option>
@@ -637,8 +637,6 @@
         textInput: document.getElementById(`text-${knife}`),
         fontSel: document.getElementById(`font-${knife}`),
         sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
-        cacheCanvas: document.createElement('canvas'),
-ವಿಡಿಓ: https://www.youtube.com/watch?v=OzZ8I4uY8jU&t=2s
         cacheCanvas: document.createElement('canvas'),
         cacheCtx: document.createElement('canvas').getContext('2d'),
         cacheValid: false
