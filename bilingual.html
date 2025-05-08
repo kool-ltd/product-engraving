@@ -11,6 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK&family=Noto+Serif+TC&display=swap" rel="stylesheet">
 
+  <!-- Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
   <!-- JSZip for ZIP download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -116,12 +119,19 @@
       font-weight: 600;
       font-size: 1rem;
       margin: 0 .5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     button[disabled] {
       opacity: .4; cursor: not-allowed;
     }
     button.off {
       background: var(--gray);
+    }
+    .material-symbols-outlined {
+      font-size: 24px; /* Adjust icon size */
+      vertical-align: middle;
     }
     .same-content {
       display: block; margin-top: .5rem;
@@ -192,6 +202,7 @@
       .controls { flex-direction: column; align-items: flex-start; }
       .navigation { flex-direction: row; gap: .5rem; }
       button { padding: .5rem .8rem; font-size: .9rem; }
+      .material-symbols-outlined { font-size: 20px; }
     }
   </style>
 </head>
@@ -238,7 +249,7 @@
         </label>
       </div>
       <div class="navigation">
-        <button id="next-1" data-i18n="next">Next</button>
+        <button id="next-1"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
 
@@ -246,12 +257,12 @@
     <div id="page-2" class="page">
       <div id="big-knife-content"></div>
       <div class="navigation">
-        <button id="back-2" data-i18n="back">Back</button>
-        <button id="edit-zone" data-i18n="editZone">Edit Zone</button>
-        <button id="resize-controls" data-i18n="resizeControls">Resize Controls</button>
-        <button id="sync-fonts" data-i18n="syncFonts">Sync Fonts</button>
-        <button id="auto-align" data-i18n="autoAlignment">Auto Align</button>
-        <button id="next-2" data-i18n="next">Next</button>
+        <button id="back-2"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
+        <button id="edit-zone"><span class="material-symbols-outlined">edit_square</span></button>
+        <button id="resize-controls"><span class="material-symbols-outlined">resize</span></button>
+        <button id="sync-fonts"><span class="material-symbols-outlined">font_download</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_right</span></button>
+        <button id="next-2"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
 
@@ -259,12 +270,12 @@
     <div id="page-3" class="page">
       <div id="small-knife-content"></div>
       <div class="navigation">
-        <button id="back-3" data-i18n="back">Back</button>
-        <button id="edit-zone" data-i18n="editZone">Edit Zone</button>
-        <button id="resize-controls" data-i18n="resizeControls">Resize Controls</button>
-        <button id="sync-fonts" data-i18n="syncFonts">Sync Fonts</button>
-        <button id="auto-align" data-i18n="autoAlignment">Auto Align</button>
-        <button id="next-3" data-i18n="preview">Preview</button>
+        <button id="back-3"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
+        <button id="edit-zone"><span class="material-symbols-outlined">edit_square</span></button>
+        <button id="resize-controls"><span class="material-symbols-outlined">resize</span></button>
+        <button id="sync-fonts"><span class="material-symbols-outlined">font_download</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">align_horizontal_right</span></button>
+        <button id="next-3"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
 
@@ -274,7 +285,7 @@
       <div class="preview-description" data-i18n="previewDescription">Click any image to enlarge</div>
       <div id="preview-content" class="preview-list"></div>
       <div class="navigation">
-        <button id="back-4" data-i18n="back">Back</button>
+        <button id="back-4"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
         <button id="download-all" data-i18n="download">Download</button>
       </div>
     </div>
@@ -290,8 +301,8 @@
     const translations = {
       en: {
         title: "Knife Engraving Customiser",
-        subtitle: "by", // Text before the logo
-        subtitleAfter: "", // Text after the logo
+        subtitle: "by",
+        subtitleAfter: "",
         chooseKnives: "Choose your knives",
         next: "Next",
         back: "Back",
@@ -321,8 +332,8 @@
       },
       "zh-hk": {
         title: "刀具刻字定制器",
-        subtitle: "由", // Text before the logo
-        subtitleAfter: "提供", // Text after the logo
+        subtitle: "由",
+        subtitleAfter: "提供",
         chooseKnives: "選擇您的刀具",
         next: "下一步",
         back: "返回",
@@ -353,7 +364,7 @@
     };
 
     /* LANGUAGE TOGGLE */
-    let currentLang = 'en'; // Default language
+    let currentLang = 'en';
 
     function updateLanguage(lang) {
       currentLang = lang;
@@ -363,7 +374,6 @@
         langToggleBtn.textContent = lang === 'en' ? translations['zh-hk'].chinese : translations.en.english;
       }
 
-      // Update static elements
       document.getElementById('title').textContent = translations[lang].title;
       const subtitle = document.getElementById('subtitle');
       subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
@@ -372,27 +382,27 @@
         if (translations[lang][key]) {
           if (el.tagName === 'INPUT' && el.type === 'text') {
             el.placeholder = translations[lang][key];
-          } else {
+          } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' && 
+                     el.id !== 'edit-zone' && el.id !== 'resize-controls' && 
+                     el.id !== 'sync-fonts' && el.id !== 'auto-align' && 
+                     el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3') {
             el.textContent = translations[lang][key];
           }
         }
       });
 
-      // Update dynamic elements (re-render knife sections)
       bigKnifeContent.innerHTML = '';
       smallKnifeContent.innerHTML = '';
       const selectedKnives = Object.keys(state);
       selectedKnives.forEach(knife => {
         createCanvasSection(knife);
-        initializeKnife(knife); // Re-initialize to re-attach event listeners
+        initializeKnife(knife);
       });
 
-      // Update previews if on page 4
       if (pages[4].classList.contains('active')) {
         generatePreviews();
       }
 
-      // Update navigation buttons
       updateNavigationButtons();
     }
 
@@ -400,13 +410,12 @@
       const navButtons = document.querySelectorAll('.navigation button');
       navButtons.forEach(btn => {
         const key = btn.getAttribute('data-i18n');
-        if (key && translations[currentLang][key]) {
+        if (key && btn.id === 'download-all') {
           btn.textContent = translations[currentLang][key];
         }
       });
     }
 
-    // Initialize language toggle
     document.addEventListener('click', e => {
       if (e.target.id === 'lang-toggle') {
         updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
@@ -420,15 +429,15 @@
     };
     const state = {};
     let sameContent = false;
-    let sharedText = ''; // Store shared text when sameContent is enabled
+    let sharedText = '';
     let firstSelectedKnife = null;
     let lastAdjusted = { big: null, small: null };
-    let syncFonts = true; // Sync both font size and family
-    let showEditZone = false; // Toggle edit zone overlay
-    let showResizeControls = true; // Toggle resize handles
-    let alignRight = false; // Auto alignment for all knives
-    let sharedXPercent = 0.9; // Changed from const to let
-    let isNavigating = false; // Prevent rapid navigation
+    let syncFonts = true;
+    let showEditZone = false;
+    let showResizeControls = true;
+    let alignRight = false;
+    let sharedXPercent = 0.9;
+    let isNavigating = false;
 
     /* ELEMENTS */
     const pages = {
@@ -486,7 +495,7 @@
     }
 
     function hitTest(fx, fy, pos, dims, scale, textX) {
-      const x = textX - dims.w * scale; // Adjust for right-aligned text
+      const x = textX - dims.w * scale;
       return fx >= x && fx <= x + dims.w * scale &&
              fy >= pos.y && fy <= pos.y + dims.h * scale;
     }
@@ -504,7 +513,7 @@
       isNavigating = true;
       pages[from].classList.remove('active');
       pages[to].classList.add('active');
-      setTimeout(() => { isNavigating = false; }, 100); // Debounce navigation
+      setTimeout(() => { isNavigating = false; }, 100);
     }
 
     function createCanvasSection(knife) {
@@ -564,10 +573,9 @@
         smallKnifeContent.appendChild(section);
       }
 
-      // Initialize state
       state[knife] = {
         img: null,
-        overlay: null, // Overlay image for edit zone
+        overlay: null,
         baseFont: knives.big.includes(knife) ? 150 : 100,
         textScale: 1,
         baseDims: { w: 0, h: 0 },
@@ -602,11 +610,10 @@
 
       const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
 
-      // Full-res
       s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.fCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
-        s.fCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height); // Scale overlay
+        s.fCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
       }
       s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.fCtx.fillStyle = '#000';
@@ -614,13 +621,12 @@
       s.fCtx.textAlign = 'right';
       s.fCtx.fillText(s.textInput.value, textX, s.pos.y);
 
-      // Preview
       const scale = s.view.width / s.full.width;
       s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
       s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.vCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
-        s.vCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height); // Scale overlay
+        s.vCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
       }
       s.vCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.vCtx.fillStyle = '#000';
@@ -629,7 +635,6 @@
       s.vCtx.fillText(s.textInput.value, textX, s.pos.y);
       s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
-      // Bounding box
       const dx = s.view.width / s.full.width;
       const dy = s.view.height / s.full.height;
       if (s.boxVisible && s.textInput.value) {
@@ -669,7 +674,7 @@
       });
       const editZoneButtons = document.querySelectorAll('#edit-zone');
       editZoneButtons.forEach(btn => {
-        btn.textContent = translations[currentLang].editZone;
+        btn.innerHTML = '<span class="material-symbols-outlined">edit_square</span>';
         btn.classList.toggle('off', !showEditZone);
       });
     }
@@ -682,7 +687,7 @@
       });
       const resizeControlsButtons = document.querySelectorAll('#resize-controls');
       resizeControlsButtons.forEach(btn => {
-        btn.textContent = translations[currentLang].resizeControls;
+        btn.innerHTML = '<span class="material-symbols-outlined">resize</span>';
         btn.classList.toggle('off', !showResizeControls);
       });
     }
@@ -695,7 +700,7 @@
       }
       const syncFontsButtons = document.querySelectorAll('#sync-fonts');
       syncFontsButtons.forEach(btn => {
-        btn.textContent = translations[currentLang].syncFonts;
+        btn.innerHTML = '<span class="material-symbols-outlined">font_download</span>';
         btn.classList.toggle('off', !syncFonts);
       });
     }
@@ -715,7 +720,7 @@
       });
       const autoAlignButtons = document.querySelectorAll('#auto-align');
       autoAlignButtons.forEach(btn => {
-        btn.textContent = translations[currentLang].autoAlignment;
+        btn.innerHTML = '<span class="material-symbols-outlined">align_horizontal_right</span>';
         btn.classList.toggle('off', alignRight);
       });
     }
@@ -742,18 +747,15 @@
       });
     }
 
-    /* MODAL */
     modal.addEventListener('click', () => {
       modal.style.display = 'none';
       modalImage.src = '';
     });
 
-    /* FONT LOADING */
     document.fonts.ready.then(() => {
       Object.keys(state).forEach(knife => draw(knife));
     });
 
-    /* NAVIGATION */
     next1Btn.addEventListener('click', async () => {
       if (isNavigating) return;
       const selected = Array.from(productPicker.querySelectorAll('input:checked'));
@@ -836,7 +838,6 @@
       }
     });
 
-    /* GLOBAL BUTTONS */
     document.addEventListener('click', e => {
       if (e.target.id === 'edit-zone') {
         toggleEditZone();
@@ -849,7 +850,6 @@
       }
     });
 
-    /* KNIFE INITIALIZATION */
     async function initializeKnife(knife) {
       createCanvasSection(knife);
       const s = state[knife];
@@ -870,19 +870,16 @@
       s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
       s.textScale = 1;
 
-      // Apply shared text if sameContent is enabled
       if (sameContent && sharedText) {
         s.textInput.value = sharedText;
         s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
       }
 
-      // Center text initially
       s.pos.x = alignRight ?
         s.full.width / 2 - s.baseDims.w :
         s.full.width * sharedXPercent - s.baseDims.w * s.textScale;
       s.pos.y = s.full.height / 2 - s.baseDims.h / 2;
 
-      // Ensure font is loaded
       document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
         s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
         draw(knife);
@@ -890,7 +887,6 @@
 
       draw(knife);
 
-      // Text / Font / Same Content Events
       s.textInput.addEventListener('input', () => {
         if (sameContent) {
           sharedText = s.textInput.value;
@@ -920,7 +916,6 @@
           draw(knife);
           syncFontAndSize(knife);
         });
-        // Fallback redraw
         setTimeout(() => draw(knife), 500);
       });
 
@@ -943,7 +938,6 @@
         });
       }
 
-      // Drag Text
       s.view.addEventListener('pointerdown', e => {
         const f = toFullCoords(s.view, s, e.clientX, e.clientY);
         const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.full.width * sharedXPercent;
@@ -983,7 +977,6 @@
         })
       );
 
-      // Resize via Handles
       s.bbox.querySelectorAll('.handle').forEach(h => {
         h.addEventListener('pointerdown', e => {
           e.stopPropagation();
@@ -1033,7 +1026,6 @@
         })
       );
 
-      // Pinch-zoom with Movement
       s.view.addEventListener('pointerdown', e => {
         s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
         if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
@@ -1089,18 +1081,15 @@
       s.overlayEl.style.visibility = 'hidden';
     }
 
-    // Download All
     downloadBtn.addEventListener('click', async () => {
       const zip = new JSZip();
       for (const knife of Object.keys(state)) {
         const s = state[knife];
         draw(knife);
 
-        // Preview Image
         const previewBlob = await new Promise(r => s.full.toBlob(r));
         zip.file(`${knife}-preview.png`, previewBlob);
 
-        // Text-only Image
         const t = document.createElement('canvas');
         t.width = s.full.width;
         t.height = s.full.height;
@@ -1130,7 +1119,6 @@
       }, 100);
     });
 
-    // Set initial language
     updateLanguage(currentLang);
   </script>
 </body>
