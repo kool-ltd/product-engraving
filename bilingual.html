@@ -837,9 +837,7 @@
         // Turning off: Keep current positions
         Object.keys(state).forEach(k => {
           if (knives.big.includes(k) === isBigKnife) {
-            // Store current position for potential re-alignment
             storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
-            // No position change; allow independent movement
             invalidateTextCache(k);
             draw(k);
           }
@@ -1179,7 +1177,6 @@
         const p = toFullCoords(s.view, s, e.clientX, e.clientY);
         const isBigKnife = knives.big.includes(knife);
         const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-        // Calculate new scale based on distance from anchor
         let newScale;
         if (s.resizeStart.handle === 'se') {
           const dx = Math.abs(p.x - s.resizeStart.anchorX);
@@ -1194,16 +1191,16 @@
           s.textRightX = s.resizeStart.anchorX;
           s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
         } else if (s.resizeStart.handle === 'ne') {
-          const dx = Math.abs(s.resizeStart.anchorX - p.x);
-          const dy = Math.abs(s.resizeStart.anchorY - p.y);
-          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-          s.textRightX = s.resizeStart.anchorX;
-          s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-        } else if (s.resizeStart.handle === 'sw') {
           const dx = Math.abs(p.x - s.resizeStart.anchorX);
           const dy = Math.abs(p.y - s.resizeStart.anchorY);
           newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
           s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
+          s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
+        } else if (s.resizeStart.handle === 'sw') {
+          const dx = Math.abs(s.resizeStart.anchorX - p.x);
+          const dy = Math.abs(p.y - s.resizeStart.anchorY);
+          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+          s.textRightX = s.resizeStart.anchorX;
           s.pos.y = s.resizeStart.anchorY;
         }
         s.textScale = newScale;
