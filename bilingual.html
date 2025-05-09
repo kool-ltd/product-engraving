@@ -498,10 +498,10 @@ let sharedText = '';
 let firstSelectedKnife = null;
 let lastAdjusted = { big: null, small: null };
 let syncFonts = true;
-let showEditZone = false;
+let showEditZone = true;
 let showResizeControls = true;
-let alignRightBig = false;
-let alignRightSmall = false;
+let alignRightBig = true;
+let alignRightSmall = true;
 let isNavigating = false;
 let lastToggleTime = 0;
 let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
@@ -689,7 +689,7 @@ function createCanvasSection(knife) {
 
 function draw(knife) {
   const s = state[knife];
-  if (!s.img || s.full.width === 0 || s.full.height === 0) return; // Prevent drawing if image or canvas is invalid
+  if (!s.img || s.full.width === 0 || s.full.height === 0) return; // Skip if image or canvas is invalid
 
   const isBigKnife = knives.big.includes(knife);
   const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
@@ -718,7 +718,7 @@ function draw(knife) {
     s.textCacheCtx.fillStyle = '#000';
     s.textCacheCtx.textBaseline = 'top';
     s.textCacheCtx.textAlign = alignRight ? 'right' : 'left';
-    s.textCacheCtx.fillText(s.textInput.value, textX, s.pos.y);
+    s.textCacheCtx.fillText(s.textInput.value || 'Sample', textX, s.pos.y);
     s.textCacheValid = true;
   }
 
@@ -742,7 +742,7 @@ function draw(knife) {
     s.bbox.style.display = 'block';
     s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
     s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-    s.bbox.style.left = ((textX) * dx) + 'px';
+    s.bbox.style.left = (textX * dx) + 'px';
     s.bbox.style.top = (s.pos.y * dy) + 'px';
   } else {
     s.bbox.style.display = 'none';
@@ -773,7 +773,6 @@ function syncFontAndText(knife) {
       state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
       const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
       state[k].pos.x = alignRightK ? state[k].full.width - state[k].baseDims.w - 20 : state[k].pos.x;
-      invalidateCache(k);
       invalidateTextCache(k);
       draw(k);
     }
@@ -841,7 +840,7 @@ function toggleAlignment(knife) {
   const group = isBigKnife ? 'big' : 'small';
 
   if (alignRight) {
-    // Turning off auto-align: restore stored positions or keep current
+    // Turning off auto-align: restore stored positions
     Object.keys(state).forEach(k => {
       if (knives.big.includes(k) === isBigKnife) {
         const pos = storedPositions[group][k] || state[k].pos;
@@ -854,10 +853,13 @@ function toggleAlignment(knife) {
     if (isBigKnife) alignRightBig = false;
     else alignRightSmall = false;
   } else {
-    // Turning on auto-align: store current positions and keep position
+    // Turning on auto-align: store current positions and sync to reference knife
+    const refPos = state[knife].pos;
     Object.keys(state).forEach(k => {
       if (knives.big.includes(k) === isBigKnife) {
         storedPositions[group][k] = { x: state[k].pos.x, y: state[k].pos.y };
+        state[k].pos.x = refPos.x;
+        state[k].pos.y = refPos.y;
         invalidateTextCache(k);
         draw(k);
       }
@@ -1023,7 +1025,7 @@ async function initializeKnife(knife) {
   s.textCacheCanvas.height = s.full.height;
   fitInBox(s.view, s.img, s.wrapper);
   const isBigKnife = knives.big.includes(knife);
-  s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont; // Carry font family to small knives
+  s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
   s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
   s.textScale = 1;
 
@@ -1032,15 +1034,14 @@ async function initializeKnife(knife) {
     s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
   }
 
-  // Set initial position to top-left corner
-  s.pos.x = 20; // 20px padding from left
-  s.pos.y = 20; // 20px padding from top
+  // Set initial position
+  s.pos.x = isBigKnife && alignRightBig ? s.full.width - s.baseDims.w - 20 : 20;
+  s.pos.y = 20;
 
-  document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
-    s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
-    draw(knife);
-  });
-
+  // Draw only after font and image are loaded
+  await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
+  s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
+  s.overlayEl.style.visibility = 'hidden';
   draw(knife);
 
   s.textInput.addEventListener('input', () => {
@@ -1123,7 +1124,7 @@ async function initializeKnife(knife) {
 	  s.pos.x = f.x - s.dragStart.dx;
 	  s.pos.y = f.y - s.dragStart.dy;
 	  const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-	  if (alignRightK) { // Sync only if auto-align is on
+	  if (alignRightK) {
 	    Object.keys(state).forEach(k => {
 	      if (k !== knife && knives.big.includes(k) === isBigKnife) {
 	        state[k].pos.x = s.pos.x;
@@ -1314,6 +1315,12 @@ downloadBtn.addEventListener('click', async () => {
 });
 
 updateLanguage(currentLang);
+
+// Set initial button states
+document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.remove('off'));
+document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.remove('off'));
+document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.remove('off'));
+document.querySelectorAll('#auto-align').forEach(btn => btn.classList.remove('off'));
   </script>
 </body>
 </html>
