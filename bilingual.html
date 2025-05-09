@@ -689,16 +689,17 @@ function createCanvasSection(knife) {
 
 function draw(knife) {
   const s = state[knife];
-  if (!s.img) return;
+  if (!s.img || s.full.width === 0 || s.full.height === 0) return; // Prevent drawing if image or canvas is invalid
 
   const isBigKnife = knives.big.includes(knife);
   const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-  const textX = alignRight ? s.full.width - 20 : s.pos.x + s.baseDims.w * s.textScale;
+  const textX = alignRight ? s.full.width - s.baseDims.w * s.textScale - 20 : s.pos.x;
 
   // Cache base image and overlay if not valid
   if (!s.cacheValid) {
     s.cacheCanvas.width = s.full.width;
     s.cacheCanvas.height = s.full.height;
+    if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return; // Skip if dimensions are invalid
     s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.cacheCtx.drawImage(s.img, 0, 0);
     if (showEditZone && s.overlay) {
@@ -708,15 +709,16 @@ function draw(knife) {
   }
 
   // Cache text if not valid
-  if (!s.textCacheValid || s.textInput.value) {
+  if (!s.textCacheValid) {
     s.textCacheCanvas.width = s.full.width;
     s.textCacheCanvas.height = s.full.height;
+    if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return; // Skip if dimensions are invalid
     s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
     s.textCacheCtx.fillStyle = '#000';
     s.textCacheCtx.textBaseline = 'top';
     s.textCacheCtx.textAlign = alignRight ? 'right' : 'left';
-    s.textCacheCtx.fillText(s.textInput.value, alignRight ? s.full.width - 20 : s.pos.x, s.pos.y);
+    s.textCacheCtx.fillText(s.textInput.value, textX, s.pos.y);
     s.textCacheValid = true;
   }
 
@@ -740,7 +742,7 @@ function draw(knife) {
     s.bbox.style.display = 'block';
     s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
     s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-    s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
+    s.bbox.style.left = ((textX) * dx) + 'px';
     s.bbox.style.top = (s.pos.y * dy) + 'px';
   } else {
     s.bbox.style.display = 'none';
@@ -856,7 +858,6 @@ function toggleAlignment(knife) {
     Object.keys(state).forEach(k => {
       if (knives.big.includes(k) === isBigKnife) {
         storedPositions[group][k] = { x: state[k].pos.x, y: state[k].pos.y };
-        // Keep current position (no change to pos.x)
         invalidateTextCache(k);
         draw(k);
       }
@@ -1122,10 +1123,9 @@ async function initializeKnife(knife) {
 	  s.pos.x = f.x - s.dragStart.dx;
 	  s.pos.y = f.y - s.dragStart.dy;
 	  const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-	  if (!alignRightK) {
-	    // Only sync if auto-align is on
+	  if (alignRightK) { // Sync only if auto-align is on
 	    Object.keys(state).forEach(k => {
-	      if (k !== knife && knives.big.includes(k) === isBigKnife && (isBigKnife ? alignRightBig : alignRightSmall)) {
+	      if (k !== knife && knives.big.includes(k) === isBigKnife) {
 	        state[k].pos.x = s.pos.x;
 	        state[k].pos.y = s.pos.y;
 	        invalidateTextCache(k);
@@ -1198,31 +1198,9 @@ async function initializeKnife(knife) {
 	    s.pos.x = s.resizeStart.anchorX - s.baseDims.w * s.textScale;
 	    s.pos.y = s.resizeStart.anchorY - s.baseDims.h * s.textScale;
 	  } else if (s.resizeStart.handle === 'ne') {
-	    s.pos.x = s.resizeStart.anchorX;
-	    s.pos.y = s.resizeStart.anchorY - s.baseDims.h * s.textScale;
-	  } else if (s.resizeStart.handle === 'sw') {
-	    s.pos.x = s.resizeStart.anchorX - s.baseDims.w * s.textScale;
-	    s.pos.y = s.resizeStart.anchorY;
-	  }
-	  const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-	  if (!alignRightK || !syncFonts) {
-	    Object.keys(state).forEach(k => {
-	      if (k !== knife && knives.big.includes(k) === isBigKnife && (alignRightK ? alignRightBig : alignRightSmall)) {
-	        state[k].pos.x = s.pos.x;
-	        state[k].pos.y = s.pos.y;
-	        state[k].baseFont = s.baseFont * s.textScale;
-	        state[k].textScale = 1;
-	        state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-	        invalidateTextCache(k);
-	        draw(k);
-	      }
-	    });
-	  }
-	  invalidateTextCache(knife);
-	  requestAnimationFrame(() => draw(knife));
-	  lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-	  syncFontAndText(knife);
-	});
+	    s.pos
+	
+	Human: The error persists after applying the changes. Here's the relevant console output:
 
   ['pointerup', 'pointercancel'].forEach(evt =>
     window.addEventListener(evt, e => {
