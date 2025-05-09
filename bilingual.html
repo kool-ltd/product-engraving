@@ -65,7 +65,7 @@
   }
   #product-picker {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Increased min-width for larger images */
     gap: .75rem;
   }
   .product-option {
@@ -74,7 +74,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 180px; /* Fixed height for consistent alignment */
+    min-height: 200px; /* Minimum height to fit scaled images */
     padding: 0.5rem;
   }
   .product-option input {
@@ -85,7 +85,7 @@
   }
   .product-option img {
     width: 100%;
-    max-height: 120px; /* Limit image height to fit within container */
+    max-height: 140px; /* Increased to fit scaled images */
     transform: scale(1.75); /* 175% size */
     object-fit: contain; /* Maintain proportions */
     border: 2px solid transparent;
@@ -336,11 +336,14 @@
       font-size: .9rem;
     }
     .product-option {
-      height: 160px; /* Slightly smaller for mobile */
+      min-height: 180px; /* Adjusted for mobile */
     }
     .product-option img {
-      max-height: 100px; /* Adjust image height for mobile */
+      max-height: 120px; /* Adjusted for mobile */
       transform: scale(1.5); /* Slightly smaller scale for mobile */
+    }
+    #product-picker {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Adjusted for smaller screens */
     }
   }
 </style>
@@ -398,7 +401,7 @@
         <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">text_rotation_none</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-2"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -411,7 +414,7 @@
         <button id="edit-zone" class="off"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">text_rotation_none</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-3"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -457,7 +460,7 @@ const translations = {
     textLabel: "Text:",
     textPlaceholder: "Enter engraving",
     fontLabel: "Font:",
-    sameContentLabel: "Use same text for all",
+    sameContentLabel: " microbiome text for all",
     instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
     editZone: "Edit Zone",
     resizeControls: "Resize Controls",
@@ -562,16 +565,17 @@ let sameContent = true;
 let sharedText = '';
 let firstSelectedKnife = null;
 let lastAdjusted = { big: null, small: null };
-let syncFonts = true;
+let syncFonts = true; // Default to ON
 let showEditZone = false;
-let showResizeControls = true;
-let autoAlignBig = false;
-let autoAlignSmall = false;
+let showResizeControls = true; // Default to ON
+let autoAlignBig = true; // Default to ON
+let autoAlignSmall = true; // Default to ON
 let isNavigating = false;
 let lastToggleTime = 0;
-let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Roboto";
 const toggleDebounce = 200; // ms
 const dragThrottle = 16; // ms (approx 60fps)
+const scaleDebounce = 50; // ms for scaling performance
 
 /* ELEMENTS */
 const pages = {
@@ -607,12 +611,13 @@ function loadImage(src) {
 
 function fitInBox(canvas, img, wrapper) {
   const wrapW = wrapper.clientWidth;
+  const devicePixelRatio = window.devicePixelRatio || 1; // Support high-DPI
   const scale = wrapW / img.naturalWidth;
-  canvas.width = img.naturalWidth * scale;
-  canvas.height = img.naturalHeight * scale;
-  canvas.style.width = canvas.width + 'px';
-  canvas.style.height = canvas.height + 'px';
-  return scale;
+  canvas.width = img.naturalWidth * scale * devicePixelRatio; // High-res
+  canvas.height = img.naturalHeight * scale * devicePixelRatio;
+  canvas.style.width = `${wrapW}px`; // Display size
+  canvas.style.height = `${img.naturalHeight * scale}px`;
+  return scale * devicePixelRatio;
 }
 
 function measureText(ctx, text, fontSize, font) {
@@ -622,14 +627,16 @@ function measureText(ctx, text, fontSize, font) {
 
 function toFullCoords(canvas, wrapper, cx, cy) {
   const r = canvas.getBoundingClientRect();
+  const devicePixelRatio = window.devicePixelRatio || 1;
   return {
-    x: (cx - r.left) * (wrapper.full.width / r.width),
-    y: (cy - r.top) * (wrapper.full.height / r.height)
+    x: (cx - r.left) * (wrapper.full.width / r.width) * devicePixelRatio,
+    y: (cy - r.top) * (wrapper.full.height / r.height) * devicePixelRatio
   };
 }
 
-function hitTest(fx, fy, pos, dims, scale) {
-  return fx >= pos.x && fx <= pos.x + dims.w * scale &&
+function hitTest(fx, fy, pos, dims, scale, isRightAligned) {
+  const x = isRightAligned ? pos.x - dims.w * scale : pos.x;
+  return fx >= x && fx <= x + dims.w * scale &&
          fy >= pos.y && fy <= pos.y + dims.h * scale;
 }
 
@@ -664,8 +671,8 @@ function createCanvasSection(knife) {
         <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
         <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
           <optgroup label="${translations[currentLang].english}">
-            <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
+            <option value="Montserrat">Montserrat</option>
             <option value="Lobster">Lobster</option>
             <option value="'Times New Roman',serif">Times New Roman</option>
             <option value="'Courier New',monospace">Courier New</option>
@@ -737,7 +744,8 @@ function createCanvasSection(knife) {
     textCacheCtx: document.createElement('canvas').getContext('2d'),
     cacheValid: false,
     textCacheValid: false,
-    lastDragTime: 0
+    lastDragTime: 0,
+    lastScaleTime: 0
   };
   state[knife].full.width = 0;
   state[knife].full.height = 0;
@@ -753,6 +761,9 @@ function createCanvasSection(knife) {
 function draw(knife) {
   const s = state[knife];
   if (!s.img) return;
+
+  const isBigKnife = knives.big.includes(knife);
+  const isRightAligned = isBigKnife ? autoAlignBig : autoAlignSmall;
 
   // Cache base image and overlay if not valid
   if (!s.cacheValid) {
@@ -774,8 +785,9 @@ function draw(knife) {
     s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
     s.textCacheCtx.fillStyle = '#000';
     s.textCacheCtx.textBaseline = 'top';
-    s.textCacheCtx.textAlign = 'left';
-    s.textCacheCtx.fillText(s.textInput.value, s.pos.x, s.pos.y);
+    s.textCacheCtx.textAlign = isRightAligned ? 'right' : 'left';
+    const x = isRightAligned ? s.pos.x : s.pos.x;
+    s.textCacheCtx.fillText(s.textInput.value, x, s.pos.y);
     s.textCacheValid = true;
   }
 
@@ -785,7 +797,8 @@ function draw(knife) {
   s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
 
   // Preview canvas
-  const scale = s.view.width / s.full.width;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const scale = s.view.width / s.full.width / devicePixelRatio;
   s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
   s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
   s.vCtx.drawImage(s.cacheCanvas, 0, 0);
@@ -793,13 +806,14 @@ function draw(knife) {
   s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
   // Bounding box
-  const dx = s.view.width / s.full.width;
-  const dy = s.view.height / s.full.height;
+  const dx = s.view.width / s.full.width / devicePixelRatio;
+  const dy = s.view.height / s.full.height / devicePixelRatio;
   if (s.boxVisible && s.textInput.value) {
     s.bbox.style.display = 'block';
-    s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
+    const width = s.baseDims.w * s.textScale * dx;
+    s.bbox.style.width = width + 'px';
     s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-    s.bbox.style.left = (s.pos.x * dx) + 'px';
+    s.bbox.style.left = (isRightAligned ? s.pos.x * dx - width : s.pos.x * dx) + 'px';
     s.bbox.style.top = (s.pos.y * dy) + 'px';
   } else {
     s.bbox.style.display = 'none';
@@ -807,13 +821,11 @@ function draw(knife) {
 }
 
 function invalidateCache(knife) {
-  const s = state[knife];
-  s.cacheValid = false;
+  state[knife].cacheValid = false;
 }
 
 function invalidateTextCache(knife) {
-  const s = state[knife];
-  s.textCacheValid = false;
+  state[knife].textCacheValid = false;
 }
 
 function syncFontAndText(knife) {
@@ -847,6 +859,18 @@ function debounceToggle(fn, id, icon) {
     const buttons = document.querySelectorAll(`#${id}`);
     buttons.forEach(btn => {
       btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+      // Update .off class based on state
+      if (id === 'resize-controls') {
+        btn.classList.toggle('off', !showResizeControls);
+      } else if (id === 'sync-fonts') {
+        btn.classList.toggle('off', !syncFonts);
+      } else if (id === 'auto-align') {
+        const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+        const isBigKnife = activePage === '2';
+        btn.classList.toggle('off', isBigKnife ? !autoAlignBig : !autoAlignSmall);
+      } else if (id === 'edit-zone') {
+        btn.classList.toggle('off', !showEditZone);
+      }
     });
   };
 }
@@ -857,10 +881,6 @@ function toggleEditZone() {
     invalidateCache(knife);
     requestAnimationFrame(() => draw(knife));
   });
-  const buttons = document.querySelectorAll('#edit-zone');
-  buttons.forEach(btn => {
-    btn.classList.toggle('off', !showEditZone);
-  });
 }
 
 function toggleResizeControls() {
@@ -868,10 +888,6 @@ function toggleResizeControls() {
   Object.keys(state).forEach(knife => {
     state[knife].boxVisible = showResizeControls;
     requestAnimationFrame(() => draw(knife));
-  });
-  const buttons = document.querySelectorAll('#resize-controls');
-  buttons.forEach(btn => {
-    btn.classList.toggle('off', !showResizeControls);
   });
 }
 
@@ -883,10 +899,6 @@ function toggleSyncFonts() {
     if (bigKnife) syncFontAndText(bigKnife);
     if (smallKnife) syncFontAndText(smallKnife);
   }
-  const buttons = document.querySelectorAll('#sync-fonts');
-  buttons.forEach(btn => {
-    btn.classList.toggle('off', !syncFonts);
-  });
 }
 
 function toggleAlignment(knife) {
@@ -918,10 +930,6 @@ function toggleAlignment(knife) {
       });
     }
   }
-  const buttons = document.querySelectorAll('#auto-align');
-  buttons.forEach(btn => {
-    btn.classList.toggle('off', isBigKnife ? !autoAlignBig : !autoAlignSmall);
-  });
 }
 
 async function generatePreviews() {
@@ -1084,7 +1092,7 @@ async function initializeKnife(knife) {
     s.baseDims = measureText(s.fCtx, s.textInput.value || 'Sample', s.baseFont, s.fontSel.value);
   }
 
-  s.pos.x = 20;
+  s.pos.x = s.full.width - 20; // Start right-aligned
   s.pos.y = 20;
 
   document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
@@ -1138,8 +1146,10 @@ async function initializeKnife(knife) {
   }
 
   s.view.addEventListener('pointerdown', e => {
+    const isBigKnife = knives.big.includes(knife);
+    const isRightAligned = isBigKnife ? autoAlignBig : autoAlignSmall;
     const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-    if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale) || s.resizing) return;
+    if (!hitTest(f.x, f.y, s.pos, s.baseDims, s.textScale, isRightAligned) || s.resizing) return;
     console.log(`Dragging started for ${knife}`);
     s.dragging = true;
     s.dragStart = { id: e.pointerId, dx: f.x - s.pos.x, dy: f.y - s.pos.y };
@@ -1206,40 +1216,42 @@ async function initializeKnife(knife) {
   window.addEventListener('pointermove', e => {
     if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
     const now = Date.now();
-    if (now - s.lastDragTime < dragThrottle) return;
-    s.lastDragTime = now;
+    if (now - s.lastScaleTime < scaleDebounce) return;
+    s.lastScaleTime = now;
     console.log(`Resizing ${knife}`);
     const p = toFullCoords(s.view, s, e.clientX, e.clientY);
     const { handle, x0, y0, scale, px, py, w0, h0 } = s.resizeStart;
+    const isBigKnife = knives.big.includes(knife);
+    const isRightAligned = isBigKnife ? autoAlignBig : autoAlignSmall;
     let newScale, newX, newY;
 
     if (handle === 'se') {
-      // Fix top-left
-      const dx = p.x - px;
+      // Fix top-left (left-aligned) or top-right (right-aligned)
+      const dx = isRightAligned ? px - p.x : p.x - px;
       const dy = p.y - py;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = x0;
+      newX = isRightAligned ? x0 + w0 * scale - w0 * newScale : x0;
       newY = y0;
     } else if (handle === 'nw') {
-      // Fix bottom-right
-      const dx = px - p.x;
+      // Fix bottom-right (left-aligned) or bottom-left (right-aligned)
+      const dx = isRightAligned ? p.x - px : px - p.x;
       const dy = py - p.y;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = x0 + w0 * scale - w0 * newScale;
+      newX = isRightAligned ? x0 : x0 + w0 * scale - w0 * newScale;
       newY = y0 + h0 * scale - h0 * newScale;
     } else if (handle === 'ne') {
-      // Fix bottom-left
-      const dx = p.x - px;
+      // Fix bottom-left (left-aligned) or bottom-right (right-aligned)
+      const dx = isRightAligned ? px - p.x : p.x - px;
       const dy = py - p.y;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = x0;
+      newX = isRightAligned ? x0 + w0 * scale - w0 * newScale : x0;
       newY = y0 + h0 * scale - h0 * newScale;
     } else if (handle === 'sw') {
-      // Fix top-right
-      const dx = px - p.x;
+      // Fix top-right (left-aligned) or top-left (right-aligned)
+      const dx = isRightAligned ? p.x - px : px - p.x;
       const dy = p.y - py;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = x0 + w0 * scale - w0 * newScale;
+      newX = isRightAligned ? x0 : x0 + w0 * scale - w0 * newScale;
       newY = y0;
     }
 
@@ -1249,23 +1261,30 @@ async function initializeKnife(knife) {
       s.pos.y = newY;
       const isBigKnife = knives.big.includes(knife);
       const autoAlign = isBigKnife ? autoAlignBig : autoAlignSmall;
-      if (autoAlign) {
+      const affectedKnives = [knife];
+      if (autoAlign || syncFonts) {
         Object.keys(state).forEach(k => {
           if (k !== knife && knives.big.includes(k) === isBigKnife) {
-            state[k].pos.x = newX;
-            state[k].pos.y = newY;
-            state[k].baseFont = s.baseFont * newScale;
-            state[k].textScale = 1;
-            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-            invalidateTextCache(k);
-            draw(k);
+            if (autoAlign) {
+              state[k].pos.x = newX;
+              state[k].pos.y = newY;
+            }
+            if (syncFonts) {
+              state[k].baseFont = s.baseFont * newScale;
+              state[k].textScale = 1;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+            }
+            affectedKnives.push(k);
           }
         });
       }
       invalidateTextCache(knife);
-      requestAnimationFrame(() => draw(knife));
+      // Batch redraws for performance
+      requestAnimationFrame(() => {
+        affectedKnives.forEach(k => draw(k));
+      });
       lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      syncFontAndText(knife);
+      if (syncFonts) syncFontAndText(knife);
     }
   });
 
@@ -1300,8 +1319,8 @@ async function initializeKnife(knife) {
   s.view.addEventListener('pointermove', e => {
     if (!s.pinch || !(e.pointerId in s.pointers)) return;
     const now = Date.now();
-    if (now - s.lastDragTime < dragThrottle) return;
-    s.lastDragTime = now;
+    if (now - s.lastScaleTime < scaleDebounce) return;
+    s.lastScaleTime = now;
     console.log(`Pinching ${knife}`);
     s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
     const [a, b] = Object.values(s.pointers);
@@ -1318,23 +1337,30 @@ async function initializeKnife(knife) {
     s.pos.y = s.pinchStart.y0 + dy;
     const isBigKnife = knives.big.includes(knife);
     const autoAlign = isBigKnife ? autoAlignBig : autoAlignSmall;
-    if (autoAlign) {
+    const affectedKnives = [knife];
+    if (autoAlign || syncFonts) {
       Object.keys(state).forEach(k => {
         if (k !== knife && knives.big.includes(k) === isBigKnife) {
-          state[k].pos.x = s.pos.x;
-          state[k].pos.y = s.pos.y;
-          state[k].baseFont = s.baseFont * newScale;
-          state[k].textScale = 1;
-          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-          invalidateTextCache(k);
-          draw(k);
+          if (autoAlign) {
+            state[k].pos.x = s.pos.x;
+            state[k].pos.y = s.pos.y;
+          }
+          if (syncFonts) {
+            state[k].baseFont = s.baseFont * newScale;
+            state[k].textScale = 1;
+            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+          }
+          affectedKnives.push(k);
         }
       });
     }
     invalidateTextCache(knife);
-    requestAnimationFrame(() => draw(knife));
+    // Batch redraws for performance
+    requestAnimationFrame(() => {
+      affectedKnives.forEach(k => draw(k));
+    });
     lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    syncFontAndText(knife);
+    if (syncFonts) syncFontAndText(knife);
   });
 
   ['pointerup', 'pointercancel'].forEach(evt =>
@@ -1366,8 +1392,9 @@ downloadBtn.addEventListener('click', async () => {
     tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
     tCtx.fillStyle = '#000';
     tCtx.textBaseline = 'top';
-    tCtx.textAlign = 'left';
-    tCtx.fillText(s.textInput.value, s.pos.x, s.pos.y);
+    tCtx.textAlign = knives.big.includes(knife) && autoAlignBig || knives.small.includes(knife) && autoAlignSmall ? 'right' : 'left';
+    const x = tCtx.textAlign === 'right' ? s.pos.x : s.pos.x;
+    tCtx.fillText(s.textInput.value, x, s.pos.y);
     const textBlob = await new Promise(r => t.toBlob(r));
     zip.file(`${knife}-text-only.png`, textBlob);
   }
