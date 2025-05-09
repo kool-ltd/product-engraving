@@ -331,7 +331,7 @@
         <button id="edit-zone"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">text_rotation_none</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-2"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -344,7 +344,7 @@
         <button id="edit-zone"><span class="material-symbols-outlined">vignette</span></button>
         <button id="resize-controls"><span class="material-symbols-outlined">format_shapes</span></button>
         <button id="sync-fonts"><span class="material-symbols-outlined">format_size</span></button>
-        <button id="auto-align"><span class="material-symbols-outlined">text_rotation_none</span></button>
+        <button id="auto-align"><span class="material-symbols-outlined">recenter</span></button>
         <button id="next-3"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
       </div>
     </div>
@@ -1022,7 +1022,7 @@
       const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
                     activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
       if (knife) {
-        debounceToggle(() => toggleAlignment(knife), 'auto-align', 'text_rotation_none')();
+        debounceToggle(() => toggleAlignment(knife), 'auto-align', 'recenter')();
       }
     }
   });
