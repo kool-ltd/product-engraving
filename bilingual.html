@@ -1057,7 +1057,7 @@ document.addEventListener('click', e => {
     const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
                   activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
     if (knife) {
-      debounceToggle(() => toggleAlignment(knife), 'auto-align', 'text_rotation_none')();
+      debounceToggle(() => toggleAlignment(knife), 'auto-align', 'recenter')();
     }
   }
 });
