@@ -546,7 +546,7 @@ function fitInBox(canvas, img, wrapper) {
   const scale = wrapW / img.naturalWidth;
   canvas.width = img.naturalWidth * scale;
   canvas.height = img.naturalHeight * scale;
-  canvas.style.width = canvas.width + ' backups';
+  canvas.style.width = canvas.width + 'px';
   canvas.style.height = canvas.height + 'px';
   return scale;
 }
@@ -1183,25 +1183,51 @@ async function initializeKnife(knife) {
 	});
 	
 	window.addEventListener('pointermove', e => {
-	  if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
-	  const now = Date.now();
-	  if (now - s.lastDragTime < dragThrottle) return;
-	  s.lastDragTime = now;
-	  console.log(`Resizing ${knife}`);
-	  const p = toFullCoords(s.view, s, e.clientX, e.clientY);
-	  const d = Math.hypot(p.x - s.resizeStart.anchorX, p.y - s.resizeStart.anchorY);
-	  s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
-	  // Adjust position to keep anchor point fixed
-	  if (s.resizeStart.handle === 'se') {
-	    s.pos.x = s.resizeStart.anchorX;
-	    s.pos.y = s.resizeStart.anchorY;
-	  } else if (s.resizeStart.handle === 'nw') {
-	    s.pos.x = s.resizeStart.anchorX - s.baseDims.w * s.textScale;
-	    s.pos.y = s.resizeStart.anchorY - s.baseDims.h * s.textScale;
-	  } else if (s.resizeStart.handle === 'ne') {
-	    s.pos
-	
-	Human: The error persists after applying the changes. Here's the relevant console output:
+  if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+  const now = Date.now();
+  if (now - s.lastDragTime < dragThrottle) return;
+  s.lastDragTime = now;
+  console.log(`Resizing ${knife}`);
+  const p = toFullCoords(s.view, s, e.clientX, e.clientY);
+  const d = Math.hypot(p.x - s.resizeStart.anchorX, p.y - s.resizeStart.anchorY);
+  s.textScale = s.resizeStart.scale * (d / s.resizeStart.d0);
+  // Adjust position to keep anchor point fixed
+  if (s.resizeStart.handle === 'se') {
+    s.pos.x = s.resizeStart.anchorX;
+    s.pos.y = s.resizeStart.anchorY;
+  } else if (s.resizeStart.handle === 'nw') {
+    s.pos.x = s.resizeStart.anchorX - s.baseDims.w * s.textScale;
+    s.pos.y = s.resizeStart.anchorY - s.baseDims.h * s.textScale;
+  } else if (s.resizeStart.handle === 'ne') {
+    s.pos.x = s.resizeStart.anchorX;
+    s.pos.y = s.resizeStart.anchorY - s.baseDims.h * s.textScale;
+  } else if (s.resizeStart.handle === 'sw') {
+    s.pos.x = s.resizeStart.anchorX - s.baseDims.w * s.textScale;
+    s.pos.y = s.resizeStart.anchorY;
+  }
+  const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
+  if (alignRightK) {
+    Object.keys(state).forEach(k => {
+      if (k !== knife && knives.big.includes(k) === isBigKnife) {
+        state[k].pos.x = s.pos.x;
+        state[k].pos.y = s.pos.y;
+        if (syncFonts) {
+          state[k].baseFont = s.baseFont * s.textScale;
+          state[k].textScale = 1;
+          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+        }
+        invalidateTextCache(k);
+        draw(k);
+      }
+    });
+  }
+  if (syncFonts) {
+    syncFontAndText(knife);
+  }
+  invalidateTextCache(knife);
+  requestAnimationFrame(() => draw(knife));
+  lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+});
 
   ['pointerup', 'pointercancel'].forEach(evt =>
     window.addEventListener(evt, e => {
@@ -1230,38 +1256,42 @@ async function initializeKnife(knife) {
   });
 
   s.view.addEventListener('pointermove', e => {
-    if (!s.pinch || !(e.pointerId in s.pointers)) return;
-    const now = Date.now();
-    if (now - s.lastDragTime < dragThrottle) return;
-    s.lastDragTime = now;
-    console.log(`Pinching ${knife}`);
-    s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-    const [a, b] = Object.values(s.pointers);
-    const fA = toFullCoords(s.view, s, a.x, a.y);
-    const fB = toFullCoords(s.view, s, b.x, b.y);
-    const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
-    s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
-    s.pos.x = (fA.x + fB.x) / 2 - (s.baseDims.w * s.textScale);
-    s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
-    const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-    if (!alignRightK) {
-      Object.keys(state).forEach(k => {
-        if (k !== knife && knives.big.includes(k) === isBigKnife) {
-          state[k].pos.x = s.pos.x;
-          state[k].pos.y = s.pos.y;
-          state[k].baseFont = s.baseFont * s.textScale;
-          state[k].textScale = 1;
-          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-          invalidateTextCache(k);
-          draw(k);
-        }
-      });
-    }
-    invalidateTextCache(knife);
-    requestAnimationFrame(() => draw(knife));
-    lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    syncFontAndText(knife);
-  });
+	  if (!s.pinch || !(e.pointerId in s.pointers)) return;
+	  const now = Date.now();
+	  if (now - s.lastDragTime < dragThrottle) return;
+	  s.lastDragTime = now;
+	  console.log(`Pinching ${knife}`);
+	  s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+	  const [a, b] = Object.values(s.pointers);
+	  const fA = toFullCoords(s.view, s, a.x, a.y);
+	  const fB = toFullCoords(s.view, s, b.x, b.y);
+	  const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+	  s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
+	  s.pos.x = (fA.x + fB.x) / 2 - (s.baseDims.w * s.textScale);
+	  s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
+	  const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
+	  if (alignRightK) {
+	    Object.keys(state).forEach(k => {
+	      if (k !== knife && knives.big.includes(k) === isBigKnife) {
+	        state[k].pos.x = s.pos.x;
+	        state[k].pos.y = s.pos.y;
+	        if (syncFonts) {
+	          state[k].baseFont = s.baseFont * s.textScale;
+	          state[k].textScale = 1;
+	          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
+	        }
+	        invalidateTextCache(k);
+	        draw(k);
+	      }
+	    });
+	  }
+	  if (syncFonts) {
+	    syncFontAndText(knife);
+	  }
+	  invalidateTextCache(knife);
+	  requestAnimationFrame(() => draw(knife));
+	  lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+	});
 
   ['pointerup', 'pointercancel'].forEach(evt =>
     s.view.addEventListener(evt, e => {
