@@ -719,7 +719,7 @@ function draw(knife) {
       s.textCacheCtx.fillStyle = '#000';
       s.textCacheCtx.textBaseline = 'top';
       s.textCacheCtx.textAlign = alignRight ? 'right' : 'left';
-      s.textCacheCtx.fillText(s.textInput.value, alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x, s.pos.y);
+      s.textCacheCtx.fillText(s.textInput.value, textX, s.pos.y);
     }
     s.textCacheValid = true;
   }
@@ -828,8 +828,8 @@ function toggleResizeControls() {
 function toggleSyncFonts() {
   syncFonts = !syncFonts;
   if (syncFonts && Object.keys(state).length > 0) {
-    const bigKnife = Object.keys(state).find(k => knives.big.includes(k));
-    const smallKnife = Object.keys(state).find(k => knives.small.includes(k));
+    const bigKnife = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
+    const smallKnife = lastAdjusted.small || Object.keys(state).find(k => knives.small.includes(k));
     if (bigKnife) syncFontAndText(bigKnife);
     if (smallKnife) syncFontAndText(smallKnife);
   }
@@ -845,10 +845,10 @@ function toggleAlignment(knife) {
   const group = isBigKnife ? 'big' : 'small';
 
   if (alignRight) {
-    // Turning off auto-align: restore stored positions
+    // Turning off auto-align: restore stored positions or keep current
     Object.keys(state).forEach(k => {
       if (knives.big.includes(k) === isBigKnife) {
-        const pos = storedPositions[group][k] || state[k].pos;
+        const pos = storedPositions[group][k] || { x: state[k].pos.x, y: state[k].pos.y };
         state[k].pos.x = pos.x;
         state[k].pos.y = pos.y;
         invalidateTextCache(k);
@@ -860,12 +860,13 @@ function toggleAlignment(knife) {
   } else {
     // Turning on auto-align: store current positions and sync to last adjusted knife
     const lastKnife = lastAdjusted[group] || knife;
-    const refPos = state[lastKnife].pos;
+    const refState = state[lastKnife];
+    const refRightEdge = refState.pos.x + refState.baseDims.w * refState.textScale;
     Object.keys(state).forEach(k => {
       if (knives.big.includes(k) === isBigKnife) {
         storedPositions[group][k] = { x: state[k].pos.x, y: state[k].pos.y };
-        state[k].pos.x = refPos.x;
-        state[k].pos.y = refPos.y;
+        state[k].pos.x = refRightEdge - state[k].baseDims.w * state[k].textScale;
+        state[k].pos.y = refState.pos.y;
         invalidateTextCache(k);
         draw(k);
       }
@@ -1158,7 +1159,7 @@ async function initializeKnife(knife) {
     })
   );
 
-  s.bbox.querySelectorAll('.handle').forEach(h => {
+    s.bbox.querySelectorAll('.handle').forEach(h => {
     h.addEventListener('pointerdown', e => {
       e.stopPropagation();
       console.log(`Resizing started for ${knife}`);
@@ -1168,17 +1169,17 @@ async function initializeKnife(knife) {
       const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
       let anchorX, anchorY;
       if (handle === 'se') {
-        anchorX = toFullCoords(s.view, s, box.left, box.top).x;
-        anchorY = toFullCoords(s.view, s, box.left, box.top).y;
+        anchorX = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.top).x;
+        anchorY = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.top).y;
       } else if (handle === 'nw') {
-        anchorX = toFullCoords(s.view, s, alignRightK ? box.left : box.right, alignRightK ? box.bottom : box.bottom).x;
-        anchorY = toFullCoords(s.view, s, alignRightK ? box.left : box.right, alignRightK ? box.bottom : box.bottom).y;
+        anchorX = toFullCoords(s.view, s, alignRightK ? box.left : box.right, box.bottom).x;
+        anchorY = toFullCoords(s.view, s, alignRightK ? box.left : box.right, box.bottom).y;
       } else if (handle === 'ne') {
-        anchorX = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.bottom).x;
-        anchorY = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.bottom).y;
-      } else if (handle === 'sw') {
         anchorX = toFullCoords(s.view, s, alignRightK ? box.left : box.right, box.top).x;
         anchorY = toFullCoords(s.view, s, alignRightK ? box.left : box.right, box.top).y;
+      } else if (handle === 'sw') {
+        anchorX = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.bottom).x;
+        anchorY = toFullCoords(s.view, s, alignRightK ? box.right : box.left, box.bottom).y;
       }
       const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
       s.resizeStart = {
@@ -1198,7 +1199,7 @@ async function initializeKnife(knife) {
     const d = Math.hypot(p.x - s.resizeStart.anchorX, p.y - s.resizeStart.anchorY);
     const newScale = s.resizeStart.scale * (d / s.resizeStart.d0);
     const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-    // Adjust position to keep anchor point fixed
+    // Adjust position to keep opposite corner anchored
     if (s.resizeStart.handle === 'se') {
       s.pos.x = alignRightK ? s.resizeStart.anchorX - s.baseDims.w * newScale : s.resizeStart.anchorX;
       s.pos.y = s.resizeStart.anchorY;
@@ -1206,11 +1207,11 @@ async function initializeKnife(knife) {
       s.pos.x = alignRightK ? s.resizeStart.anchorX : s.resizeStart.anchorX - s.baseDims.w * newScale;
       s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
     } else if (s.resizeStart.handle === 'ne') {
-      s.pos.x = alignRightK ? s.resizeStart.anchorX - s.baseDims.w * newScale : s.resizeStart.anchorX;
-      s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-    } else if (s.resizeStart.handle === 'sw') {
       s.pos.x = alignRightK ? s.resizeStart.anchorX : s.resizeStart.anchorX - s.baseDims.w * newScale;
       s.pos.y = s.resizeStart.anchorY;
+    } else if (s.resizeStart.handle === 'sw') {
+      s.pos.x = alignRightK ? s.resizeStart.anchorX - s.baseDims.w * newScale : s.resizeStart.anchorX;
+      s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
     }
     s.textScale = newScale;
     if (alignRightK) {
@@ -1329,10 +1330,10 @@ downloadBtn.addEventListener('click', async () => {
     tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
     tCtx.fillStyle = '#000';
     tCtx.textBaseline = 'top';
-    tCtx.textAlign = 'left';
     const isBigKnife = knives.big.includes(knife);
     const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-    const textX = alignRight ? s.full.width - 20 : s.pos.x;
+    tCtx.textAlign = alignRight ? 'right' : 'left';
+    const textX = alignRight ? s.pos.x + s.baseDims.w * s.textScale : s.pos.x;
     tCtx.fillText(s.textInput.value, textX, s.pos.y);
     const textBlob = await new Promise(r => t.toBlob(r));
     zip.file(`${knife}-text-only.png`, textBlob);
