@@ -65,7 +65,7 @@
   }
   #product-picker {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Increased min-width for larger images */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: .75rem;
   }
   .product-option {
@@ -74,7 +74,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 200px; /* Minimum height to fit scaled images */
+    min-height: 140px;
     padding: 0.5rem;
   }
   .product-option input {
@@ -85,9 +85,8 @@
   }
   .product-option img {
     width: 100%;
-    max-height: 140px; /* Increased to fit scaled images */
-    transform: scale(1.75); /* 175% size */
-    object-fit: contain; /* Maintain proportions */
+    max-height: 140px;
+    object-fit: contain;
     border: 2px solid transparent;
     border-radius: var(--radius);
     display: block;
@@ -99,7 +98,7 @@
     display: block;
     font-size: .9rem;
     margin-top: .25rem;
-    color: #4c4c4c; /* Match Page 1 text color */
+    color: #4c4c4c;
   }
   .controls {
     display: flex;
@@ -131,10 +130,13 @@
     background: #eaeaea;
     touch-action: none;
     margin: auto;
+    overflow: hidden; /* Prevent canvas overflow */
   }
   canvas {
     display: block;
     touch-action: none;
+    max-width: 100%; /* Ensure canvas fits container */
+    height: auto; /* Maintain aspect ratio */
   }
   .loading-overlay {
     position: absolute;
@@ -336,14 +338,14 @@
       font-size: .9rem;
     }
     .product-option {
-      min-height: 180px; /* Adjusted for mobile */
+      min-height: 180px;
     }
     .product-option img {
-      max-height: 120px; /* Adjusted for mobile */
-      transform: scale(1.5); /* Slightly smaller scale for mobile */
+      max-height: 120px;
+      transform: scale(1.5);
     }
     #product-picker {
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Adjusted for smaller screens */
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     }
   }
 </style>
@@ -460,7 +462,7 @@ const translations = {
     textLabel: "Text:",
     textPlaceholder: "Enter engraving",
     fontLabel: "Font:",
-    sameContentLabel: " microbiome text for all",
+    sameContentLabel: "Same text for all",
     instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
     editZone: "Edit Zone",
     resizeControls: "Resize Controls",
@@ -610,14 +612,21 @@ function loadImage(src) {
 }
 
 function fitInBox(canvas, img, wrapper) {
-  const wrapW = wrapper.clientWidth;
-  const devicePixelRatio = window.devicePixelRatio || 1; // Support high-DPI
-  const scale = wrapW / img.naturalWidth;
-  canvas.width = img.naturalWidth * scale * devicePixelRatio; // High-res
-  canvas.height = img.naturalHeight * scale * devicePixelRatio;
-  canvas.style.width = `${wrapW}px`; // Display size
-  canvas.style.height = `${img.naturalHeight * scale}px`;
-  return scale * devicePixelRatio;
+  const wrapW = wrapper.clientWidth; // Container width
+  const devicePixelRatio = window.devicePixelRatio || 1; // High-DPI support
+  const aspectRatio = img.naturalWidth / img.naturalHeight;
+  const canvasW = wrapW; // Match container width
+  const canvasH = canvasW / aspectRatio; // Preserve image aspect ratio
+
+  // Set pixel dimensions for high resolution
+  canvas.width = canvasW * devicePixelRatio;
+  canvas.height = canvasH * devicePixelRatio;
+
+  // Set display dimensions to fit container
+  canvas.style.width = `${canvasW}px`;
+  canvas.style.height = `${canvasH}px`;
+
+  return canvasW / img.naturalWidth; // Return scale for coordinate calculations
 }
 
 function measureText(ctx, text, fontSize, font) {
@@ -859,7 +868,6 @@ function debounceToggle(fn, id, icon) {
     const buttons = document.querySelectorAll(`#${id}`);
     buttons.forEach(btn => {
       btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
-      // Update .off class based on state
       if (id === 'resize-controls') {
         btn.classList.toggle('off', !showResizeControls);
       } else if (id === 'sync-fonts') {
@@ -1226,28 +1234,24 @@ async function initializeKnife(knife) {
     let newScale, newX, newY;
 
     if (handle === 'se') {
-      // Fix top-left (left-aligned) or top-right (right-aligned)
       const dx = isRightAligned ? px - p.x : p.x - px;
       const dy = p.y - py;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
       newX = isRightAligned ? x0 + w0 * scale - w0 * newScale : x0;
       newY = y0;
     } else if (handle === 'nw') {
-      // Fix bottom-right (left-aligned) or bottom-left (right-aligned)
       const dx = isRightAligned ? p.x - px : px - p.x;
       const dy = py - p.y;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
       newX = isRightAligned ? x0 : x0 + w0 * scale - w0 * newScale;
       newY = y0 + h0 * scale - h0 * newScale;
     } else if (handle === 'ne') {
-      // Fix bottom-left (left-aligned) or bottom-right (right-aligned)
       const dx = isRightAligned ? px - p.x : p.x - px;
       const dy = py - p.y;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
       newX = isRightAligned ? x0 + w0 * scale - w0 * newScale : x0;
       newY = y0 + h0 * scale - h0 * newScale;
     } else if (handle === 'sw') {
-      // Fix top-right (left-aligned) or top-left (right-aligned)
       const dx = isRightAligned ? p.x - px : px - p.x;
       const dy = p.y - py;
       newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
@@ -1279,7 +1283,6 @@ async function initializeKnife(knife) {
         });
       }
       invalidateTextCache(knife);
-      // Batch redraws for performance
       requestAnimationFrame(() => {
         affectedKnives.forEach(k => draw(k));
       });
@@ -1355,7 +1358,6 @@ async function initializeKnife(knife) {
       });
     }
     invalidateTextCache(knife);
-    // Batch redraws for performance
     requestAnimationFrame(() => {
       affectedKnives.forEach(k => draw(k));
     });
