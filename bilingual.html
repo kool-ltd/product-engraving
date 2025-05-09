@@ -131,7 +131,6 @@
     touch-action: none;
     margin: auto;
     overflow: hidden; /* Prevent canvas overflow */
-    
   }
   canvas {
     display: block;
@@ -339,10 +338,11 @@
       font-size: .9rem;
     }
     .product-option {
-      min-height: 100px;
+      min-height: 180px;
     }
     .product-option img {
       max-height: 120px;
+      transform: scale(1.5);
     }
     #product-picker {
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -612,30 +612,21 @@ function loadImage(src) {
 }
 
 function fitInBox(canvas, img, wrapper) {
+  const wrapW = wrapper.clientWidth; // Container width
   const devicePixelRatio = window.devicePixelRatio || 1; // High-DPI support
-  const maxContainerWidth = wrapper.parentElement.clientWidth; // Container's available width
-  const imgWidth = img.naturalWidth;
-  const imgHeight = img.naturalHeight;
-  const aspectRatio = imgWidth / imgHeight;
-
-  // Use the image's natural width, but cap at container's width for responsiveness
-  let canvasW = Math.min(imgWidth, maxContainerWidth);
-  let canvasH = canvasW / aspectRatio;
+  const aspectRatio = img.naturalWidth / img.naturalHeight;
+  const canvasW = wrapW; // Match container width
+  const canvasH = canvasW / aspectRatio; // Preserve image aspect ratio
 
   // Set pixel dimensions for high resolution
   canvas.width = canvasW * devicePixelRatio;
   canvas.height = canvasH * devicePixelRatio;
 
-  // Set display dimensions to match calculated size
+  // Set display dimensions to fit container
   canvas.style.width = `${canvasW}px`;
   canvas.style.height = `${canvasH}px`;
 
-  // Adjust wrapper to fit canvas
-  wrapper.style.width = `${canvasW}px`;
-  wrapper.style.height = `${canvasH}px`;
-
-  // Return scale for coordinate calculations
-  return canvasW / imgWidth;
+  return canvasW / img.naturalWidth; // Return scale for coordinate calculations
 }
 
 function measureText(ctx, text, fontSize, font) {
@@ -1174,75 +1165,29 @@ async function initializeKnife(knife) {
   });
 
   window.addEventListener('pointermove', e => {
-    if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+    if (!s.dragging || e.pointerId !== s.dragStart.id) return;
     const now = Date.now();
-    if (now - s.lastScaleTime < scaleDebounce) return;
-    s.lastScaleTime = now;
-    console.log(`Resizing ${knife}`);
-    const p = toFullCoords(s.view, s, e.clientX, e.clientY);
-    const { handle, x0, y0, scale, px, py, w0, h0 } = s.resizeStart;
+    if (now - s.lastDragTime < dragThrottle) return;
+    s.lastDragTime = now;
+    console.log(`Dragging ${knife}`);
+    const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+    s.pos.x = f.x - s.dragStart.dx;
+    s.pos.y = f.y - s.dragStart.dy;
     const isBigKnife = knives.big.includes(knife);
-    const isRightAligned = isBigKnife ? autoAlignBig : autoAlignSmall;
-    let newScale, newX, newY;
-  
-    // Calculate scaling based on handle
-    if (handle === 'se') {
-      const dx = isRightAligned ? px - p.x : p.x - px;
-      const dy = p.y - py;
-      newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = isRightAligned ? x0 : x0; // Keep x0 for right-aligned
-      newY = y0;
-    } else if (handle === 'nw') {
-      const dx = isRightAligned ? p.x - px : px - p.x;
-      const dy = py - p.y;
-      newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = isRightAligned ? x0 : x0 + w0 * scale - w0 * newScale;
-      newY = y0 + h0 * scale - h0 * newScale;
-    } else if (handle === 'ne') {
-      const dx = isRightAligned ? px - p.x : p.x - px;
-      const dy = py - p.y;
-      newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = isRightAligned ? x0 : x0; // Keep x0 for right-aligned
-      newY = y0 + h0 * scale - h0 * newScale;
-    } else if (handle === 'sw') {
-      const dx = isRightAligned ? p.x - px : px - p.x;
-      const dy = p.y - py;
-      newScale = scale * Math.max(dx / (w0 * scale), dy / (h0 * scale));
-      newX = isRightAligned ? x0 : x0 + w0 * scale - w0 * newScale;
-      newY = y0;
-    }
-  
-    // Ensure scale is within reasonable bounds
-    if (newScale > 0.1 && newScale < 10) {
-      s.textScale = newScale;
-      s.pos.x = newX;
-      s.pos.y = newY;
-      const isBigKnife = knives.big.includes(knife);
-      const autoAlign = isBigKnife ? autoAlignBig : autoAlignSmall;
-      const affectedKnives = [knife];
-      if (autoAlign || syncFonts) {
-        Object.keys(state).forEach(k => {
-          if (k !== knife && knives.big.includes(k) === isBigKnife) {
-            if (autoAlign) {
-              state[k].pos.x = newX;
-              state[k].pos.y = newY;
-            }
-            if (syncFonts) {
-              state[k].baseFont = s.baseFont * newScale;
-              state[k].textScale = 1;
-              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value || 'Sample', state[k].baseFont, state[k].fontSel.value);
-            }
-            affectedKnives.push(k);
-          }
-        });
-      }
-      invalidateTextCache(knife);
-      requestAnimationFrame(() => {
-        affectedKnives.forEach(k => draw(k));
+    const autoAlign = isBigKnife ? autoAlignBig : autoAlignSmall;
+    if (autoAlign) {
+      Object.keys(state).forEach(k => {
+        if (k !== knife && knives.big.includes(k) === isBigKnife) {
+          state[k].pos.x = s.pos.x;
+          state[k].pos.y = s.pos.y;
+          invalidateTextCache(k);
+          draw(k);
+        }
       });
-      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      if (syncFonts) syncFontAndText(knife);
     }
+    invalidateTextCache(knife);
+    requestAnimationFrame(() => draw(knife));
+    lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
   });
 
   ['pointerup', 'pointercancel'].forEach(evt =>
