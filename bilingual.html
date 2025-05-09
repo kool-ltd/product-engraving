@@ -612,35 +612,30 @@ function loadImage(src) {
 }
 
 function fitInBox(canvas, img, wrapper) {
-  const wrapW = wrapper.clientWidth; // Container width
-  const wrapH = wrapper.clientHeight || wrapW; // Use wrapper height or fallback to width
   const devicePixelRatio = window.devicePixelRatio || 1; // High-DPI support
-  const imgAspectRatio = img.naturalWidth / img.naturalHeight;
-  const wrapAspectRatio = wrapW / wrapH;
+  const maxContainerWidth = wrapper.parentElement.clientWidth; // Container's available width
+  const imgWidth = img.naturalWidth;
+  const imgHeight = img.naturalHeight;
+  const aspectRatio = imgWidth / imgHeight;
 
-  let canvasW, canvasH;
-
-  // Fit canvas to wrapper while preserving image aspect ratio
-  if (imgAspectRatio > wrapAspectRatio) {
-    // Image is wider than wrapper: fit to width
-    canvasW = wrapW;
-    canvasH = canvasW / imgAspectRatio;
-  } else {
-    // Image is taller than wrapper: fit to height
-    canvasH = wrapH;
-    canvasW = canvasH * imgAspectRatio;
-  }
+  // Use the image's natural width, but cap at container's width for responsiveness
+  let canvasW = Math.min(imgWidth, maxContainerWidth);
+  let canvasH = canvasW / aspectRatio;
 
   // Set pixel dimensions for high resolution
   canvas.width = canvasW * devicePixelRatio;
   canvas.height = canvasH * devicePixelRatio;
 
-  // Set display dimensions to fit container
+  // Set display dimensions to match calculated size
   canvas.style.width = `${canvasW}px`;
   canvas.style.height = `${canvasH}px`;
 
+  // Adjust wrapper to fit canvas
+  wrapper.style.width = `${canvasW}px`;
+  wrapper.style.height = `${canvasH}px`;
+
   // Return scale for coordinate calculations
-  return canvasW / img.naturalWidth;
+  return canvasW / imgWidth;
 }
 
 function measureText(ctx, text, fontSize, font) {
