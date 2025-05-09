@@ -368,413 +368,485 @@
   </div>
 
   <script>
-    /* TRANSLATIONS */
-    const translations = {
-      en: {
-        title: "Knife Engraving Customiser",
-        subtitle: "by",
-        subtitleAfter: "",
-        chooseKnives: "Choose your knives",
-        next: "Next",
-        back: "Back",
-        preview: "Preview",
-        previewAllKnives: "Preview All Knives",
-        previewDescription: "Click any image to enlarge",
-        download: "Download",
-        chefKnife: "Chef Knife",
-        santokuKnife: "Santoku Knife",
-        breadKnife: "Bread Knife",
-        chopperKnife: "Chopper Knife",
-        utilityKnife: "Utility Knife",
-        paringKnife: "Paring Knife",
-        textLabel: "Text:",
-        textPlaceholder: "Enter engraving",
-        fontLabel: "Font:",
-        sameContentLabel: "Use same text for all",
-        instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
-        editZone: "Edit Zone",
-        resizeControls: "Resize Controls",
-        syncFonts: "Sync Fonts",
-        autoAlignment: "Auto Align",
-        loading: "Loading…",
-        knife: "Knife",
-        english: "English",
-        chinese: "Chinese",
-        modalClose: "Click anywhere to close"
-      },
-      "zh-hk": {
-        title: "刀具刻字定制器",
-        subtitle: "由",
-        subtitleAfter: "提供",
-        chooseKnives: "選擇您的刀具",
-        next: "下一步",
-        back: "返回",
-        preview: "預覽",
-        previewAllKnives: "預覽所有刀具",
-        previewDescription: "點擊任何圖片放大",
-        download: "下載",
-        chefKnife: "主廚刀",
-        santokuKnife: "三德刀",
-        breadKnife: "麵包刀",
-        chopperKnife: "砍刀",
-        utilityKnife: "多用途刀",
-        paringKnife: "削皮刀",
-        textLabel: "文字：",
-        textPlaceholder: "輸入刻字",
-        fontLabel: "字體：",
-        sameContentLabel: "所有刀具使用相同文字",
-        instructions: "• 拖動文字以移動。<br>• 拖動角落以縮放（桌面）。<br>• 捏合以縮放和移動文字（手機）。",
-        editZone: "編輯區域",
-        resizeControls: "調整控制",
-        syncFonts: "同步字體",
-        autoAlignment: "自動對齊",
-        loading: "載入中…",
-        knife: "刀",
-        english: "英文",
-        chinese: "中文",
-        modalClose: "點擊任意位置關閉"
-      }
-    };
+  /* TRANSLATIONS */
+  const translations = {
+    en: {
+      title: "Knife Engraving Customiser",
+      subtitle: "by",
+      subtitleAfter: "",
+      chooseKnives: "Choose your knives",
+      next: "Next",
+      back: "Back",
+      preview: "Preview",
+      previewAllKnives: "Preview All Knives",
+      previewDescription: "Click any image to enlarge",
+      download: "Download",
+      chefKnife: "Chef Knife",
+      santokuKnife: "Santoku Knife",
+      breadKnife: "Bread Knife",
+      chopperKnife: "Chopper Knife",
+      utilityKnife: "Utility Knife",
+      paringKnife: "Paring Knife",
+      textLabel: "Text:",
+      textPlaceholder: "Enter engraving",
+      fontLabel: "Font:",
+      sameContentLabel: "Use same text for all",
+      instructions: "• Drag text to move.<br>• Drag a corner to scale (desktop).<br>• Pinch to zoom and move text (mobile).",
+      editZone: "Edit Zone",
+      resizeControls: "Resize Controls",
+      syncFonts: "Sync Fonts",
+      autoAlignment: "Auto Align",
+      loading: "Loading…",
+      knife: "Knife",
+      english: "English",
+      chinese: "Chinese",
+      modalClose: "Click anywhere to close"
+    },
+    "zh-hk": {
+      title: "刀具刻字定制器",
+      subtitle: "由",
+      subtitleAfter: "提供",
+      chooseKnives: "選擇您的刀具",
+      next: "下一步",
+      back: "返回",
+      preview: "預覽",
+      previewAllKnives: "預覽所有刀具",
+      previewDescription: "點擊任何圖片放大",
+      download: "下載",
+      chefKnife: "主廚刀",
+      santokuKnife: "三德刀",
+      breadKnife: "麵包刀",
+      chopperKnife: "砍刀",
+      utilityKnife: "多用途刀",
+      paringKnife: "削皮刀",
+      textLabel: "文字：",
+      textPlaceholder: "輸入刻字",
+      fontLabel: "字體：",
+      sameContentLabel: "所有刀具使用相同文字",
+      instructions: "• 拖動文字以移動。<br>• 拖動角落以縮放（桌面）。<br>• 捏合以縮放和移動文字（手機）。",
+      editZone: "編輯區域",
+      resizeControls: "調整控制",
+      syncFonts: "同步字體",
+      autoAlignment: "自動對齊",
+      loading: "載入中…",
+      knife: "刀",
+      english: "英文",
+      chinese: "中文",
+      modalClose: "點擊任意位置關閉"
+    }
+  };
 
-    /* LANGUAGE TOGGLE */
-    let currentLang = 'en';
+  /* LANGUAGE TOGGLE */
+  let currentLang = 'en';
 
-    function updateLanguage(lang) {
-      currentLang = lang;
-      document.documentElement.lang = lang;
-      const langToggleBtn = document.getElementById('lang-toggle');
-      if (langToggleBtn) {
-        langToggleBtn.textContent = lang === 'en' ? translations['zh-hk'].chinese : translations.en.english;
-      }
-
-      document.getElementById('title').textContent = translations[lang].title;
-      const subtitle = document.getElementById('subtitle');
-      subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang][key]) {
-          if (el.tagName === 'INPUT' && el.type === 'text') {
-            el.placeholder = translations[lang][key];
-          } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' &&
-                     el.id !== 'edit-zone' && el.id !== 'resize-controls' &&
-                     el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
-                     el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
-                     el.id !== 'download-all') {
-            el.textContent = translations[lang][key];
-          }
-        }
-      });
-
-      bigKnifeContent.innerHTML = '';
-      smallKnifeContent.innerHTML = '';
-      const selectedKnives = Object.keys(state);
-      selectedKnives.forEach(knife => {
-        createCanvasSection(knife);
-        initializeKnife(knife);
-      });
-
-      if (pages[4].classList.contains('active')) {
-        generatePreviews();
-      }
+  function updateLanguage(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    const langToggleBtn = document.getElementById('lang-toggle');
+    if (langToggleBtn) {
+      langToggleBtn.textContent = lang === 'en' ? translations['zh-hk'].chinese : translations.en.english;
     }
 
-    document.addEventListener('click', e => {
-      if (e.target.id === 'lang-toggle' || e.target.closest('#lang-toggle')) {
-        console.log('Language toggle clicked');
-        updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
+    document.getElementById('title').textContent = translations[lang].title;
+    const subtitle = document.getElementById('subtitle');
+    subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang][key]) {
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+          el.placeholder = translations[lang][key];
+        } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' &&
+                   el.id !== 'edit-zone' && el.id !== 'resize-controls' &&
+                   el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
+                   el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
+                   el.id !== 'download-all') {
+          el.textContent = translations[lang][key];
+        }
       }
     });
 
-    /* STATE */
-    const knives = {
-      big: ['santoku', 'chef', 'bread', 'chopper'],
-      small: ['utility', 'paring']
-    };
-    const state = {};
-    let sameContent = true;
-    let sharedText = '';
-    let firstSelectedKnife = null;
-    let lastAdjusted = { big: null, small: null };
-    let syncFonts = true;
-    let showEditZone = true;
-    let showResizeControls = true;
-    let alignRightBig = true;
-    let alignRightSmall = true;
-    let isNavigating = false;
-    let lastToggleTime = 0;
-    let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
-    let storedPositions = { big: {}, small: {} }; // Store textRightX, pos.y for auto-align toggle
-    const toggleDebounce = 200; // ms
+    bigKnifeContent.innerHTML = '';
+    smallKnifeContent.innerHTML = '';
+    const selectedKnives = Object.keys(state);
+    selectedKnives.forEach(knife => {
+      createCanvasSection(knife);
+      initializeKnife(knife);
+    });
 
-    /* ELEMENTS */
-    const pages = {
-      1: document.getElementById('page-1'),
-      2: document.getElementById('page-2'),
-      3: document.getElementById('page-3'),
-      4: document.getElementById('page-4')
-    };
-    const productPicker = document.getElementById('product-picker');
-    const bigKnifeContent = document.getElementById('big-knife-content');
-    const smallKnifeContent = document.getElementById('small-knife-content');
-    const previewContent = document.getElementById('preview-content');
-    const next1Btn = document.getElementById('next-1');
-    const back2Btn = document.getElementById('back-2');
-    const next2Btn = document.getElementById('next-2');
-    const back3Btn = document.getElementById('back-3');
-    const next3Btn = document.getElementById('next-3');
-    const back4Btn = document.getElementById('back-4');
-    const downloadBtn = document.getElementById('download-all');
-    const modal = document.getElementById('modal');
-    const modalImage = document.getElementById('modal-image');
+    if (pages[4].classList.contains('active')) {
+      generatePreviews();
+    }
+  }
 
-    /* HELPERS */
-    function loadImage(src) {
-      return new Promise((resolve, reject) => {
-        const i = new Image();
-        i.crossOrigin = 'anonymous';
-        i.onload = () => resolve(i);
-        i.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-        i.src = src;
+  document.addEventListener('click', e => {
+    if (e.target.id === 'lang-toggle' || e.target.closest('#lang-toggle')) {
+      console.log('Language toggle clicked');
+      updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
+    }
+  });
+
+  /* STATE */
+  const knives = {
+    big: ['santoku', 'chef', 'bread', 'chopper'],
+    small: ['utility', 'paring']
+  };
+  const state = {};
+  let sameContent = true;
+  let sharedText = '';
+  let firstSelectedKnife = null;
+  let lastAdjusted = { big: null, small: null };
+  let syncFonts = true;
+  let showEditZone = true;
+  let showResizeControls = true;
+  let alignRightBig = true;
+  let alignRightSmall = true;
+  let isNavigating = false;
+  let lastToggleTime = 0;
+  let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+  let storedPositions = { big: {}, small: {} }; // Store textRightX, pos.y for auto-align toggle
+  const toggleDebounce = 200; // ms
+
+  /* ELEMENTS */
+  const pages = {
+    1: document.getElementById('page-1'),
+    2: document.getElementById('page-2'),
+    3: document.getElementById('page-3'),
+    4: document.getElementById('page-4')
+  };
+  const productPicker = document.getElementById('product-picker');
+  const bigKnifeContent = document.getElementById('big-knife-content');
+  const smallKnifeContent = document.getElementById('small-knife-content');
+  const previewContent = document.getElementById('preview-content');
+  const next1Btn = document.getElementById('next-1');
+  const back2Btn = document.getElementById('back-2');
+  const next2Btn = document.getElementById('next-2');
+  const back3Btn = document.getElementById('back-3');
+  const next3Btn = document.getElementById('next-3');
+  const back4Btn = document.getElementById('back-4');
+  const downloadBtn = document.getElementById('download-all');
+  const modal = document.getElementById('modal');
+  const modalImage = document.getElementById('modal-image');
+
+  /* HELPERS */
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const i = new Image();
+      i.crossOrigin = 'anonymous';
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      i.src = src;
+    });
+  }
+
+  function fitInBox(canvas, img, wrapper) {
+    const wrapW = wrapper.clientWidth;
+    const scale = wrapW / img.naturalWidth;
+    canvas.width = img.naturalWidth * scale;
+    canvas.height = img.naturalHeight * scale;
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+    return scale;
+  }
+
+  function measureText(ctx, text, fontSize, font) {
+    ctx.font = `${fontSize}px ${font}`;
+    return { w: ctx.measureText(text).width, h: fontSize };
+  }
+
+  function toFullCoords(canvas, wrapper, cx, cy) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: (cx - r.left) * (wrapper.full.width / r.width),
+      y: (cy - r.top) * (wrapper.full.height / r.height)
+    };
+  }
+
+  function hitTest(fx, fy, posY, dims, scale, textRightX) {
+    const x = textRightX - dims.w * scale;
+    return fx >= x && fx <= textRightX &&
+           fy >= posY && fy <= posY + dims.h * scale;
+  }
+
+  function hasBigKnives(selected) {
+    return selected.some(input => knives.big.includes(input.dataset.name));
+  }
+
+  function hasSmallKnives(selected) {
+    return selected.some(input => knives.small.includes(input.dataset.name));
+  }
+
+  function switchPage(from, to) {
+    if (isNavigating) return;
+    isNavigating = true;
+    pages[from].classList.remove('active');
+    pages[to].classList.add('active');
+    setTimeout(() => { isNavigating = false; }, 100);
+  }
+
+  function createCanvasSection(knife) {
+    const showSameContent = knife === firstSelectedKnife;
+    const section = document.createElement('div');
+    section.className = 'knife-section';
+    section.innerHTML = `
+      <h3 data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</h3>
+      <div class="controls">
+        <div>
+          <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
+          <input type="text" id="text-${knife}" placeholder="${translations[currentLang].textPlaceholder}">
+        </div>
+        <div>
+          <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
+          <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
+            <optgroup label="${translations[currentLang].english}">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Lobster">Lobster</option>
+              <option value="'Times New Roman',serif">Times New Roman</option>
+              <option value="'Courier New',monospace">Courier New</option>
+              <option value="Arial,sans-serif">Arial</option>
+            </optgroup>
+            <optgroup label="${translations[currentLang].chinese}">
+              <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
+              <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
+              <option value="'Noto Sans HK',sans-serif">思源黑體</option>
+              <option value="'Noto Serif TC',serif">思源宋體</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      ${showSameContent ? `
+        <div class="same-content">
+          <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
+          <label for="same-content-${knife}" data-i18n="sameContentLabel">${translations[currentLang].sameContentLabel}</label>
+        </div>
+      ` : ''}
+      <p style="font-size:.8rem;color:#666;margin-top:.5rem;" data-i18n="instructions">
+        ${translations[currentLang].instructions}
+      </p>
+      <div class="canvas-wrapper" id="wrapper-${knife}">
+        <canvas id="canvas-${knife}"></canvas>
+        <div class="loading-overlay" id="overlay-${knife}" data-i18n="loading">${translations[currentLang].loading}</div>
+        <div class="bbox" id="bbox-${knife}">
+          <div class="handle" data-handle="nw"></div>
+          <div class="handle" data-handle="ne"></div>
+          <div class="handle" data-handle="sw"></div>
+          <div class="handle" data-handle="se"></div>
+        </div>
+      </div>
+    `;
+    if (knives.big.includes(knife)) {
+      bigKnifeContent.appendChild(section);
+    } else {
+      smallKnifeContent.appendChild(section);
+    }
+
+    state[knife] = {
+      img: null,
+      overlay: null,
+      baseFont: knives.big.includes(knife) ? 150 : 100,
+      textScale: 1,
+      baseDims: { w: 0, h: 0 },
+      textRightX: 0, // Set to canvas center after image load
+      pos: { y: 0 }, // Set to canvas center after image load
+      boxVisible: showResizeControls,
+      dragging: false,
+      dragStart: {},
+      resizing: false,
+      resizeStart: {},
+      pointers: {},
+      pinch: false,
+      pinchStart: {},
+      view: document.getElementById(`canvas-${knife}`),
+      vCtx: document.getElementById(`canvas-${knife}`).getContext('2d'),
+      full: document.createElement('canvas'),
+      fCtx: document.createElement('canvas').getContext('2d'),
+      wrapper: document.getElementById(`wrapper-${knife}`),
+      overlayEl: document.getElementById(`overlay-${knife}`),
+      bbox: document.getElementById(`bbox-${knife}`),
+      textInput: document.getElementById(`text-${knife}`),
+      fontSel: document.getElementById(`font-${knife}`),
+      sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
+      cacheCanvas: document.createElement('canvas'),
+      cacheCtx: document.createElement('canvas').getContext('2d'),
+      textCacheCanvas: document.createElement('canvas'),
+      textCacheCtx: document.createElement('canvas').getContext('2d'),
+      previewCanvas: document.createElement('canvas'),
+      cacheValid: false,
+      textCacheValid: false,
+      pendingDraw: false // Added for draw optimization
+    };
+    state[knife].full.width = 0;
+    state[knife].full.height = 0;
+    state[knife].fCtx = state[knife].full.getContext('2d');
+    state[knife].cacheCanvas.width = 0;
+    state[knife].cacheCanvas.height = 0;
+    state[knife].cacheCtx = state[knife].cacheCanvas.getContext('2d');
+    state[knife].textCacheCanvas.width = 0;
+    state[knife].textCacheCanvas.height = 0;
+    state[knife].textCacheCtx = state[knife].textCacheCanvas.getContext('2d');
+    state[knife].previewCanvas.width = 0;
+    state[knife].previewCanvas.height = 0;
+  }
+
+  function draw(knife) {
+    const s = state[knife];
+    if (!s.img || s.full.width === 0 || s.full.height === 0) return;
+
+    const textX = s.textRightX;
+
+    // Cache base image and overlay
+    if (!s.cacheValid) {
+      s.cacheCanvas.width = s.full.width;
+      s.cacheCanvas.height = s.full.height;
+      if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
+      s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
+      s.cacheCtx.drawImage(s.img, 0, 0);
+      if (showEditZone && s.overlay) {
+        s.cacheCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
+      }
+      s.cacheValid = true;
+    }
+
+    // Cache text
+    if (!s.textCacheValid) {
+      s.textCacheCanvas.width = s.full.width;
+      s.textCacheCanvas.height = s.full.height;
+      if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
+      s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
+      if (s.textInput.value) {
+        s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        s.textCacheCtx.fillStyle = '#000';
+        s.textCacheCtx.textBaseline = 'top';
+        s.textCacheCtx.textAlign = 'right';
+        s.textCacheCtx.fillText(s.textInput.value, textX, s.pos.y);
+      }
+      s.textCacheValid = true;
+    }
+
+    // Full-res canvas
+    s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
+    s.fCtx.drawImage(s.cacheCanvas, 0, 0);
+    s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
+
+    // Preview canvas
+    const scale = s.view.width / s.full.width;
+    s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
+    s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
+    s.vCtx.drawImage(s.cacheCanvas, 0, 0);
+    s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
+    s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // Bounding box (left edge at textRightX - width)
+    const dx = s.view.width / s.full.width;
+    const dy = s.view.height / s.full.height;
+    if (s.boxVisible && s.textInput.value) {
+      s.bbox.style.display = 'block';
+      s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
+      s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
+      s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
+      s.bbox.style.top = (s.pos.y * dy) + 'px';
+    } else {
+      s.bbox.style.display = 'none';
+    }
+    s.pendingDraw = false; // Reset pending draw
+  }
+
+  function invalidateCache(knife) {
+    state[knife].cacheValid = false;
+  }
+
+  function invalidateTextCache(knife) {
+    state[knife].textCacheValid = false;
+  }
+
+  function syncFontAndText(knife) {
+    if (!syncFonts) return;
+    const refState = state[knife];
+    const fontFamily = refState.fontSel.value;
+    const effectiveFontSize = refState.baseFont * refState.textScale;
+    const isBigKnife = knives.big.includes(knife);
+    Object.keys(state).forEach(k => {
+      if (k !== knife && knives.big.includes(k) === isBigKnife) {
+        state[k].fontSel.value = fontFamily;
+        state[k].baseFont = effectiveFontSize;
+        state[k].textScale = 1;
+        state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+        invalidateTextCache(k);
+        if (!state[k].pendingDraw) {
+          state[k].pendingDraw = true;
+          requestAnimationFrame(() => draw(k));
+        }
+      }
+    });
+    if (isBigKnife) {
+      lastBigKnifeFont = fontFamily;
+    }
+  }
+
+  function debounceToggle(fn, id, icon) {
+    return () => {
+      const now = Date.now();
+      if (now - lastToggleTime < toggleDebounce) return;
+      lastToggleTime = now;
+      console.log(`Toggling ${id}`);
+      fn();
+      document.querySelectorAll(`#${id}`).forEach(btn => {
+        btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
       });
-    }
+    };
+  }
 
-    function fitInBox(canvas, img, wrapper) {
-      const dpr = window.devicePixelRatio || 1;
-      const wrapW = wrapper.clientWidth;
-      const scale = wrapW / img.naturalWidth;
-      canvas.width = img.naturalWidth * scale * dpr;
-      canvas.height = img.naturalHeight * scale * dpr;
-      canvas.style.width = (canvas.width / dpr) + 'px';
-      canvas.style.height = (canvas.height / dpr) + 'px';
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
-      return scale;
-    }
-
-    function measureText(ctx, text, fontSize, font) {
-      ctx.font = `${fontSize}px ${font}`;
-      return { w: ctx.measureText(text).width, h: fontSize };
-    }
-
-    function toFullCoords(canvas, wrapper, cx, cy) {
-      const r = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      return {
-        x: (cx - r.left) * (wrapper.full.width / (r.width / dpr)),
-        y: (cy - r.top) * (wrapper.full.height / (r.height / dpr))
-      };
-    }
-
-    function hitTest(fx, fy, posY, dims, scale, textRightX) {
-      const x = textRightX - dims.w * scale;
-      return fx >= x && fx <= textRightX &&
-             fy >= posY && fy <= posY + dims.h * scale;
-    }
-
-    function hasBigKnives(selected) {
-      return selected.some(input => knives.big.includes(input.dataset.name));
-    }
-
-    function hasSmallKnives(selected) {
-      return selected.some(input => knives.small.includes(input.dataset.name));
-    }
-
-    function switchPage(from, to) {
-      if (isNavigating) return;
-      isNavigating = true;
-      pages[from].classList.remove('active');
-      pages[to].classList.add('active');
-      setTimeout(() => { isNavigating = false; }, 100);
-    }
-
-    function createCanvasSection(knife) {
-      const showSameContent = knife === firstSelectedKnife;
-      const section = document.createElement('div');
-      section.className = 'knife-section';
-      section.innerHTML = `
-        <h3 data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</h3>
-        <div class="controls">
-          <div>
-            <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
-            <input type="text" id="text-${knife}" placeholder="${translations[currentLang].textPlaceholder}">
-          </div>
-          <div>
-            <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
-            <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
-              <optgroup label="${translations[currentLang].english}">
-                <option value="Montserrat">Montserrat</option>
-                <option value="Roboto">Roboto</option>
-                <option value="Lobster">Lobster</option>
-                <option value="'Times New Roman',serif">Times New Roman</option>
-                <option value="'Courier New',monospace">Courier New</option>
-                <option value="Arial,sans-serif">Arial</option>
-              </optgroup>
-              <optgroup label="${translations[currentLang].chinese}">
-                <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
-                <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
-                <option value="'Noto Sans HK',sans-serif">思源黑體</option>
-                <option value="'Noto Serif TC',serif">思源宋體</option>
-              </optgroup>
-            </select>
-          </div>
-        </div>
-        ${showSameContent ? `
-          <div class="same-content">
-            <input type="checkbox" id="same-content-${knife}" ${sameContent ? 'checked' : ''}>
-            <label for="same-content-${knife}" data-i18n="sameContentLabel">${translations[currentLang].sameContentLabel}</label>
-          </div>
-        ` : ''}
-        <p style="font-size:.8rem;color:#666;margin-top:.5rem;" data-i18n="instructions">
-          ${translations[currentLang].instructions}
-        </p>
-        <div class="canvas-wrapper" id="wrapper-${knife}">
-          <canvas id="canvas-${knife}"></canvas>
-          <div class="loading-overlay" id="overlay-${knife}" data-i18n="loading">${translations[currentLang].loading}</div>
-          <div class="bbox" id="bbox-${knife}">
-            <div class="handle" data-handle="nw"></div>
-            <div class="handle" data-handle="ne"></div>
-            <div class="handle" data-handle="sw"></div>
-            <div class="handle" data-handle="se"></div>
-          </div>
-        </div>
-      `;
-      if (knives.big.includes(knife)) {
-        bigKnifeContent.appendChild(section);
-      } else {
-        smallKnifeContent.appendChild(section);
+  function toggleEditZone() {
+    showEditZone = !showEditZone;
+    Object.keys(state).forEach(knife => {
+      invalidateCache(knife);
+      if (!state[knife].pendingDraw) {
+        state[knife].pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
       }
+    });
+    document.querySelectorAll('#edit-zone').forEach(btn => {
+      btn.classList.toggle('off', !showEditZone);
+    });
+  }
 
-      state[knife] = {
-        img: null,
-        overlay: null,
-        baseFont: knives.big.includes(knife) ? 150 : 100,
-        textScale: 1,
-        baseDims: { w: 0, h: 0 },
-        textRightX: 0, // Set to canvas center after image load
-        pos: { y: 0 }, // Set to canvas center after image load
-        boxVisible: showResizeControls,
-        dragging: false,
-        dragStart: {},
-        resizing: false,
-        resizeStart: {},
-        pointers: {},
-        pinch: false,
-        pinchStart: {},
-        view: document.getElementById(`canvas-${knife}`),
-        vCtx: document.getElementById(`canvas-${knife}`).getContext('2d'),
-        full: document.createElement('canvas'),
-        fCtx: document.createElement('canvas').getContext('2d'),
-        wrapper: document.getElementById(`wrapper-${knife}`),
-        overlayEl: document.getElementById(`overlay-${knife}`),
-        bbox: document.getElementById(`bbox-${knife}`),
-        textInput: document.getElementById(`text-${knife}`),
-        fontSel: document.getElementById(`font-${knife}`),
-        sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
-        cacheCanvas: document.createElement('canvas'),
-        cacheCtx: document.createElement('canvas').getContext('2d'),
-        textCacheCanvas: document.createElement('canvas'),
-        textCacheCtx: document.createElement('canvas').getContext('2d'),
-        previewCanvas: document.createElement('canvas'),
-        cacheValid: false,
-        textCacheValid: false,
-        pendingDraw: false
-      };
-      state[knife].full.width = 0;
-      state[knife].full.height = 0;
-      state[knife].fCtx = state[knife].full.getContext('2d');
-      state[knife].cacheCanvas.width = 0;
-      state[knife].cacheCanvas.height = 0;
-      state[knife].cacheCtx = state[knife].cacheCanvas.getContext('2d');
-      state[knife].textCacheCanvas.width = 0;
-      state[knife].textCacheCanvas.height = 0;
-      state[knife].textCacheCtx = state[knife].textCacheCanvas.getContext('2d');
-      state[knife].previewCanvas.width = 0;
-      state[knife].previewCanvas.height = 0;
-    }
-
-    function draw(knife) {
-      const s = state[knife];
-      if (!s.img || s.full.width === 0 || s.full.height === 0) return;
-
-      const textX = s.textRightX;
-
-      // Cache base image and overlay
-      if (!s.cacheValid) {
-        s.cacheCanvas.width = s.full.width;
-        s.cacheCanvas.height = s.full.height;
-        if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
-        s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
-        s.cacheCtx.drawImage(s.img, 0, 0);
-        if (showEditZone && s.overlay) {
-          s.cacheCtx.drawImage(s.overlay, 0, 0, s.full.width, s.full.height);
-        }
-        s.cacheValid = true;
+  function toggleResizeControls() {
+    showResizeControls = !showResizeControls;
+    Object.keys(state).forEach(knife => {
+      state[knife].boxVisible = showResizeControls;
+      if (!state[knife].pendingDraw) {
+        state[knife].pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
       }
+    });
+    document.querySelectorAll('#resize-controls').forEach(btn => {
+      btn.classList.toggle('off', !showResizeControls);
+    });
+  }
 
-      // Cache text
-      if (!s.textCacheValid) {
-        s.textCacheCanvas.width = s.full.width;
-        s.textCacheCanvas.height = s.full.height;
-        if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
-        s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
-        if (s.textInput.value) {
-          s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
-          s.textCacheCtx.fillStyle = '#000';
-          s.textCacheCtx.textBaseline = 'top';
-          s.textCacheCtx.textAlign = 'right';
-          s.textCacheCtx.fillText(s.textInput.value, textX, s.pos.y);
-        }
-        s.textCacheValid = true;
-      }
-
-      // Full-res canvas
-      s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
-      s.fCtx.drawImage(s.cacheCanvas, 0, 0);
-      s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
-
-      // Preview canvas
-      const scale = s.view.width / s.full.width / (window.devicePixelRatio || 1);
-      s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
-      s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
-      s.vCtx.drawImage(s.cacheCanvas, 0, 0);
-      s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
-      s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
-
-      // Bounding box (left edge at textRightX - width)
-      const dx = s.view.width / s.full.width / (window.devicePixelRatio || 1);
-      const dy = s.view.height / s.full.height / (window.devicePixelRatio || 1);
-      if (s.boxVisible && s.textInput.value) {
-        s.bbox.style.display = 'block';
-        s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
-        s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-        s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
-        s.bbox.style.top = (s.pos.y * dy) + 'px';
-      } else {
-        s.bbox.style.display = 'none';
-      }
-      s.pendingDraw = false;
+  function toggleSyncFonts() {
+    syncFonts = !syncFonts;
+    if (syncFonts && Object.keys(state).length > 0) {
+      const bigKnife = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
+      const smallKnife = lastAdjusted.small || Object.keys(state).find(k => knives.small.includes(k));
+      if (bigKnife) syncFontAndText(bigKnife);
+      if (smallKnife) syncFontAndText(smallKnife);
     }
+    document.querySelectorAll('#sync-fonts').forEach(btn => {
+      btn.classList.toggle('off', !syncFonts);
+    });
+  }
 
-    function invalidateCache(knife) {
-      state[knife].cacheValid = false;
-    }
+  function toggleAlignment(knife) {
+    const isBigKnife = knives.big.includes(knife);
+    const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
+    const group = isBigKnife ? 'big' : 'small';
 
-    function invalidateTextCache(knife) {
-      state[knife].textCacheValid = false;
-    }
-
-    function syncFontAndText(knife) {
-      if (!syncFonts) return;
-      const refState = state[knife];
-      const fontFamily = refState.fontSel.value;
-      const effectiveFontSize = refState.baseFont * refState.textScale;
-      const isBigKnife = knives.big.includes(knife);
+    if (alignRight) {
+      // Turning off: Keep current positions
       Object.keys(state).forEach(k => {
-        if (k !== knife && knives.big.includes(k) === isBigKnife) {
-          state[k].fontSel.value = fontFamily;
-          state[k].baseFont = effectiveFontSize;
-          state[k].textScale = 1;
-          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+        if (knives.big.includes(k) === isBigKnife) {
+          storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
           invalidateTextCache(k);
           if (!state[k].pendingDraw) {
             state[k].pendingDraw = true;
@@ -782,300 +854,262 @@
           }
         }
       });
-      if (isBigKnife) {
-        lastBigKnifeFont = fontFamily;
-      }
-    }
-
-    function debounceToggle(fn, id, icon) {
-      return () => {
-        const now = Date.now();
-        if (now - lastToggleTime < toggleDebounce) return;
-        lastToggleTime = now;
-        console.log(`Toggling ${id}`);
-        fn();
-        document.querySelectorAll(`#${id}`).forEach(btn => {
-          btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
-        });
-      };
-    }
-
-    function toggleEditZone() {
-      showEditZone = !showEditZone;
-      Object.keys(state).forEach(knife => {
-        invalidateCache(knife);
-        if (!state[knife].pendingDraw) {
-          state[knife].pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      });
-      document.querySelectorAll('#edit-zone').forEach(btn => {
-        btn.classList.toggle('off', !showEditZone);
-      });
-    }
-
-    function toggleResizeControls() {
-      showResizeControls = !showResizeControls;
-      Object.keys(state).forEach(knife => {
-        state[knife].boxVisible = showResizeControls;
-        if (!state[knife].pendingDraw) {
-          state[knife].pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      });
-      document.querySelectorAll('#resize-controls').forEach(btn => {
-        btn.classList.toggle('off', !showResizeControls);
-      });
-    }
-
-    function toggleSyncFonts() {
-      syncFonts = !syncFonts;
-      if (syncFonts && Object.keys(state).length > 0) {
-        const bigKnife = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
-        const smallKnife = lastAdjusted.small || Object.keys(state).find(k => knives.small.includes(k));
-        if (bigKnife) syncFontAndText(bigKnife);
-        if (smallKnife) syncFontAndText(smallKnife);
-      }
-      document.querySelectorAll('#sync-fonts').forEach(btn => {
-        btn.classList.toggle('off', !syncFonts);
-      });
-    }
-
-    function toggleAlignment(knife) {
-      const isBigKnife = knives.big.includes(knife);
-      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-      const group = isBigKnife ? 'big' : 'small';
-
-      if (alignRight) {
-        // Turning off: Keep current positions
-        Object.keys(state).forEach(k => {
-          if (knives.big.includes(k) === isBigKnife) {
-            storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          }
-        });
-        if (isBigKnife) alignRightBig = false;
-        else alignRightSmall = false;
-      } else {
-        // Turning on: Sync to last adjusted knife's right edge
-        const lastKnife = lastAdjusted[group] || knife;
-        const refTextRightX = state[lastKnife].textRightX;
-        const refY = state[lastKnife].pos.y;
-        Object.keys(state).forEach(k => {
-          if (knives.big.includes(k) === isBigKnife) {
-            storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
-            state[k].textRightX = refTextRightX;
-            state[k].pos.y = refY;
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          }
-        });
-        if (isBigKnife) alignRightBig = true;
-        else alignRightSmall = true;
-      }
-
-      document.querySelectorAll('#auto-align').forEach(btn => {
-        btn.classList.toggle('off', isBigKnife ? !alignRightBig : !alignRightSmall);
-      });
-    }
-
-    async function generatePreviews() {
-      previewContent.innerHTML = '';
-      for (const knife of Object.keys(state)) {
-        const s = state[knife];
-        s.previewCanvas.width = s.full.width;
-        s.previewCanvas.height = s.full.height;
-        const ctx = s.previewCanvas.getContext('2d');
-        ctx.drawImage(s.img, 0, 0);
-        if (s.textInput.value) {
-          ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
-          ctx.fillStyle = '#000';
-          ctx.textBaseline = 'top';
-          ctx.textAlign = 'right';
-          ctx.fillText(s.textInput.value, s.textRightX, s.pos.y);
-        }
-        const previewUrl = s.previewCanvas.toDataURL('image/png');
-        const div = document.createElement('div');
-        div.className = 'preview-item';
-        div.innerHTML = `
-          <img src="${previewUrl}" alt="${knife} preview" data-knife="${knife}">
-          <span data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</span>
-        `;
-        previewContent.appendChild(div);
-      }
-      previewContent.querySelectorAll('img').forEach(img => {
-        img.addEventListener('click', () => {
-          modalImage.src = img.src;
-          modal.style.display = 'flex';
-        });
-      });
-    }
-
-    modal.addEventListener('click', () => {
-      modal.style.display = 'none';
-      modalImage.src = '';
-    });
-
-    document.fonts.ready.then(() => {
-      Object.keys(state).forEach(knife => {
-        if (!state[knife].pendingDraw) {
-          state[knife].pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      });
-    });
-
-    next1Btn.addEventListener('click', async () => {
-      if (isNavigating) return;
-      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-      if (selected.length === 0) return;
-      bigKnifeContent.innerHTML = '';
-      smallKnifeContent.innerHTML = '';
-      Object.keys(state).forEach(knife => delete state[knife]);
-      firstSelectedKnife = selected[0].dataset.name;
-
-      const hasBig = hasBigKnives(selected);
-      const hasSmall = hasSmallKnives(selected);
-
-      if (hasBig) {
-        switchPage(1, 2);
-        for (const input of selected) {
-          const knife = input.dataset.name;
-          if (knives.big.includes(knife)) {
-            await initializeKnife(knife);
+      if (isBigKnife) alignRightBig = false;
+      else alignRightSmall = false;
+    } else {
+      // Turning on: Sync to last adjusted knife's right edge
+      const lastKnife = lastAdjusted[group] || knife;
+      const refTextRightX = state[lastKnife].textRightX;
+      const refY = state[lastKnife].pos.y;
+      Object.keys(state).forEach(k => {
+        if (knives.big.includes(k) === isBigKnife) {
+          storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
+          state[k].textRightX = refTextRightX;
+          state[k].pos.y = refY;
+          invalidateTextCache(k);
+          if (!state[k].pendingDraw) {
+            state[k].pendingDraw = true;
+            requestAnimationFrame(() => draw(k));
           }
         }
-      } else if (hasSmall) {
-        switchPage(1, 3);
-        for (const input of selected) {
-          const knife = input.dataset.name;
-          if (knives.small.includes(knife)) {
-            await initializeKnife(knife);
-          }
-        }
-      }
-    });
+      });
+      if (isBigKnife) alignRightBig = true;
+      else alignRightSmall = true;
+    }
 
-    back2Btn.addEventListener('click', () => {
-      switchPage(2, 1);
+    document.querySelectorAll('#auto-align').forEach(btn => {
+      btn.classList.toggle('off', isBigKnife ? !alignRightBig : !alignRightSmall);
     });
+  }
 
-    next2Btn.addEventListener('click', async () => {
-      if (isNavigating) return;
-      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-      const hasSmall = hasSmallKnives(selected);
-      if (hasSmall) {
-        switchPage(2, 3);
-        for (const input of selected) {
-          const knife = input.dataset.name;
-          if (knives.small.includes(knife) && !state[knife]) {
-            await initializeKnife(knife);
-          }
-        }
-      } else {
-        switchPage(2, 4);
-        await generatePreviews();
-      }
-    });
-
-    back3Btn.addEventListener('click', () => {
-      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-      const hasBig = hasBigKnives(selected);
-      if (hasBig) {
-        switchPage(3, 2);
-      } else {
-        switchPage(3, 1);
-      }
-    });
-
-    next3Btn.addEventListener('click', async () => {
-      if (isNavigating) return;
-      switchPage(3, 4);
-      await generatePreviews();
-    });
-
-    back4Btn.addEventListener('click', () => {
-      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-      const hasSmall = hasSmallKnives(selected);
-      const hasBig = hasBigKnives(selected);
-      if (hasSmall) {
-        switchPage(4, 3);
-      } else if (hasBig) {
-        switchPage(4, 2);
-      } else {
-        switchPage(4, 1);
-      }
-    });
-
-    document.addEventListener('click', e => {
-      if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
-        debounceToggle(toggleEditZone, 'edit-zone', 'vignette')();
-      } else if (e.target.id === 'resize-controls' || e.target.closest('#resize-controls')) {
-        debounceToggle(toggleResizeControls, 'resize-controls', 'format_shapes')();
-      } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
-        debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
-      } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
-        const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
-        const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
-                      activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
-        if (knife) {
-          debounceToggle(() => toggleAlignment(knife), 'auto-align', 'text_rotation_none')();
-        }
-      }
-    });
-
-    async function initializeKnife(knife) {
-      createCanvasSection(knife);
+  async function generatePreviews() {
+    previewContent.innerHTML = '';
+    for (const knife of Object.keys(state)) {
       const s = state[knife];
-      s.overlayEl.style.visibility = 'visible';
-      s.img = await loadImage(
-        productPicker.querySelector(`input[data-name="${knife}"]`).value
-      );
-      try {
-        s.overlay = await loadImage(`${knife}-overlay.png`);
-      } catch (e) {
-        console.warn(`Overlay image for ${knife} not found`);
-        s.overlay = null;
-      }
-      s.full.width = s.img.naturalWidth;
-      s.full.height = s.img.naturalHeight;
-      // Center text
-      s.textRightX = s.full.width / 2;
-      s.pos.y = s.full.height / 2;
-      s.cacheCanvas.width = s.full.width;
-      s.cacheCanvas.height = s.full.height;
-      s.textCacheCanvas.width = s.full.width;
-      s.textCacheCanvas.height = s.full.height;
       s.previewCanvas.width = s.full.width;
       s.previewCanvas.height = s.full.height;
-      fitInBox(s.view, s.img, s.wrapper);
-      const isBigKnife = knives.big.includes(knife);
-      s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
-      s.baseDims = { w: 0, h: s.baseFont };
-
-      if (sameContent && sharedText) {
-        s.textInput.value = sharedText;
-        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-      }
-
-      await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
+      const ctx = s.previewCanvas.getContext('2d');
+      ctx.drawImage(s.img, 0, 0);
       if (s.textInput.value) {
-        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+        ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        ctx.fillStyle = '#000';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'right';
+        ctx.fillText(s.textInput.value, s.textRightX, s.pos.y);
       }
-      s.overlayEl.style.visibility = 'hidden';
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
+      const previewUrl = s.previewCanvas.toDataURL('image/png');
+      const div = document.createElement('div');
+      div.className = 'preview-item';
+      div.innerHTML = `
+        <img src="${previewUrl}" alt="${knife} preview" data-knife="${knife}">
+        <span data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</span>
+      `;
+      previewContent.appendChild(div);
+    }
+    previewContent.querySelectorAll('img').forEach(img => {
+      img.addEventListener('click', () => {
+        modalImage.src = img.src;
+        modal.style.display = 'flex';
+      });
+    });
+  }
+
+  modal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    modalImage.src = '';
+  });
+
+  document.fonts.ready.then(() => {
+    Object.keys(state).forEach(knife => {
+      if (!state[knife].pendingDraw) {
+        state[knife].pendingDraw = true;
         requestAnimationFrame(() => draw(knife));
       }
+    });
+  });
 
-      s.textInput.addEventListener('input', () => {
+  next1Btn.addEventListener('click', async () => {
+    if (isNavigating) return;
+    const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+    if (selected.length === 0) return;
+    bigKnifeContent.innerHTML = '';
+    smallKnifeContent.innerHTML = '';
+    Object.keys(state).forEach(knife => delete state[knife]);
+    firstSelectedKnife = selected[0].dataset.name;
+
+    const hasBig = hasBigKnives(selected);
+    const hasSmall = hasSmallKnives(selected);
+
+    if (hasBig) {
+      switchPage(1, 2);
+      for (const input of selected) {
+        const knife = input.dataset.name;
+        if (knives.big.includes(knife)) {
+          await initializeKnife(knife);
+        }
+      }
+    } else if (hasSmall) {
+      switchPage(1, 3);
+      for (const input of selected) {
+        const knife = input.dataset.name;
+        if (knives.small.includes(knife)) {
+          await initializeKnife(knife);
+        }
+      }
+    }
+  });
+
+  back2Btn.addEventListener('click', () => {
+    switchPage(2, 1);
+  });
+
+  next2Btn.addEventListener('click', async () => {
+    if (isNavigating) return;
+    const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+    const hasSmall = hasSmallKnives(selected);
+    if (hasSmall) {
+      switchPage(2, 3);
+      for (const input of selected) {
+        const knife = input.dataset.name;
+        if (knives.small.includes(knife) && !state[knife]) {
+          await initializeKnife(knife);
+        }
+      }
+    } else {
+      switchPage(2, 4);
+      await generatePreviews();
+    }
+  });
+
+  back3Btn.addEventListener('click', () => {
+    const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+    const hasBig = hasBigKnives(selected);
+    if (hasBig) {
+      switchPage(3, 2);
+    } else {
+      switchPage(3, 1);
+    }
+  });
+
+  next3Btn.addEventListener('click', async () => {
+    if (isNavigating) return;
+    switchPage(3, 4);
+    await generatePreviews();
+  });
+
+  back4Btn.addEventListener('click', () => {
+    const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+    const hasSmall = hasSmallKnives(selected);
+    const hasBig = hasBigKnives(selected);
+    if (hasSmall) {
+      switchPage(4, 3);
+    } else if (hasBig) {
+      switchPage(4, 2);
+    } else {
+      switchPage(4, 1);
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
+      debounceToggle(toggleEditZone, 'edit-zone', 'vignette')();
+    } else if (e.target.id === 'resize-controls' || e.target.closest('#resize-controls')) {
+      debounceToggle(toggleResizeControls, 'resize-controls', 'format_shapes')();
+    } else if (e.target.id === 'sync-fonts' || e.target.closest('#sync-fonts')) {
+      debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
+    } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
+      const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+      const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
+                    activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
+      if (knife) {
+        debounceToggle(() => toggleAlignment(knife), 'auto-align', 'text_rotation_none')();
+      }
+    }
+  });
+
+  async function initializeKnife(knife) {
+    createCanvasSection(knife);
+    const s = state[knife];
+    s.overlayEl.style.visibility = 'visible';
+    s.img = await loadImage(
+      productPicker.querySelector(`input[data-name="${knife}"]`).value
+    );
+    try {
+      s.overlay = await loadImage(`${knife}-overlay.png`);
+    } catch (e) {
+      console.warn(`Overlay image for ${knife} not found`);
+      s.overlay = null;
+    }
+    s.full.width = s.img.naturalWidth;
+    s.full.height = s.img.naturalHeight;
+    // Center text
+    s.textRightX = s.full.width / 2;
+    s.pos.y = s.full.height / 2;
+    s.cacheCanvas.width = s.full.width;
+    s.cacheCanvas.height = s.full.height;
+    s.textCacheCanvas.width = s.full.width;
+    s.textCacheCanvas.height = s.full.height;
+    s.previewCanvas.width = s.full.width;
+    s.previewCanvas.height = s.full.height;
+    fitInBox(s.view, s.img, s.wrapper);
+    const isBigKnife = knives.big.includes(knife);
+    s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
+    s.baseDims = { w: 0, h: s.baseFont };
+
+    if (sameContent && sharedText) {
+      s.textInput.value = sharedText;
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+    }
+
+    await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
+    if (s.textInput.value) {
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+    }
+    s.overlayEl.style.visibility = 'hidden';
+    if (!s.pendingDraw) {
+      s.pendingDraw = true;
+      requestAnimationFrame(() => draw(knife));
+    }
+
+    s.textInput.addEventListener('input', () => {
+      if (sameContent) {
+        sharedText = s.textInput.value;
+        Object.keys(state).forEach(k => {
+          state[k].textInput.value = sharedText;
+          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+          invalidateTextCache(k);
+          if (!state[k].pendingDraw) {
+            state[k].pendingDraw = true;
+            requestAnimationFrame(() => draw(k));
+          }
+        });
+      } else {
+        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+        invalidateTextCache(knife);
+        if (!s.pendingDraw) {
+          s.pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+    });
+
+    s.fontSel.addEventListener('input', () => {
+      document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
+        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+        invalidateTextCache(knife);
+        if (!s.pendingDraw) {
+          s.pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+        syncFontAndText(knife);
+        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+      });
+    });
+
+    if (s.sameContentChk) {
+      s.sameContentChk.addEventListener('change', () => {
+        sameContent = s.sameContentChk.checked;
         if (sameContent) {
           sharedText = s.textInput.value;
           Object.keys(state).forEach(k => {
@@ -1088,319 +1122,281 @@
             }
           });
         } else {
-          s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-          invalidateTextCache(knife);
-          if (!s.pendingDraw) {
-            s.pendingDraw = true;
-            requestAnimationFrame(() => draw(knife));
-          }
-        }
-        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      });
-
-      s.fontSel.addEventListener('input', () => {
-        document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
-          s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-          invalidateTextCache(knife);
-          if (!s.pendingDraw) {
-            s.pendingDraw = true;
-            requestAnimationFrame(() => draw(knife));
-          }
-          syncFontAndText(knife);
-          lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-        });
-      });
-
-      if (s.sameContentChk) {
-        s.sameContentChk.addEventListener('change', () => {
-          sameContent = s.sameContentChk.checked;
-          if (sameContent) {
-            sharedText = s.textInput.value;
-            Object.keys(state).forEach(k => {
-              state[k].textInput.value = sharedText;
-              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-              invalidateTextCache(k);
-              if (!state[k].pendingDraw) {
-                state[k].pendingDraw = true;
-                requestAnimationFrame(() => draw(k));
-              }
-            });
-          } else {
-            sharedText = '';
-          }
-        });
-      }
-
-      // Dragging
-      s.view.addEventListener('pointerdown', e => {
-        const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-        if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
-        console.log(`Dragging started for ${knife}`);
-        s.dragging = true;
-        s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
-        e.preventDefault();
-      });
-
-      window.addEventListener('pointermove', e => {
-        if (!s.dragging || e.pointerId !== s.dragStart.id) return;
-        const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-        s.textRightX = f.x - s.dragStart.dx;
-        s.pos.y = f.y - s.dragStart.dy;
-        const isBigKnife = knives.big.includes(knife);
-        const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-        if (alignRight) {
-          Object.keys(state).forEach(k => {
-            if (k !== knife && knives.big.includes(k) === isBigKnife) {
-              state[k].textRightX = s.textRightX;
-              state[k].pos.y = s.pos.y;
-              invalidateTextCache(k);
-              if (!state[k].pendingDraw) {
-                state[k].pendingDraw = true;
-                requestAnimationFrame(() => draw(k));
-              }
-            }
-          });
-        }
-        invalidateTextCache(knife);
-        if (!s.pendingDraw) {
-          s.pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      });
-
-      ['pointerup', 'pointercancel'].forEach(evt =>
-        window.addEventListener(evt, e => {
-          if (e.pointerId === s.dragStart.id) {
-            console.log(`Dragging stopped for ${knife}`);
-            s.dragging = false;
-          }
-        })
-      );
-
-      // Resizing
-      s.bbox.querySelectorAll('.handle').forEach(h => {
-        h.addEventListener('pointerdown', e => {
-          e.stopPropagation();
-          console.log(`Resizing started for ${knife}`);
-          s.resizing = true;
-          const handle = h.dataset.handle;
-          const box = s.bbox.getBoundingClientRect();
-          let anchorX, anchorY;
-          // Anchor opposite corner
-          if (handle === 'se') {
-            anchorX = toFullCoords(s.view, s, box.left, box.top).x; // nw
-            anchorY = toFullCoords(s.view, s, box.left, box.top).y;
-          } else if (handle === 'nw') {
-            anchorX = toFullCoords(s.view, s, box.right, box.bottom).x; // se
-            anchorY = toFullCoords(s.view, s, box.right, box.bottom).y;
-          } else if (handle === 'ne') {
-            anchorX = toFullCoords(s.view, s, box.left, box.bottom).x; // sw
-            anchorY = toFullCoords(s.view, s, box.left, box.bottom).y;
-          } else if (handle === 'sw') {
-            anchorX = toFullCoords(s.view, s, box.right, box.top).x; // ne
-            anchorY = toFullCoords(s.view, s, box.right, box.top).y;
-          }
-          const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
-          s.resizeStart = {
-            id: e.pointerId,
-            anchorX,
-            anchorY,
-            scale: s.textScale,
-            textRightX: s.textRightX,
-            posY: s.pos.y,
-            handle
-          };
-        });
-      });
-
-      window.addEventListener('pointermove', e => {
-        if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
-        const p = toFullCoords(s.view, s, e.clientX, e.clientY);
-        const isBigKnife = knives.big.includes(knife);
-        const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-        let newScale;
-        if (s.resizeStart.handle === 'se') {
-          const dx = Math.abs(p.x - s.resizeStart.anchorX);
-          const dy = Math.abs(p.y - s.resizeStart.anchorY);
-          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-          s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
-          s.pos.y = s.resizeStart.anchorY;
-        } else if (s.resizeStart.handle === 'nw') {
-          const dx = Math.abs(s.resizeStart.anchorX - p.x);
-          const dy = Math.abs(s.resizeStart.anchorY - p.y);
-          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-          s.textRightX = s.resizeStart.anchorX;
-          s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-        } else if (s.resizeStart.handle === 'ne') {
-          const dx = Math.abs(p.x - s.resizeStart.anchorX);
-          const dy = Math.abs(p.y - s.resizeStart.anchorY);
-          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-          s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
-          s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-        } else if (s.resizeStart.handle === 'sw') {
-          const dx = Math.abs(s.resizeStart.anchorX - p.x);
-          const dy = Math.abs(p.y - s.resizeStart.anchorY);
-          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-          s.textRightX = s.resizeStart.anchorX;
-          s.pos.y = s.resizeStart.anchorY;
-        }
-        s.textScale = newScale;
-        if (alignRight) {
-          Object.keys(state).forEach(k => {
-            if (k !== knife && knives.big.includes(k) === isBigKnife) {
-              state[k].textRightX = s.textRightX;
-              state[k].pos.y = s.pos.y;
-              if (syncFonts) {
-                state[k].baseFont = s.baseFont * s.textScale;
-                state[k].textScale = 1;
-                state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-              }
-              invalidateTextCache(k);
-              if (!state[k].pendingDraw) {
-                state[k].pendingDraw = true;
-                requestAnimationFrame(() => draw(k));
-              }
-            }
-          });
-        }
-        if (syncFonts) {
-          syncFontAndText(knife);
-        }
-        invalidateTextCache(knife);
-        if (!s.pendingDraw) {
-          s.pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      });
-
-      ['pointerup', 'pointercancel'].forEach(evt =>
-        window.addEventListener(evt, e => {
-          if (e.pointerId === s.resizeStart.id) {
-            console.log(`Resizing stopped for ${knife}`);
-            s.resizing = false;
-          }
-        })
-      );
-
-      // Pinching
-      s.view.addEventListener('pointerdown', e => {
-        s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-        if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
-          console.log(`Pinch started for ${knife}`);
-          s.pinch = true;
-          const [pA, pB] = Object.values(s.pointers);
-          const fA = toFullCoords(s.view, s, pA.x, pA.y);
-          const fB = toFullCoords(s.view, s, pB.x, pB.y);
-          s.pinchStart = {
-            scale: s.textScale,
-            cx: (fA.x + fB.x) / 2,
-            cy: (fA.y + fB.y) / 2,
-            d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
-          };
+          sharedText = '';
         }
       });
-
-      window.addEventListener('pointermove', e => {
-        if (!s.pinch || !(e.pointerId in s.pointers)) return;
-        s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-        const [a, b] = Object.values(s.pointers);
-        const fA = toFullCoords(s.view, s, a.x, a.y);
-        const fB = toFullCoords(s.view, s, b.x, b.y);
-        const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
-        s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
-        s.textRightX = (fA.x + fB.x) / 2;
-        s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
-        const isBigKnife = knives.big.includes(knife);
-        const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-        if (alignRight) {
-          Object.keys(state).forEach(k => {
-            if (k !== knife && knives.big.includes(k) === isBigKnife) {
-              state[k].textRightX = s.textRightX;
-              state[k].pos.y = s.pos.y;
-              if (syncFonts) {
-                state[k].baseFont = s.baseFont * s.textScale;
-                state[k].textScale = 1;
-                state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-              }
-              invalidateTextCache(k);
-              if (!state[k].pendingDraw) {
-                state[k].pendingDraw = true;
-                requestAnimationFrame(() => draw(k));
-              }
-            }
-          });
-        }
-        if (syncFonts) {
-          syncFontAndText(knife);
-        }
-        invalidateTextCache(knife);
-        if (!s.pendingDraw) {
-          s.pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      });
-
-      ['pointerup', 'pointercancel'].forEach(evt =>
-        window.addEventListener(evt, e => {
-          delete s.pointers[e.pointerId];
-          if (Object.keys(s.pointers).length < 2) {
-            console.log(`Pinch stopped for ${knife}`);
-            s.pinch = false;
-            // Ensure final draw with updated state
-            if (!s.pendingDraw) {
-              s.pendingDraw = true;
-              requestAnimationFrame(() => draw(knife));
-            }
-          }
-        })
-      );
-
-      s.overlayEl.style.visibility = 'hidden';
     }
 
-    downloadBtn.addEventListener('click', async () => {
-      const zip = new JSZip();
-      for (const knife of Object.keys(state)) {
-        const s = state[knife];
-        const previewBlob = await new Promise(r => s.previewCanvas.toBlob(r));
-        zip.file(`${knife}-preview.png`, previewBlob);
-
-        const t = document.createElement('canvas');
-        t.width = s.full.width;
-        t.height = s.full.height;
-        const tCtx = t.getContext('2d');
-        tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
-        tCtx.fillStyle = '#000';
-        tCtx.textBaseline = 'top';
-        tCtx.textAlign = 'right';
-        tCtx.fillText(s.textInput.value, s.textRightX, s.pos.y);
-        const textBlob = await new Promise(r => t.toBlob(r));
-        zip.file(`${knife}-text-only.png`, textBlob);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'knife-engravings.zip';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-        a.remove();
-      }, 100);
+    // Dragging
+    s.view.addEventListener('pointerdown', e => {
+      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+      if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
+      console.log(`Dragging started for ${knife}`);
+      s.dragging = true;
+      s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
+      e.preventDefault();
     });
 
-    updateLanguage(currentLang);
+    window.addEventListener('pointermove', e => {
+      if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+      s.textRightX = f.x - s.dragStart.dx;
+      s.pos.y = f.y - s.dragStart.dy;
+      const isBigKnife = knives.big.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && knives.big.includes(k) === isBigKnife) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+    });
 
-    // Set initial button states
-    document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.remove('off'));
-    document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.remove('off'));
-    document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.remove('off'));
-    document.querySelectorAll('#auto-align').forEach(btn => btn.classList.remove('off'));
-  </script>
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        if (e.pointerId === s.dragStart.id) {
+          console.log(`Dragging stopped for ${knife}`);
+          s.dragging = false;
+        }
+      })
+    );
+
+    // Resizing
+    s.bbox.querySelectorAll('.handle').forEach(h => {
+      h.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        console.log(`Resizing started for ${knife}`);
+        s.resizing = true;
+        const handle = h.dataset.handle;
+        const box = s.bbox.getBoundingClientRect();
+        let anchorX, anchorY;
+        // Anchor opposite corner
+        if (handle === 'se') {
+          anchorX = toFullCoords(s.view, s, box.left, box.top).x; // nw
+          anchorY = toFullCoords(s.view, s, box.left, box.top).y;
+        } else if (handle === 'nw') {
+          anchorX = toFullCoords(s.view, s, box.right, box.bottom).x; // se
+          anchorY = toFullCoords(s.view, s, box.right, box.bottom).y;
+        } else if (handle === 'ne') {
+          anchorX = toFullCoords(s.view, s, box.left, box.bottom).x; // sw
+          anchorY = toFullCoords(s.view, s, box.left, box.bottom).y;
+        } else if (handle === 'sw') {
+          anchorX = toFullCoords(s.view, s, box.right, box.top).x; // ne
+          anchorY = toFullCoords(s.view, s, box.right, box.top).y;
+        }
+        const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
+        s.resizeStart = {
+          id: e.pointerId,
+          anchorX,
+          anchorY,
+          scale: s.textScale,
+          textRightX: s.textRightX,
+          posY: s.pos.y,
+          handle
+        };
+      });
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+      const p = toFullCoords(s.view, s, e.clientX, e.clientY);
+      const isBigKnife = knives.big.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
+      let newScale;
+      if (s.resizeStart.handle === 'se') {
+        const dx = Math.abs(p.x - s.resizeStart.anchorX);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
+        s.pos.y = s.resizeStart.anchorY;
+      } else if (s.resizeStart.handle === 'nw') {
+        const dx = Math.abs(s.resizeStart.anchorX - p.x);
+        const dy = Math.abs(s.resizeStart.anchorY - p.y);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX;
+        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
+      } else if (s.resizeStart.handle === 'ne') {
+        const dx = Math.abs(p.x - s.resizeStart.anchorX);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
+        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
+      } else if (s.resizeStart.handle === 'sw') {
+        const dx = Math.abs(s.resizeStart.anchorX - p.x);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX;
+        s.pos.y = s.resizeStart.anchorY;
+      }
+      s.textScale = newScale;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && knives.big.includes(k) === isBigKnife) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            if (syncFonts) {
+              state[k].baseFont = s.baseFont * s.textScale;
+              state[k].textScale = 1;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            }
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      if (syncFonts) {
+        syncFontAndText(knife);
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+    });
+
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        if (e.pointerId === s.resizeStart.id) {
+          console.log(`Resizing stopped for ${knife}`);
+          s.resizing = false;
+        }
+      })
+    );
+
+    // Pinching
+    s.view.addEventListener('pointerdown', e => {
+      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
+        console.log(`Pinch started for ${knife}`);
+        s.pinch = true;
+        const [pA, pB] = Object.values(s.pointers);
+        const fA = toFullCoords(s.view, s, pA.x, pA.y);
+        const fB = toFullCoords(s.view, s, pB.x, pB.y);
+        s.pinchStart = {
+          scale: s.textScale,
+          cx: (fA.x + fB.x) / 2,
+          cy: (fA.y + fB.y) / 2,
+          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
+        };
+      }
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (!s.pinch || !(e.pointerId in s.pointers)) return;
+      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      const [a, b] = Object.values(s.pointers);
+      const fA = toFullCoords(s.view, s, a.x, a.y);
+      const fB = toFullCoords(s.view, s, b.x, b.y);
+      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+      s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
+      s.textRightX = (fA.x + fB.x) / 2;
+      s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
+      const isBigKnife = knives.big.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && knives.big.includes(k) === isBigKnife) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            if (syncFonts) {
+              state[k].baseFont = s.baseFont * s.textScale;
+              state[k].textScale = 1;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            }
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      if (syncFonts) {
+        syncFontAndText(knife);
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
+    });
+
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        delete s.pointers[e.pointerId];
+        if (Object.keys(s.pointers).length < 2) {
+          console.log(`Pinch stopped for ${knife}`);
+          s.pinch = false;
+          // Ensure final draw with updated state
+          if (!s.pendingDraw) {
+            s.pendingDraw = true;
+            requestAnimationFrame(() => draw(knife));
+          }
+        }
+      })
+    );
+
+    s.overlayEl.style.visibility = 'hidden';
+  }
+
+  downloadBtn.addEventListener('click', async () => {
+    const zip = new JSZip();
+    for (const knife of Object.keys(state)) {
+      const s = state[knife];
+      const previewBlob = await new Promise(r => s.previewCanvas.toBlob(r));
+      zip.file(`${knife}-preview.png`, previewBlob);
+
+      const t = document.createElement('canvas');
+      t.width = s.full.width;
+      t.height = s.full.height;
+      const tCtx = t.getContext('2d');
+      tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      tCtx.fillStyle = '#000';
+      tCtx.textBaseline = 'top';
+      tCtx.textAlign = 'right';
+      tCtx.fillText(s.textInput.value, s.textRightX, s.pos.y);
+      const textBlob = await new Promise(r => t.toBlob(r));
+      zip.file(`${knife}-text-only.png`, textBlob);
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'knife-engravings.zip';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 100);
+  });
+
+  updateLanguage(currentLang);
+
+  // Set initial button states
+  document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.remove('off'));
+  document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.remove('off'));
+  document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.remove('off'));
+  document.querySelectorAll('#auto-align').forEach(btn => btn.classList.remove('off'));
+</script>
 </body>
 </html>
