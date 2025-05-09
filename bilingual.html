@@ -774,7 +774,10 @@ function syncFontAndText(knife) {
       state[k].textScale = 1;
       state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
       const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-      state[k].pos.x = alignRightK ? state[k].full.width - state[k].baseDims.w - 20 : state[k].pos.x;
+      if (alignRightK) {
+        state[k].pos.x = refState.pos.x;
+        state[k].pos.y = refState.pos.y;
+      }
       invalidateTextCache(k);
       draw(k);
     }
@@ -863,7 +866,6 @@ function toggleAlignment(knife) {
         storedPositions[group][k] = { x: state[k].pos.x, y: state[k].pos.y };
         state[k].pos.x = refPos.x;
         state[k].pos.y = refPos.y;
-        state[k].pos.x = state[k].full.width - state[k].baseDims.w * state[k].textScale - 20; // Right-align
         invalidateTextCache(k);
         draw(k);
       }
@@ -1039,7 +1041,7 @@ async function initializeKnife(knife) {
   }
 
   // Set initial position
-  s.pos.x = isBigKnife && alignRightBig ? s.full.width - s.baseDims.w * s.textScale - 20 : 20;
+  s.pos.x = 20;
   s.pos.y = 20;
 
   // Draw only after font and image are loaded
@@ -1056,20 +1058,11 @@ async function initializeKnife(knife) {
       Object.keys(state).forEach(k => {
         state[k].textInput.value = sharedText;
         state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-        const isBigKnifeK = knives.big.includes(k);
-        const alignRightK = isBigKnifeK ? alignRightBig : alignRightSmall;
-        if (alignRightK) {
-          state[k].pos.x = state[k].full.width - state[k].baseDims.w * state[k].textScale - 20;
-        }
         invalidateTextCache(k);
         draw(k);
       });
     } else {
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-      const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-      if (alignRightK) {
-        s.pos.x = s.full.width - s.baseDims.w * s.textScale - 20;
-      }
       invalidateTextCache(knife);
       draw(knife);
     }
@@ -1079,10 +1072,6 @@ async function initializeKnife(knife) {
   s.fontSel.addEventListener('input', () => {
     document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-      const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
-      if (alignRightK) {
-        s.pos.x = s.full.width - s.baseDims.w * s.textScale - 20;
-      }
       invalidateTextCache(knife);
       draw(knife);
       syncFontAndText(knife);
@@ -1098,11 +1087,6 @@ async function initializeKnife(knife) {
         Object.keys(state).forEach(k => {
           state[k].textInput.value = sharedText;
           state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-          const isBigKnifeK = knives.big.includes(k);
-          const alignRightK = isBigKnifeK ? alignRightBig : alignRightSmall;
-          if (alignRightK) {
-            state[k].pos.x = state[k].full.width - state[k].baseDims.w * state[k].textScale - 20;
-          }
           invalidateTextCache(k);
           draw(k);
         });
@@ -1125,16 +1109,11 @@ async function initializeKnife(knife) {
 
   window.addEventListener('pointermove', e => {
     if (!s.dragging || e.pointerId !== s.dragStart.id) return;
-    const now = Date.now();
-    if (now - s.lastDragTime < dragThrottle) return;
-    s.lastDragTime = now;
-    console.log(`Dragging ${knife}`);
     const f = toFullCoords(s.view, s, e.clientX, e.clientY);
     s.pos.x = f.x - s.dragStart.dx;
     s.pos.y = f.y - s.dragStart.dy;
     const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
     if (alignRightK) {
-      s.pos.x = s.full.width - s.baseDims.w * s.textScale - 20; // Right-align
       Object.keys(state).forEach(k => {
         if (k !== knife && knives.big.includes(k) === isBigKnife) {
           state[k].pos.x = s.pos.x;
@@ -1193,10 +1172,6 @@ async function initializeKnife(knife) {
 
   window.addEventListener('pointermove', e => {
     if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
-    const now = Date.now();
-    if (now - s.lastDragTime < dragThrottle) return;
-    s.lastDragTime = now;
-    console.log(`Resizing ${knife}`);
     const p = toFullCoords(s.view, s, e.clientX, e.clientY);
     const d = Math.hypot(p.x - s.resizeStart.anchorX, p.y - s.resizeStart.anchorY);
     const newScale = s.resizeStart.scale * (d / s.resizeStart.d0);
@@ -1217,7 +1192,6 @@ async function initializeKnife(knife) {
     s.textScale = newScale;
     const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
     if (alignRightK) {
-      s.pos.x = s.full.width - s.baseDims.w * s.textScale - 20; // Right-align
       Object.keys(state).forEach(k => {
         if (k !== knife && knives.big.includes(k) === isBigKnife) {
           state[k].pos.x = s.pos.x;
@@ -1282,7 +1256,6 @@ async function initializeKnife(knife) {
     s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
     const alignRightK = isBigKnife ? alignRightBig : alignRightSmall;
     if (alignRightK) {
-      s.pos.x = s.full.width - s.baseDims.w * s.textScale - 20; // Right-align
       Object.keys(state).forEach(k => {
         if (k !== knife && knives.big.includes(k) === isBigKnife) {
           state[k].pos.x = s.pos.x;
