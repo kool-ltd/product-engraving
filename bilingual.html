@@ -506,6 +506,8 @@ let isNavigating = false;
 let lastToggleTime = 0;
 let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
 let storedPositions = { big: {}, small: {} }; // Store positions for each knife
+const toggleDebounce = 200; // ms
+const dragThrottle = 16; // ms (approx 60fps)
 
 /* ELEMENTS */
 const pages = {
