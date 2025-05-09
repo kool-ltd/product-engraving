@@ -503,7 +503,7 @@
     let isNavigating = false;
     let lastToggleTime = 0;
     let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
-    let storedPositions = { big: {}, small: {} }; // Store textRightX, pos.y
+    let storedPositions = { big: {}, small: {} }; // Store textRightX, pos.y for auto-align toggle
     const toggleDebounce = 200; // ms
     const dragThrottle = 16; // ms (approx 60fps)
 
@@ -647,8 +647,8 @@
         baseFont: knives.big.includes(knife) ? 150 : 100,
         textScale: 1,
         baseDims: { w: 0, h: 0 },
-        textRightX: 20, // Right-edge x position (textAlign = 'right')
-        pos: { y: 20 }, // Only y position needed
+        textRightX: 0, // Set to canvas center after image load
+        pos: { y: 0 }, // Set to canvas center after image load
         boxVisible: showResizeControls,
         dragging: false,
         dragStart: {},
@@ -671,7 +671,7 @@
         cacheCtx: document.createElement('canvas').getContext('2d'),
         textCacheCanvas: document.createElement('canvas'),
         textCacheCtx: document.createElement('canvas').getContext('2d'),
-        previewCanvas: document.createElement('canvas'), // For storing preview image
+        previewCanvas: document.createElement('canvas'),
         cacheValid: false,
         textCacheValid: false,
         lastDragTime: 0
@@ -693,7 +693,6 @@
       const s = state[knife];
       if (!s.img || s.full.width === 0 || s.full.height === 0) return;
 
-      // Always textAlign = 'right'
       const textX = s.textRightX;
 
       // Cache base image and overlay
@@ -835,12 +834,12 @@
       const group = isBigKnife ? 'big' : 'small';
 
       if (alignRight) {
-        // Turning off: Restore individual positions
+        // Turning off: Keep current positions
         Object.keys(state).forEach(k => {
           if (knives.big.includes(k) === isBigKnife) {
-            const pos = storedPositions[group][k] || { textRightX: state[k].textRightX, y: state[k].pos.y };
-            state[k].textRightX = pos.textRightX;
-            state[k].pos.y = pos.y;
+            // Store current position for potential re-alignment
+            storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
+            // No position change; allow independent movement
             invalidateTextCache(k);
             draw(k);
           }
@@ -874,7 +873,6 @@
       previewContent.innerHTML = '';
       for (const knife of Object.keys(state)) {
         const s = state[knife];
-        // Use previewCanvas to store image
         s.previewCanvas.width = s.full.width;
         s.previewCanvas.height = s.full.height;
         const ctx = s.previewCanvas.getContext('2d');
@@ -1026,6 +1024,9 @@
       }
       s.full.width = s.img.naturalWidth;
       s.full.height = s.img.naturalHeight;
+      // Center text
+      s.textRightX = s.full.width / 2;
+      s.pos.y = s.full.height / 2;
       s.cacheCanvas.width = s.full.width;
       s.cacheCanvas.height = s.full.height;
       s.textCacheCanvas.width = s.full.width;
@@ -1146,6 +1147,7 @@
           const handle = h.dataset.handle;
           const box = s.bbox.getBoundingClientRect();
           let anchorX, anchorY;
+          // Anchor opposite corner
           if (handle === 'se') {
             anchorX = toFullCoords(s.view, s, box.left, box.top).x; // nw
             anchorY = toFullCoords(s.view, s, box.left, box.top).y;
@@ -1165,7 +1167,8 @@
             anchorX,
             anchorY,
             scale: s.textScale,
-            d0: Math.hypot(p0.x - anchorX, p0.y - anchorY),
+            textRightX: s.textRightX,
+            posY: s.pos.y,
             handle
           };
         });
@@ -1174,21 +1177,32 @@
       window.addEventListener('pointermove', e => {
         if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
         const p = toFullCoords(s.view, s, e.clientX, e.clientY);
-        const d = Math.hypot(p.x - s.resizeStart.anchorX, p.y - s.resizeStart.anchorY);
-        const newScale = s.resizeStart.scale * (d / s.resizeStart.d0);
         const isBigKnife = knives.big.includes(knife);
         const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-        // Adjust textRightX and pos.y to keep anchor fixed
+        // Calculate new scale based on distance from anchor
+        let newScale;
         if (s.resizeStart.handle === 'se') {
+          const dx = Math.abs(p.x - s.resizeStart.anchorX);
+          const dy = Math.abs(p.y - s.resizeStart.anchorY);
+          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
           s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
           s.pos.y = s.resizeStart.anchorY;
         } else if (s.resizeStart.handle === 'nw') {
+          const dx = Math.abs(s.resizeStart.anchorX - p.x);
+          const dy = Math.abs(s.resizeStart.anchorY - p.y);
+          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
           s.textRightX = s.resizeStart.anchorX;
           s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
         } else if (s.resizeStart.handle === 'ne') {
+          const dx = Math.abs(s.resizeStart.anchorX - p.x);
+          const dy = Math.abs(s.resizeStart.anchorY - p.y);
+          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
           s.textRightX = s.resizeStart.anchorX;
           s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
         } else if (s.resizeStart.handle === 'sw') {
+          const dx = Math.abs(p.x - s.resizeStart.anchorX);
+          const dy = Math.abs(p.y - s.resizeStart.anchorY);
+          newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
           s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
           s.pos.y = s.resizeStart.anchorY;
         }
@@ -1299,11 +1313,9 @@
       const zip = new JSZip();
       for (const knife of Object.keys(state)) {
         const s = state[knife];
-        // Use stored previewCanvas for preview.png
         const previewBlob = await new Promise(r => s.previewCanvas.toBlob(r));
         zip.file(`${knife}-preview.png`, previewBlob);
 
-        // Text-only canvas
         const t = document.createElement('canvas');
         t.width = s.full.width;
         t.height = s.full.height;
