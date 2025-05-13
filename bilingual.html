@@ -248,47 +248,50 @@
       color: #4c4c4c;
     }
     .button-guide {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: var(--pad);
-      margin-bottom: 1rem;
-    }
-    .button-guide h3 {
-      margin-bottom: 1rem;
-    }
-    .guide-navigation {
-      margin-bottom: 1rem;
-    }
-    .guide-button {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: .6rem;
-      border-radius: var(--radius);
-      cursor: default;
-      font-weight: 600;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-    }
-    .button-descriptions {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .button-desc h4 {
-      font-size: 1rem;
-      margin-bottom: .25rem;
-      color: #333;
-    }
-    .button-desc p {
-      font-size: .9rem;
-      color: #666;
-      margin-bottom: .25rem;
-    }
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: var(--pad);
+         margin-bottom: 1rem;
+      }
+      .button-guide h3 {
+        margin-bottom: 1rem;
+        color: #000;
+      }
+      .button-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .button-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .guide-button {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: .6rem;
+        border-radius: var(--radius);
+        cursor: default;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+      }
+      .button-desc h4 {
+        font-size: 1rem;
+        margin-bottom: .25rem;
+        color: #333;
+      }
+      .button-desc p {
+        font-size: .9rem;
+        color: #666;
+        margin-bottom: .25rem;
+      }
     @media (max-width: 600px) {
       .controls {
         flex-direction: column;
@@ -320,14 +323,14 @@
       .button-guide {
         padding: .5rem;
       }
-      .guide-navigation {
-        flex-wrap: wrap;
-        gap: .3rem;
+      .button-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
       }
       .guide-button {
         padding: .5rem;
         min-width: 36px;
-        font-size: .9rem;
       }
       .button-desc h4 {
         font-size: .9rem;
@@ -335,7 +338,7 @@
       .button-desc p {
         font-size: .8rem;
       }
-    }
+      }
     }
   </style>
 </head>
@@ -428,47 +431,59 @@
     </div>
 
     <div class="button-guide">
-        <h3 data-i18n="buttonGuideTitle">How to Use the Controls</h3>
-        <div class="navigation guide-navigation">
-          <button class="guide-button" data-i18n="backCustomize"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
-          <button class="guide-button" data-i18n="editZoneGuide"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">vignette</span></button>
-          <button class="guide-button" data-i18n="resizeControlsGuide"><span class="material-symbols-outlined">format_shapes</span></button>
-          <button class="guide-button" data-i18n="syncFontsGuide"><span class="material-symbols-outlined">format_size</span></button>
-          <button class="guide-button" data-i18n="autoAlignGuide"><span class="material-symbols-outlined">text_rotation_none</span></button>
-          <button class="guide-button" data-i18n="nextGuide"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
-          <button class="guide-button" data-i18n="downloadGuide"><span class="material-symbols-outlined">download_2</span></button>
-        </div>
-        <div class="button-descriptions">
+      <h3 data-i18n="buttonGuideTitle">How to Use the Controls</h3>
+      <div class="button-list">
+        <div class="button-item">
+          <button class="guide-button"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
           <div class="button-desc">
             <h4 data-i18n="backCustomize"></h4>
             <p data-i18n="backCustomizeOn"></p>
             <p data-i18n="backCustomizeOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          
+        <button class="guide-button" data-i18n="editZoneGuide"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">vignette</span></button>
           <div class="button-desc">
             <h4 data-i18n="editZoneGuide"></h4>
             <p data-i18n="editZoneOn"></p>
             <p data-i18n="editZoneOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          <button class="guide-button"><span class="material-symbols-outlined">format_shapes</span></button>
           <div class="button-desc">
             <h4 data-i18n="resizeControlsGuide"></h4>
             <p data-i18n="resizeControlsOn"></p>
             <p data-i18n="resizeControlsOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          <button class="guide-button"><span class="material-symbols-outlined">format_size</span></button>
           <div class="button-desc">
             <h4 data-i18n="syncFontsGuide"></h4>
             <p data-i18n="syncFontsOn"></p>
             <p data-i18n="syncFontsOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          <button class="guide-button"><span class="material-symbols-outlined">text_rotation_none</span></button>
           <div class="button-desc">
             <h4 data-i18n="autoAlignGuide"></h4>
             <p data-i18n="autoAlignOn"></p>
             <p data-i18n="autoAlignOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          <button class="guide-button" data-i18n="nextGuide"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
           <div class="button-desc">
-            <h4 data-i18n="nextGuide"></h4>
-            <p data-i18n="nextGuideOn"></p>
-            <p data-i18n="nextGuideOff"></p>
+            <h4 data-i18n="backPreview"></h4>
+            <p data-i18n="backPreviewOn"></p>
+            <p data-i18n="backPreviewOff"></p>
           </div>
+        </div>
+        <div class="button-item">
+          <button class="guide-button"><span class="material-symbols-outlined">download_2</span></button>
           <div class="button-desc">
             <h4 data-i18n="downloadGuide"></h4>
             <p data-i18n="downloadOn"></p>
@@ -516,6 +531,7 @@
       buttonGuideTitle: "How to Use the Controls",
       backCustomize: "Back",
       backCustomizeOn: "Returns to the previous page (e.g., knife selection or big knives).",
+      //backCustomizeOff: "N/A (non-toggleable button).",
       editZoneGuide: "Show Edit Area",
       editZoneOn: "Displays the engraving area overlay to guide text placement.",
       editZoneOff: "Hides the engraving area overlay for a clearer view of the knife.",
@@ -528,10 +544,12 @@
       autoAlignGuide: "Auto Align Text",
       autoAlignOn: "Keeps text position aligned across all knives in the same group for consistency.",
       autoAlignOff: "Allows independent text positioning for each knife.",
-      nextGuide: "Next",
-      nextGuideOn: "Advances to the next page (e.g., small knives or preview).",
-      downloadGuide: "Download All",
+      backPreview: "Back",
+      backPreviewOn: "Returns to the customization page (big or small knives) or knife selection.",
+      backPreviewOff: "N/A (non-toggleable button).",
+      //downloadGuide: "Download All",
       downloadOn: "Downloads a ZIP file with preview and text-only images for all customized knives.",
+      //downloadOff: "N/A (non-toggleable button)."
     },
     "zh-hk": {
       title: "刀具刻字定制器",
@@ -567,6 +585,7 @@
       buttonGuideTitle: "如何使用控制按鈕",
       backCustomize: "返回",
       backCustomizeOn: "返回上一頁（例如刀具選擇或大刀頁面）。",
+      //backCustomizeOff: "不適用（不可切換按鈕）。",
       editZoneGuide: "顯示編輯區域",
       editZoneOn: "顯示刻字區域覆蓋，指引文字放置。",
       editZoneOff: "隱藏刻字區域覆蓋，以更清晰地查看刀具。",
@@ -579,10 +598,12 @@
       autoAlignGuide: "自動對齊文字",
       autoAlignOn: "保持同一組刀具的文字位置對齊，確保一致性。",
       autoAlignOff: "允許每把刀具的文字位置獨立調整。",
-      nextGuide: "下一步",
-      nextGuideOn: "前往下一頁（例如小刀或預覽頁面）。",
+      backPreview: "返回",
+      backPreviewOn: "返回定制頁面（大刀或小刀）或刀具選擇頁面。",
+      //backPreviewOff: "不適用（不可切換按鈕）。",
       downloadGuide: "下載全部",
       downloadOn: "下載包含所有定制刀具預覽和純文字圖片的ZIP文件。",
+      //downloadOff: "不適用（不可切換按鈕）。"
     }
   };
 
