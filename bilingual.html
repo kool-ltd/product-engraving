@@ -53,20 +53,24 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
+      padding: 1rem;
+      box-sizing: border-box;
     }
     .product-option {
-      position: relative;
-      text-align: center;
-      height: 130px;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      text-align: center;
     }
     .product-option input {
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
     .product-option img {
-      width: 100%; border: 2px solid transparent;
-      border-radius: var(--radius); display: block;
+      width: 100%;
+      height: 130px;
+      object-fit: contain;
+      max-width: 200px;
+      margin-bottom: 0.5rem;
     }
     .product-option input:checked+img {
       border-color: var(--accent);
@@ -978,7 +982,7 @@
     const effectiveFontSize = refState.baseFont * refState.textScale;
     const isBigKnife = items.big.includes(item);
     const isNonKnife = items.nonKnife.includes(item);
-    const group = is Ditulis oleh: isBigKnife ? 'big' : isNonKnife ? 'nonKnife' : 'small';
+    const group = isBigKnife ? 'big' : isNonKnife ? 'nonKnife' : 'small';
     Object.keys(state).forEach(k => {
       const isSameGroup = (isBigKnife && items.big.includes(k)) ||
                           (isNonKnife && items.nonKnife.includes(k)) ||
