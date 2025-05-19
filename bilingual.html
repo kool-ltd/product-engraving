@@ -9,8 +9,8 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@700&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK:wght@700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
-    
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK&family=Noto+Serif+TC&display=swap" rel="stylesheet">
+
   <!-- Material Symbols -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
@@ -794,13 +794,12 @@
 
   function fitInBox(canvas, img, wrapper) {
     const wrapW = wrapper.clientWidth;
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const scale = (wrapW / img.naturalWidth) * devicePixelRatio;
+    const scale = wrapW / img.naturalWidth;
     canvas.width = img.naturalWidth * scale;
     canvas.height = img.naturalHeight * scale;
-    canvas.style.width = (img.naturalWidth * wrapW / img.naturalWidth) + 'px';
-    canvas.style.height = (img.naturalHeight * wrapW / img.naturalWidth) + 'px';
-    return scale / devicePixelRatio;
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+    return scale;
   }
 
   function measureText(ctx, text, fontSize, font) {
@@ -976,7 +975,7 @@
       if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
       s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
       if (s.textInput.value) {
-        s.textCacheCtx.font = `700 ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
         s.textCacheCtx.fillStyle = '#000';
         s.textCacheCtx.textBaseline = 'top';
         s.textCacheCtx.textAlign = 'right';
@@ -1168,7 +1167,7 @@
       const ctx = s.previewCanvas.getContext('2d');
       ctx.drawImage(s.img, 0, 0);
       if (s.textInput.value) {
-        ctx.font = `700 ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+        ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
         ctx.fillStyle = '#000';
         ctx.textBaseline = 'top';
         ctx.textAlign = 'right';
@@ -1715,7 +1714,7 @@
       t.width = s.full.width;
       t.height = s.full.height;
       const tCtx = t.getContext('2d');
-      tCtx.font = `700 ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       tCtx.fillStyle = '#000';
       tCtx.textBaseline = 'top';
       tCtx.textAlign = 'right';
