@@ -952,9 +952,9 @@
   function draw(knife) {
     const s = state[knife];
     if (!s.img || s.full.width === 0 || s.full.height === 0) return;
-
+  
     const textX = s.textRightX;
-
+  
     // Cache base image and overlay
     if (!s.cacheValid) {
       s.cacheCanvas.width = s.full.width;
@@ -967,7 +967,7 @@
       }
       s.cacheValid = true;
     }
-
+  
     // Cache text
     if (!s.textCacheValid) {
       s.textCacheCanvas.width = s.full.width;
@@ -983,20 +983,22 @@
       }
       s.textCacheValid = true;
     }
-
+  
     // Full-res canvas
     s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.fCtx.drawImage(s.cacheCanvas, 0, 0);
     s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
-
+  
     // Preview canvas
     const scale = s.view.width / s.full.width;
+    s.vCtx.imageSmoothingEnabled = true;
+    s.vCtx.imageSmoothingQuality = 'high';
     s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
     s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.vCtx.drawImage(s.cacheCanvas, 0, 0);
     s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
     s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
-
+  
     // Bounding box (left edge at textRightX - width)
     const dx = s.view.width / s.full.width;
     const dy = s.view.height / s.full.height;
@@ -1009,7 +1011,7 @@
     } else {
       s.bbox.style.display = 'none';
     }
-    s.pendingDraw = false; // Reset pending draw
+    s.pendingDraw = false;
   }
 
   function invalidateCache(knife) {
