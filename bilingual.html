@@ -838,6 +838,7 @@
     isNavigating = true;
     pages[from].classList.remove('active');
     pages[to].classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => { isNavigating = false; }, 100);
   }
 
