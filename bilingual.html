@@ -326,6 +326,22 @@
         cursor: pointer;
         display: inline-block;
       }
+    .disclaimer {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--pad);
+      margin-bottom: 1rem;
+    }
+    .disclaimer h3 {
+      margin-bottom: 1rem;
+      color: #000;
+    }
+    .disclaimer p {
+      font-size: .9rem;
+      color: #666;
+      line-height: 1.5;
+    }
     @media (max-width: 600px) {
       .controls {
         flex-direction: column;
@@ -371,6 +387,16 @@
       }
       .button-desc p {
         font-size: .8rem;
+      }
+      .disclaimer {
+          padding: .5rem;
+        }
+        .disclaimer h3 {
+          font-size: 1rem;
+        }
+        .disclaimer p {
+          font-size: .8rem;
+        }
       }
       }
     }
@@ -553,6 +579,20 @@
         </div>
       </div>
     </div>
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      <h3 data-i18n="disclaimerTitle">Disclaimer</h3>
+      <p data-i18n="disclaimerText">
+        The Knife Engraving Customizer allows you to preview and design personalized engravings on selected products. Please note the following:<br>
+        • <strong>Preview Accuracy</strong>: The previews generated are for visualization purposes only and may differ slightly from the final engraved product due to variations in materials, engraving techniques, or device display settings.<br>
+        • <strong>Content Responsibility</strong>: You are responsible for ensuring that the text entered is appropriate, non-offensive, and complies with applicable laws. We reserve the right to reject any engraving requests that contain inappropriate or prohibited content.<br>
+        • <strong>Font and Weight Limitations</strong>: Some fonts (e.g., Lobster, Chocolate Classical Sans, LXGW WenKai Mono TC) do not support bold weight (700) and will default to their standard weight (400). Final engraving appearance may vary based on font selection.<br>
+        • <strong>Production Limitations</strong>: Engraving placement, size, and depth are subject to the physical constraints of the selected product and our engraving equipment. We will make reasonable efforts to match your design, but minor adjustments may be necessary.<br>
+        • <strong>No Refunds for Customization</strong>: Due to the personalized nature of engraved products, orders are final and non-refundable unless the product is defective or the engraving significantly deviates from the approved design.<br>
+        • <strong>Technical Issues</strong>: While we strive to ensure the tool functions correctly, we are not liable for errors caused by technical issues, such as browser compatibility or incorrect preview rendering.<br>
+        By using this tool, you acknowledge and agree to these terms. For questions, contact our customer support.
+      </p>
+    </div>
     <!-- Custom Alert Modal -->
     <div id="alert-modal" class="modal">
       <div class="alert-content">
@@ -622,7 +662,17 @@
       choppingBoard: "Chopping Board (Coming Soon)",
       tongs: "Tongs (Coming Soon)",
       scissors: "Scissors (Coming Soon)",
-      chooseKnives: "Choose your items"
+      chooseKnives: "Choose your items",
+      disclaimerTitle: "Disclaimer",
+      disclaimerText: `
+        The Knife Engraving Customizer allows you to preview and design personalized engravings on selected products. Please note the following:<br>
+        • <strong>Preview Accuracy</strong>: The previews generated are for visualization purposes only and may differ slightly from the final engraved product due to variations in materials, engraving techniques, or device display settings.<br>
+        • <strong>Content Responsibility</strong>: You are responsible for ensuring that the text entered is appropriate, non-offensive, and complies with applicable laws. We reserve the right to reject any engraving requests that contain inappropriate or prohibited content.<br>
+        • <strong>Production Limitations</strong>: Engraving placement, size, and depth are subject to the physical constraints of the selected product and our engraving equipment. We will make reasonable efforts to match your design, but minor adjustments may be necessary.<br>
+        • <strong>No Refunds for Customization</strong>: Due to the personalized nature of engraved products, orders are final and non-refundable unless the product is defective or the engraving significantly deviates from the approved design.<br>
+        • <strong>Technical Issues</strong>: While we strive to ensure the tool functions correctly, we are not liable for errors caused by technical issues, such as browser compatibility or incorrect preview rendering.<br>
+        By using this tool, you acknowledge and agree to these terms. For questions, contact our customer support.
+      `
     },
     "zh-hk": {
       title: "刀具刻字定制器",
@@ -681,7 +731,17 @@
       choppingBoard: "砧板（即將推出）",
       tongs: "夾子（即將推出）",
       scissors: "剪刀（即將推出）",
-      chooseKnives: "選擇你的產品"
+      chooseKnives: "選擇你的產品",
+      disclaimerTitle: "免責聲明",
+    disclaimerText: `
+      刀具刻字定制器允許您預覽和設計所選產品的個性化刻字。請注意以下事項：<br>
+      • <strong>預覽準確性</strong>：生成的預覽僅供視覺參考，可能因材料、刻字技術或設備顯示設置的差異，與最終刻字產品略有不同。<br>
+      • <strong>內容責任</strong>：您有責任確保輸入的文字適當、無冒犯性並符合適用法律。我們保留拒絕任何包含不當或禁止內容的刻字請求的權利。<br>
+      • <strong>生產限制</strong>：刻字的位置、大小和深度受所選產品和我們刻字設備的物理限制。我們會盡合理努力匹配您的設計，但可能需要輕微調整。<br>
+      • <strong>定制產品無退貨</strong>：由於刻字產品的個性化特性，除非產品有缺陷或刻字與批准的設計顯著不符，否則訂單為最終確認且不可退貨。<br>
+      • <strong>技術問題</strong>：雖然我們努力確保工具正常運行，但我們對因技術問題（例如瀏覽器兼容性或預覽渲染錯誤）導致的錯誤不承擔責任。<br>
+      使用本工具即表示您認可並同意這些條款。如有疑問，請聯繫我們的客戶支持。
+    `
     }
   };
 
@@ -718,6 +778,7 @@
 
     bigKnifeContent.innerHTML = '';
     smallKnifeContent.innerHTML = '';
+    otherContent.innerHTML = '';
     const selectedKnives = Object.keys(state);
     selectedKnives.forEach(knife => {
       createCanvasSection(knife);
