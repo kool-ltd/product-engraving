@@ -65,8 +65,12 @@
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
     .product-option img {
-      width: 100%; border: 2px solid transparent;
-      border-radius: var(--radius); display: block;
+      max-width: 100%;
+      max-height: 210px;
+      object-fit: contain;
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      display: block;
     }
     .product-option input:checked+img {
       border-color: var(--accent);
