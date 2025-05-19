@@ -1477,7 +1477,7 @@
     s.view.addEventListener('pointerdown', e => {
       const f = toFullCoords(s.view, s, e.clientX, e.clientY);
       if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
-      console.log(`Dragging started for ${knife}`);
+      // console.log(`Dragging started for ${knife}`);
       s.dragging = true;
       s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
       e.preventDefault();
@@ -1514,7 +1514,7 @@
     ['pointerup', 'pointercancel'].forEach(evt =>
       window.addEventListener(evt, e => {
         if (e.pointerId === s.dragStart.id) {
-          console.log(`Dragging stopped for ${knife}`);
+          // console.log(`Dragging stopped for ${knife}`);
           s.dragging = false;
         }
       })
@@ -1524,7 +1524,7 @@
     s.bbox.querySelectorAll('.handle').forEach(h => {
       h.addEventListener('pointerdown', e => {
         e.stopPropagation();
-        console.log(`Resizing started for ${knife}`);
+        // console.log(`Resizing started for ${knife}`);
         s.resizing = true;
         const handle = h.dataset.handle;
         const box = s.bbox.getBoundingClientRect();
@@ -1620,7 +1620,7 @@
     ['pointerup', 'pointercancel'].forEach(evt =>
       window.addEventListener(evt, e => {
         if (e.pointerId === s.resizeStart.id) {
-          console.log(`Resizing stopped for ${knife}`);
+          // console.log(`Resizing stopped for ${knife}`);
           s.resizing = false;
         }
       })
@@ -1630,7 +1630,7 @@
     s.view.addEventListener('pointerdown', e => {
       s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
       if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
-        console.log(`Pinch started for ${knife}`);
+        // console.log(`Pinch started for ${knife}`);
         s.pinch = true;
         const [pA, pB] = Object.values(s.pointers);
         const fA = toFullCoords(s.view, s, pA.x, pA.y);
@@ -1689,7 +1689,7 @@
       window.addEventListener(evt, e => {
         delete s.pointers[e.pointerId];
         if (Object.keys(s.pointers).length < 2) {
-          console.log(`Pinch stopped for ${knife}`);
+          // console.log(`Pinch stopped for ${knife}`);
           s.pinch = false;
           // Ensure final draw with updated state
           if (!s.pendingDraw) {
