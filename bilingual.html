@@ -103,8 +103,12 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       background: #eaeaea;
+      overflow: hidden;
       touch-action: none;
       margin: auto;
+    }
+    .canvas-wrapper canvas {
+      border-radius: var(--radius);
     }
     canvas {
       display: block;
@@ -842,7 +846,7 @@
     const section = document.createElement('div');
     section.className = 'knife-section';
     section.innerHTML = `
-      <h3 data-i18n="${knife}">${translations[currentLang][knife]}</h3>
+      <h3 data-i18n="${knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife}">${translations[currentLang][knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife]}</h3>
       <div class="controls">
         <div>
           <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
