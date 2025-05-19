@@ -769,7 +769,7 @@
                        el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
                        el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
                        el.id !== 'download-all') {
-                el.textContent = translations[lang][key];
+                el.innerHTML = translations[lang][key];
             }
         }
     });
