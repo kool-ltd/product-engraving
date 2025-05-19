@@ -97,6 +97,13 @@
       height: 33px;
       border-radius: 7px;
     }
+    .controls select[id^="weight-"] {
+      width: 100%;
+      padding: .5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+    }
     .canvas-wrapper {
       position: relative;
       width: 100%; max-width: 1168px;
@@ -870,6 +877,15 @@
               <option value="'Noto Sans HK',sans-serif">思源黑體</option>
               <option value="'Noto Serif TC',serif">思源宋體</option>
             </optgroup>
+          </select>
+        </div>
+        <div>
+          <label for="weight-${knife}" data-i18n="weightLabel">${translations[currentLang].weightLabel}</label>
+          <select id="weight-${knife}">
+            <option value="100" data-i18n="thin">Thin</option>
+            <option value="400" data-i18n="regular" selected>Regular</option>
+            <option value="700" data-i18n="bold">Bold</option>
+            <option value="900" data-i18n="superBold">Super Bold</option>
           </select>
         </div>
       </div>
