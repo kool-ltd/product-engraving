@@ -620,7 +620,12 @@
       close: "Close",
       choppingBoard: "Chopping Board (Coming Soon)",
       tongs: "Tongs (Coming Soon)",
-      scissors: "Scissors (Coming Soon)"
+      scissors: "Scissors (Coming Soon)",
+      weightLabel: "Font Weight",
+      thin: "Thin",
+      regular: "Regular",
+      bold: "Bold",
+      superBold: "Heavy"
     },
     "zh-hk": {
       title: "刀具刻字定制器",
@@ -678,8 +683,13 @@
       close: "關閉",
       choppingBoard: "砧板（即將推出）",
       tongs: "夾子（即將推出）",
-      scissors: "剪刀（即將推出）"
-    }
+      scissors: "剪刀（即將推出）",
+      weightLabel: "字體粗細",
+      thin: "細",
+      regular: "標準",
+      bold: "粗",
+      superBold: "超粗"
+      }
   };
 
   /* LANGUAGE TOGGLE */
@@ -692,35 +702,42 @@
     if (langToggleBtn) {
       langToggleBtn.textContent = lang === 'en' ? translations['zh-hk'].chinese : translations.en.english;
     }
-
+  
     document.getElementById('title').textContent = translations[lang].title;
     const subtitle = document.getElementById('subtitle');
     subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang][key]) {
-            if (el.tagName === 'INPUT' && el.type === 'text') {
-                el.placeholder = translations[lang][key];
-            } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' &&
-                       el.id !== 'edit-zone' && el.id !== 'resize-controls' &&
-                       el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
-                       el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
-                       el.id !== 'download-all') {
-                el.textContent = translations[lang][key];
-            }
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang][key]) {
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+          el.placeholder = translations[lang][key];
+        } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' &&
+                   el.id !== 'back-5' && el.id !== 'next-5' &&
+                   el.id !== 'edit-zone' && el.id !== 'resize-controls' &&
+                   el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
+                   el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
+                   el.id !== 'download-all') {
+          el.textContent = translations[lang][key];
         }
+      }
     });
-
+    document.querySelectorAll('select[id^="weight-"] option').forEach(option => {
+      const key = option.getAttribute('data-i18n');
+      if (translations[lang][key]) {
+        option.textContent = translations[lang][key];
+      }
+    });
     document.getElementById('alert-close').textContent = translations[lang].close;
-
+  
     bigKnifeContent.innerHTML = '';
     smallKnifeContent.innerHTML = '';
+    otherContent.innerHTML = '';
     const selectedKnives = Object.keys(state);
     selectedKnives.forEach(knife => {
       createCanvasSection(knife);
       initializeKnife(knife);
     });
-
+  
     if (pages[4].classList.contains('active')) {
       generatePreviews();
     }
@@ -794,12 +811,13 @@
 
   function fitInBox(canvas, img, wrapper) {
     const wrapW = wrapper.clientWidth;
-    const scale = wrapW / img.naturalWidth;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const scale = (wrapW / img.naturalWidth) * devicePixelRatio;
     canvas.width = img.naturalWidth * scale;
     canvas.height = img.naturalHeight * scale;
-    canvas.style.width = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
-    return scale;
+    canvas.style.width = (img.naturalWidth * wrapW / img.naturalWidth) + 'px';
+    canvas.style.height = (img.naturalHeight * wrapW / img.naturalWidth) + 'px';
+    return scale / devicePixelRatio;
   }
 
   function measureText(ctx, text, fontSize, font) {
@@ -870,6 +888,15 @@
               <option value="'Noto Sans HK',sans-serif">思源黑體</option>
               <option value="'Noto Serif TC',serif">思源宋體</option>
             </optgroup>
+          </select>
+        </div>
+        <div>
+          <label for="weight-${knife}" data-i18n="weightLabel">${translations[currentLang].weightLabel}</label>
+          <select id="weight-${knife}">
+            <option value="100" data-i18n="thin">Thin</option>
+            <option value="400" data-i18n="regular" selected>Regular</option>
+            <option value="700" data-i18n="bold">Bold</option>
+            <option value="900" data-i18n="superBold">Super Bold</option>
           </select>
         </div>
       </div>
