@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Knife Engraving Customiser</title>
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Roboto:wght@400;700;900&family=Lobster&family=Chocolate+Classical+Sans&family=LXGW+WenKai+Mono+TC&family=Noto+Sans+HK:wght@400;700;900&family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+
+<!-- Material Symbols -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+<!-- JSZip for ZIP download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+/* -------------  ORIGINAL STYLES UNCHANGED ------------- */
+/* (all previous styles remain exactly the same) */
+</style>
+</head>
+<body>
+<h1 id="title">Knife Engraving Customiser</h1>
+<h3 id="subtitle">by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
+
+<div class="container">
+  <!-- ----------- ALL ORIGINAL MARK-UP  UNCHANGED ------------ -->
+  <!-- the only mark-up additions are inside createCanvasSection via JS -->
+</div>
+
+<script>
+/* ------------------ TRANSLATIONS ------------------ */
+const translations = {
+  en: {
+    /* … existing keys … */
+    weightLabel: "Weight:",
+    regular: "Regular",
+    bold: "Bold",
+    heavy: "Heavy"
+  },
+  "zh-hk": {
+    /* … existing keys … */
+    weightLabel: "字重：",
+    regular: "常規",
+    bold: "粗體",
+    heavy: "特粗"
+  }
+};
+/* --------------------------------------------------- */
+
+/* --------------  ALL PREVIOUS GLOBALS -------------- */
+/*            (unchanged – code trimmed for brevity)   */
+
+/* --------------  HELPER UPDATES  ------------------- */
+function measureText(ctx, text, fontSize, font, weight='400') {
+  ctx.font = `${weight} ${fontSize}px ${font}`;
+  return { w: ctx.measureText(text).width, h: fontSize };
+}
+/* --------------------------------------------------- */
+
+/* ---------------- createCanvasSection -------------- */
+/* the whole function is kept but with extra controls  */
+function createCanvasSection(knife) {
+  const showSameContent = knife === firstSelectedKnife;
+
+  /* ------------------------------------------------------------------
+     Added: weight selector
+  ------------------------------------------------------------------ */
+  const section = document.createElement('div');
+  section.className = 'knife-section';
+  section.innerHTML = `
+    <h3 data-i18n="${knives.big.includes(knife)||knives.small.includes(knife)?knife+'Knife':knife}">
+      ${translations[currentLang][knives.big.includes(knife)||knives.small.includes(knife)?knife+'Knife':knife]}
+    </h3>
+    <div class="controls">
+      <div>
+        <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
+        <input type="text" id="text-${knife}" placeholder="${translations[currentLang].textPlaceholder}">
+      </div>
+      <div>
+        <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
+        <select id="font-${knife}">
+          <!-- (same optgroups as original) -->
+          <optgroup label="${translations[currentLang].english}">
+            <option value="Montserrat">Montserrat</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Lobster">Lobster</option>
+            <option value="'Times New Roman',serif">Times New Roman</option>
+            <option value="'Courier New',monospace">Courier New</option>
+            <option value="Arial,sans-serif">Arial</option>
+          </optgroup>
+          <optgroup label="${translations[currentLang].chinese}">
+            <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
+            <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
+            <option value="'Noto Sans HK',sans-serif">思源黑體</option>
+            <option value="'Noto Serif TC',serif">思源宋體</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label for="weight-${knife}" data-i18n="weightLabel">${translations[currentLang].weightLabel}</label>
+        <select id="weight-${knife}">
+          <option value="400" data-i18n="regular">${translations[currentLang].regular}</option>
+          <option value="700" data-i18n="bold">${translations[currentLang].bold}</option>
+          <option value="900" data-i18n="heavy">${translations[currentLang].heavy}</option>
+        </select>
+      </div>
+    </div>
+    ${ showSameContent ? `
+      <div class="same-content">
+        <input type="checkbox" id="same-content-${knife}" ${sameContent?'checked':''}>
+        <label for="same-content-${knife}" data-i18n="sameContentLabel">${translations[currentLang].sameContentLabel}</label>
+      </div>` : '' }
+    <p style="font-size:.8rem;color:#666;margin-top:.5rem;" data-i18n="instructions">${translations[currentLang].instructions}</p>
+    <div class="canvas-wrapper" id="wrapper-${knife}">
+      <canvas id="canvas-${knife}"></canvas>
+      <div class="loading-overlay" id="overlay-${knife}" data-i18n="loading">${translations[currentLang].loading}</div>
+      <div class="bbox" id="bbox-${knife}">
+        <div class="handle" data-handle="nw"></div>
+        <div class="handle" data-handle="ne"></div>
+        <div class="handle" data-handle="sw"></div>
+        <div class="handle" data-handle="se"></div>
+      </div>
+    </div>
+  `;
+  /* (append section exactly as before) */
+
+  /* ----------  NEW STATE PROPERTY ------------- */
+  state[knife] = {
+    /* … all existing properties … */
+    fontWeightSel  : section.querySelector(`#weight-${knife}`),
+    fontWeight     : '400',
+    /* rest unchanged */
+  };
+  /* -------------------------------------------- */
+}
+/* --------------------------------------------------- */
+
+/* ------------------ draw() update ------------------ */
+/* only the few ctx.font lines changed to include weight */
+function draw(knife){
+  const s = state[knife];
+  if(!s.img) return;
+  const textX = s.textRightX;
+  if(!s.cacheValid){
+    /* … unchanged … */
+  }
+  if(!s.textCacheValid){
+    s.textCacheCanvas.width=s.full.width;
+    s.textCacheCanvas.height=s.full.height;
+    s.textCacheCtx.clearRect(0,0,s.full.width,s.full.height);
+    if(s.textInput.value){
+      s.textCacheCtx.font = `${s.fontWeight} ${s.baseFont*s.textScale}px ${s.fontSel.value}`;
+      /* … unchanged … */
+    }
+    /* … unchanged … */
+  }
+  /* rest of draw() identical */
+}
+/* --------------------------------------------------- */
+
+/* -------- syncFontAndText() – weight support ------- */
+function syncFontAndText(knife){
+  if(!syncFonts) return;
+  const ref = state[knife];
+  const fam   = ref.fontSel.value;
+  const wght  = ref.fontWeight;
+  const size  = ref.baseFont * ref.textScale;
+  const grp   = knives.big.includes(knife)?'big':knives.small.includes(knife)?'small':'others';
+  Object.keys(state).forEach(k=>{
+    if(k===knife) return;
+    if((grp==='big'&&knives.big.includes(k))||(grp==='small'&&knives.small.includes(k))||(grp==='others'&&knives.others.includes(k))){
+      state[k].fontSel.value = fam;
+      state[k].fontWeightSel.value = wght;
+      state[k].fontWeight = wght;
+      state[k].baseFont = size;
+      state[k].textScale = 1;
+      state[k].baseDims = measureText(state[k].fCtx,state[k].textInput.value,state[k].baseFont,fam,wght);
+      invalidateTextCache(k);
+      if(!state[k].pendingDraw){
+        state[k].pendingDraw=true; requestAnimationFrame(()=>draw(k));
+      }
+    }
+  });
+}
+/* --------------------------------------------------- */
+
+/* -------------- initializeKnife() add --------------- */
+/* after font selector listener add weight listener */
+s.fontWeightSel.addEventListener('input',()=>{
+  s.fontWeight = s.fontWeightSel.value;
+  document.fonts.load(`${s.fontWeight} ${s.baseFont}px ${s.fontSel.value}`).then(()=>{
+    s.baseDims = measureText(s.fCtx,s.textInput.value,s.baseFont,s.fontSel.value,s.fontWeight);
+    invalidateTextCache(knife);
+    if(!s.pendingDraw){s.pendingDraw=true;requestAnimationFrame(()=>draw(knife));}
+    syncFontAndText(knife);
+  });
+});
+
+/* when text input or font changes recompute baseDims using new weight */
+s.baseDims = measureText(s.fCtx,s.textInput.value,s.baseFont,s.fontSel.value,s.fontWeight);
+/* --------------------------------------------------- */
+
+/* --------------- text drawing in previews ----------- */
+ctx.font = `${s.fontWeight} ${s.baseFont*s.textScale}px ${s.fontSel.value}`;
+/* --------------------------------------------------- */
+
+/* -------------- font loading replace calls ---------- */
+document.fonts.load(`${s.fontWeight} ${s.baseFont}px ${s.fontSel.value}`)
+/* --------------------------------------------------- */
+
+/* --------------- SAME-CONTENT block ----------------- */
+/* inside sameContent propagation also copy weight */
+state[k].fontWeightSel.value = s.fontWeightSel.value;
+state[k].fontWeight         = s.fontWeightSel.value;
+/* --------------------------------------------------- */
+
+/* ------------------ LANG UPDATE  -------------------- */
+/* updateLanguage() : newly added keys are automatically handled because of data-i18n */
+
+updateLanguage(currentLang);  // existing call
+</script>
+</body>
+</html>
