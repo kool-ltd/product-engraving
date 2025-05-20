@@ -859,12 +859,22 @@
   }
 
   function fitInBox(canvas, img, wrapper) {
+    const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
     const wrapW = wrapper.clientWidth;
     const scale = wrapW / img.naturalWidth;
-    canvas.width = img.naturalWidth * scale;
-    canvas.height = img.naturalHeight * scale;
-    canvas.style.width = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
+  
+    // Set canvas CSS size to fit wrapper
+    canvas.style.width = wrapW + 'px';
+    canvas.style.height = (img.naturalHeight * scale) + 'px';
+  
+    // Set canvas internal resolution to account for DPR
+    canvas.width = img.naturalWidth * scale * dpr;
+    canvas.height = img.naturalHeight * scale * dpr;
+  
+    // Scale the context to match DPR
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+  
     return scale;
   }
 
