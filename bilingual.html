@@ -111,10 +111,9 @@
     }
     .canvas-wrapper canvas {
       border-radius: var(--radius);
-    }
-    canvas {
       display: block;
-      touch-action: none;
+      width: 100%;
+      height: auto;
     }
     .loading-overlay {
       position: absolute; inset: 0;
@@ -391,15 +390,31 @@
         font-size: .8rem;
       }
       .disclaimer {
-          padding: .5rem;
-        }
-        .disclaimer h3 {
-          font-size: 1rem;
-        }
-        .disclaimer p {
-          font-size: .8rem;
-        }
+        padding: .5rem;
       }
+      .disclaimer h3 {
+        font-size: 1rem;
+      }
+      .disclaimer p {
+        font-size: .8rem;
+      }
+      .canvas-wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .canvas-wrapper canvas {
+        max-width: 100%;
+        height: auto;
+      }
+      .handle {
+        width: 15px;
+        height: 15px;
+        top: -7.5px;
+        left: -7.5px;
+        right: -7.5px;
+        bottom: -7.5px;
       }
     }
   </style>
@@ -852,45 +867,65 @@
     return new Promise((resolve, reject) => {
       const i = new Image();
       i.crossOrigin = 'anonymous';
-      i.onload = () => resolve(i);
+      i.onload = () => {
+        if (i.naturalWidth < 100 || i.naturalHeight < 100) {
+          console.warn(`Low-resolution image detected: ${src}`);
+        }
+        resolve(i);
+      };
       i.onerror = () => reject(new Error(`Failed to load image: ${src}`));
       i.src = src;
     });
   }
-
+  
   function fitInBox(canvas, img, wrapper) {
+    const dpr = window.devicePixelRatio || 1;
     const wrapW = wrapper.clientWidth;
     const scale = wrapW / img.naturalWidth;
-    canvas.width = img.naturalWidth * scale;
-    canvas.height = img.naturalHeight * scale;
-    canvas.style.width = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
+  
+    // Set CSS size
+    canvas.style.width = wrapW + 'px';
+    canvas.style.height = (img.naturalHeight * scale) + 'px';
+  
+    // Set internal resolution
+    canvas.width = img.naturalWidth * scale * dpr;
+    canvas.height = img.naturalHeight * scale * dpr;
+  
+    // Scale context for DPR
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+  
     return scale;
   }
-
+  
   function measureText(ctx, text, fontSize, font) {
     ctx.font = `${fontSize}px ${font}`;
-    return { w: ctx.measureText(text).width, h: fontSize };
-  }
-
-  function toFullCoords(canvas, wrapper, cx, cy) {
-    const r = canvas.getBoundingClientRect();
+    const metrics = ctx.measureText(text);
     return {
-      x: (cx - r.left) * (wrapper.full.width / r.width),
-      y: (cy - r.top) * (wrapper.full.height / r.height)
+      w: metrics.width,
+      h: fontSize // Approximate; use metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent if needed
     };
   }
-
+  
+  function toFullCoords(canvas, wrapper, cx, cy) {
+    const r = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    return {
+      x: (cx - r.left) * (wrapper.full.width / r.width) * dpr,
+      y: (cy - r.top) * (wrapper.full.height / r.height) * dpr
+    };
+  }
+  
   function hitTest(fx, fy, posY, dims, scale, textRightX) {
     const x = textRightX - dims.w * scale;
     return fx >= x && fx <= textRightX &&
            fy >= posY && fy <= posY + dims.h * scale;
   }
-
+  
   function hasBigKnives(selected) {
     return selected.some(input => knives.big.includes(input.dataset.name));
   }
-
+  
   function hasSmallKnives(selected) {
     return selected.some(input => knives.small.includes(input.dataset.name));
   }
@@ -898,7 +933,7 @@
   function hasOtherItems(selected) {
     return selected.some(input => knives.others.includes(input.dataset.name));
   }
-
+  
   function switchPage(from, to) {
     if (isNavigating) return;
     isNavigating = true;
@@ -907,7 +942,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => { isNavigating = false; }, 100);
   }
-
+  
   function createCanvasSection(knife) {
     const showSameContent = knife === firstSelectedKnife;
     const section = document.createElement('div');
@@ -966,15 +1001,15 @@
     } else if (knives.others.includes(knife)) {
       otherContent.appendChild(section);
     }
-
+  
     state[knife] = {
       img: null,
       overlay: null,
       baseFont: knives.big.includes(knife) ? 150 : knives.small.includes(knife) ? 100 : 120,
       textScale: 1,
       baseDims: { w: 0, h: 0 },
-      textRightX: 0, // Set to canvas center after image load
-      pos: { y: 0 }, // Set to canvas center after image load
+      textRightX: 0,
+      pos: { y: 0 },
       boxVisible: showResizeControls,
       dragging: false,
       dragStart: {},
@@ -1000,7 +1035,7 @@
       previewCanvas: document.createElement('canvas'),
       cacheValid: false,
       textCacheValid: false,
-      pendingDraw: false // Added for draw optimization
+      pendingDraw: false
     };
     state[knife].full.width = 0;
     state[knife].full.height = 0;
@@ -1014,18 +1049,21 @@
     state[knife].previewCanvas.width = 0;
     state[knife].previewCanvas.height = 0;
   }
-
+  
   function draw(knife) {
     const s = state[knife];
     if (!s.img || s.full.width === 0 || s.full.height === 0) return;
   
     const textX = s.textRightX;
+    const dpr = window.devicePixelRatio || 1;
   
     // Cache base image and overlay
     if (!s.cacheValid) {
       s.cacheCanvas.width = s.full.width;
       s.cacheCanvas.height = s.full.height;
       if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
+      s.cacheCtx.imageSmoothingEnabled = true;
+      s.cacheCtx.imageSmoothingQuality = 'high';
       s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.cacheCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
@@ -1039,6 +1077,8 @@
       s.textCacheCanvas.width = s.full.width;
       s.textCacheCanvas.height = s.full.height;
       if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
+      s.textCacheCtx.imageSmoothingEnabled = true;
+      s.textCacheCtx.imageSmoothingQuality = 'high';
       s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
       if (s.textInput.value) {
         s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
@@ -1051,12 +1091,14 @@
     }
   
     // Full-res canvas
+    s.fCtx.imageSmoothingEnabled = true;
+    s.fCtx.imageSmoothingQuality = 'high';
     s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.fCtx.drawImage(s.cacheCanvas, 0, 0);
     s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
   
     // Preview canvas
-    const scale = s.view.width / s.full.width;
+    const scale = s.view.width / s.full.width / dpr;
     s.vCtx.imageSmoothingEnabled = true;
     s.vCtx.imageSmoothingQuality = 'high';
     s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -1065,29 +1107,44 @@
     s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
     s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
   
-    // Bounding box (left edge at textRightX - width)
-    const dx = s.view.width / s.full.width;
-    const dy = s.view.height / s.full.height;
+    // Bounding box
     if (s.boxVisible && s.textInput.value) {
+      const canvasRect = s.view.getBoundingClientRect();
+      const wrapperRect = s.wrapper.getBoundingClientRect();
+      const dx = s.view.width / s.full.width;
+      const dy = s.view.height / s.full.height;
+  
+      // Measure text for accurate bounding box
+      s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      const metrics = s.fCtx.measureText(s.textInput.value);
+      const textWidth = metrics.width;
+      const textHeight = s.baseFont * s.textScale;
+  
+      // Calculate bounding box in CSS pixels
+      const bboxLeft = (s.textRightX - textWidth) * dx + (canvasRect.left - wrapperRect.left);
+      const bboxTop = s.pos.y * dy + (canvasRect.top - wrapperRect.top);
+      const bboxWidth = textWidth * dx;
+      const bboxHeight = textHeight * dy;
+  
       s.bbox.style.display = 'block';
-      s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
-      s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
-      s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
-      s.bbox.style.top = (s.pos.y * dy) + 'px';
+      s.bbox.style.width = bboxWidth + 'px';
+      s.bbox.style.height = bboxHeight + 'px';
+      s.bbox.style.left = bboxLeft + 'px';
+      s.bbox.style.top = bboxTop + 'px';
     } else {
       s.bbox.style.display = 'none';
     }
     s.pendingDraw = false;
   }
-
+  
   function invalidateCache(knife) {
     state[knife].cacheValid = false;
   }
-
+  
   function invalidateTextCache(knife) {
     state[knife].textCacheValid = false;
   }
-
+  
   function syncFontAndText(knife) {
     if (!syncFonts) return;
     const refState = state[knife];
@@ -1116,20 +1173,19 @@
       lastBigKnifeFont = fontFamily;
     }
   }
-
+  
   function debounceToggle(fn, id, icon) {
     return () => {
       const now = Date.now();
       if (now - lastToggleTime < toggleDebounce) return;
       lastToggleTime = now;
-      console.log(`Toggling ${id}`);
       fn();
       document.querySelectorAll(`#${id}`).forEach(btn => {
         btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
       });
     };
   }
-
+  
   function toggleEditZone() {
     showEditZone = !showEditZone;
     Object.keys(state).forEach(knife => {
@@ -1143,7 +1199,7 @@
       btn.classList.toggle('off', !showEditZone);
     });
   }
-
+  
   function toggleResizeControls() {
     showResizeControls = !showResizeControls;
     Object.keys(state).forEach(knife => {
@@ -1157,20 +1213,22 @@
       btn.classList.toggle('off', !showResizeControls);
     });
   }
-
+  
   function toggleSyncFonts() {
     syncFonts = !syncFonts;
     if (syncFonts && Object.keys(state).length > 0) {
       const bigKnife = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
       const smallKnife = lastAdjusted.small || Object.keys(state).find(k => knives.small.includes(k));
+      const otherItem = lastAdjusted.others || Object.keys(state).find(k => knives.others.includes(k));
       if (bigKnife) syncFontAndText(bigKnife);
       if (smallKnife) syncFontAndText(smallKnife);
+      if (otherItem) syncFontAndText(otherItem);
     }
     document.querySelectorAll('#sync-fonts').forEach(btn => {
       btn.classList.toggle('off', !syncFonts);
     });
   }
-
+  
   function toggleAlignment(knife) {
     const isBigKnife = knives.big.includes(knife);
     const isSmallKnife = knives.small.includes(knife);
@@ -1179,7 +1237,6 @@
     const group = isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others';
   
     if (alignRight) {
-      // Turning off: Keep current positions
       Object.keys(state).forEach(k => {
         if ((isBigKnife && knives.big.includes(k)) || 
             (isSmallKnife && knives.small.includes(k)) || 
@@ -1196,7 +1253,6 @@
       else if (isSmallKnife) alignRightSmall = false;
       else alignRightOthers = false;
     } else {
-      // Turning on: Sync to last adjusted item's right edge
       const lastKnife = lastAdjusted[group] || knife;
       const refTextRightX = state[lastKnife].textRightX;
       const refY = state[lastKnife].pos.y;
@@ -1223,7 +1279,7 @@
       btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
     });
   }
-
+  
   async function generatePreviews() {
     previewContent.innerHTML = '';
     for (const knife of Object.keys(state)) {
@@ -1231,6 +1287,8 @@
       s.previewCanvas.width = s.full.width;
       s.previewCanvas.height = s.full.height;
       const ctx = s.previewCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(s.img, 0, 0);
       if (s.textInput.value) {
         ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
@@ -1239,12 +1297,12 @@
         ctx.textAlign = 'right';
         ctx.fillText(s.textInput.value, s.textRightX, s.pos.y);
       }
-      const previewUrl = s.previewCanvas.toDataURL('image/png');
+      const previewUrl = s.previewCanvas.toDataURL('image/png', 1.0);
       const div = document.createElement('div');
       div.className = 'preview-item';
       div.innerHTML = `
         <img src="${previewUrl}" alt="${knife} preview" data-knife="${knife}">
-        <span data-i18n="${knife}Knife">${translations[currentLang][`${knife}Knife`]}</span>
+        <span data-i18n="${knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife}">${translations[currentLang][knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife]}</span>
       `;
       previewContent.appendChild(div);
     }
@@ -1255,20 +1313,21 @@
       });
     });
   }
-
+  
   modal.addEventListener('click', () => {
-    modal.style.display = 'none';
+    modal.style.display = 'n
+  one';
     modalImage.src = '';
   });
-
+  
   const alertModal = document.getElementById('alert-modal');
   const alertCloseBtn = document.getElementById('alert-close');
   
   alertCloseBtn.addEventListener('click', () => {
-      alertModal.style.display = 'none';
-      document.getElementById('alert-message').textContent = '';
-  });  
-
+    alertModal.style.display = 'none';
+    document.getElementById('alert-message').textContent = '';
+  });
+  
   document.fonts.ready.then(() => {
     Object.keys(state).forEach(knife => {
       if (!state[knife].pendingDraw) {
@@ -1277,7 +1336,369 @@
       }
     });
   });
-
+  
+  // Debounce utility for touch events
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+  
+  async function initializeKnife(knife) {
+    createCanvasSection(knife);
+    const s = state[knife];
+    s.overlayEl.style.visibility = 'visible';
+    s.img = await loadImage(
+      productPicker.querySelector(`input[data-name="${knife}"]`).value
+    );
+    try {
+      s.overlay = await loadImage(`${knife}-overlay.png`);
+    } catch (e) {
+      console.warn(`Overlay image for ${knife} not found`);
+      s.overlay = null;
+    }
+    s.full.width = s.img.naturalWidth;
+    s.full.height = s.img.naturalHeight;
+    s.textRightX = s.full.width / 2;
+    s.pos.y = s.full.height / 2;
+    s.cacheCanvas.width = s.full.width;
+    s.cacheCanvas.height = s.full.height;
+    s.textCacheCanvas.width = s.full.width;
+    s.textCacheCanvas.height = s.full.height;
+    s.previewCanvas.width = s.full.width;
+    s.previewCanvas.height = s.full.height;
+    fitInBox(s.view, s.img, s.wrapper);
+    const isBigKnife = knives.big.includes(knife);
+    s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
+    s.baseDims = { w: 0, h: s.baseFont };
+  
+    await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
+    if (sameContent && sharedText) {
+      s.textInput.value = sharedText;
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+    } else if (s.textInput.value) {
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+    }
+    s.overlayEl.style.visibility = 'hidden';
+    if (!s.pendingDraw) {
+      s.pendingDraw = true;
+      requestAnimationFrame(() => draw(knife));
+    }
+  
+    s.textInput.addEventListener('input', () => {
+      if (sameContent) {
+        sharedText = s.textInput.value;
+        Object.keys(state).forEach(k => {
+          state[k].textInput.value = sharedText;
+          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+          invalidateTextCache(k);
+          if (!state[k].pendingDraw) {
+            state[k].pendingDraw = true;
+            requestAnimationFrame(() => draw(k));
+          }
+        });
+      } else {
+        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+        invalidateTextCache(knife);
+        if (!s.pendingDraw) {
+          s.pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    });
+  
+    s.fontSel.addEventListener('input', () => {
+      document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
+        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+        invalidateTextCache(knife);
+        if (!s.pendingDraw) {
+          s.pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+        syncFontAndText(knife);
+        lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+      });
+    });
+  
+    if (s.sameContentChk) {
+      s.sameContentChk.addEventListener('change', () => {
+        sameContent = s.sameContentChk.checked;
+        if (sameContent) {
+          sharedText = s.textInput.value;
+          Object.keys(state).forEach(k => {
+            state[k].textInput.value = sharedText;
+            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          });
+        } else {
+          sharedText = '';
+        }
+      });
+    }
+  
+    // Dragging
+    s.view.addEventListener('pointerdown', e => {
+      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+      if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
+      s.dragging = true;
+      s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
+      e.preventDefault();
+    });
+  
+    window.addEventListener('pointermove', debounce(e => {
+      if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
+      s.textRightX = f.x - s.dragStart.dx;
+      s.pos.y = f.y - s.dragStart.dy;
+      const isBigKnife = knives.big.includes(knife);
+      const isSmallKnife = knives.small.includes(knife);
+      const isOtherItem = knives.others.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && 
+              ((isBigKnife && knives.big.includes(k)) || 
+               (isSmallKnife && knives.small.includes(k)) || 
+               (isOtherItem && knives.others.includes(k)))) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    }, 16));
+  
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        if (e.pointerId === s.dragStart.id) {
+          s.dragging = false;
+        }
+      })
+    );
+  
+    // Resizing
+    s.bbox.querySelectorAll('.handle').forEach(h => {
+      h.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        s.resizing = true;
+        const handle = h.dataset.handle;
+        const box = s.bbox.getBoundingClientRect();
+        let anchorX, anchorY;
+        if (handle === 'se') {
+          anchorX = toFullCoords(s.view, s, box.left, box.top).x;
+          anchorY = toFullCoords(s.view, s, box.left, box.top).y;
+        } else if (handle === 'nw') {
+          anchorX = toFullCoords(s.view, s, box.right, box.bottom).x;
+          anchorY = toFullCoords(s.view, s, box.right, box.bottom).y;
+        } else if (handle === 'ne') {
+          anchorX = toFullCoords(s.view, s, box.left, box.bottom).x;
+          anchorY = toFullCoords(s.view, s, box.left, box.bottom).y;
+        } else if (handle === 'sw') {
+          anchorX = toFullCoords(s.view, s, box.right, box.top).x;
+          anchorY = toFullCoords(s.view, s, box.right, box.top).y;
+        }
+        const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
+        s.resizeStart = {
+          id: e.pointerId,
+          anchorX,
+          anchorY,
+          scale: s.textScale,
+          textRightX: s.textRightX,
+          posY: s.pos.y,
+          handle
+        };
+      });
+    });
+  
+    window.addEventListener('pointermove', debounce(e => {
+      if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
+      const p = toFullCoords(s.view, s, e.clientX, e.clientY);
+      const isBigKnife = knives.big.includes(knife);
+      const isSmallKnife = knives.small.includes(knife);
+      const isOtherItem = knives.others.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
+      let newScale;
+      if (s.resizeStart.handle === 'se') {
+        const dx = Math.abs(p.x - s.resizeStart.anchorX);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
+        s.pos.y = s.resizeStart.anchorY;
+      } else if (s.resizeStart.handle === 'nw') {
+        const dx = Math.abs(s.resizeStart.anchorX - p.x);
+        const dy = Math.abs(s.resizeStart.anchorY - p.y);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX;
+        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
+      } else if (s.resizeStart.handle === 'ne') {
+        const dx = Math.abs(p.x - s.resizeStart.anchorX);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
+        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
+      } else if (s.resizeStart.handle === 'sw') {
+        const dx = Math.abs(s.resizeStart.anchorX - p.x);
+        const dy = Math.abs(p.y - s.resizeStart.anchorY);
+        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
+        s.textRightX = s.resizeStart.anchorX;
+        s.pos.y = s.resizeStart.anchorY;
+      }
+      s.textScale = newScale;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && 
+              ((isBigKnife && knives.big.includes(k)) || 
+               (isSmallKnife && knives.small.includes(k)) || 
+               (isOtherItem && knives.others.includes(k)))) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            if (syncFonts) {
+              state[k].baseFont = s.baseFont * s.textScale;
+              state[k].textScale = 1;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            }
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      if (syncFonts) {
+        syncFontAndText(knife);
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    }, 16));
+  
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        if (e.pointerId === s.resizeStart.id) {
+          s.resizing = false;
+        }
+      })
+    );
+  
+    // Pinching
+    s.view.addEventListener('pointerdown', e => {
+      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
+        s.pinch = true;
+        const [pA, pB] = Object.values(s.pointers);
+        const fA = toFullCoords(s.view, s, pA.x, pA.y);
+        const fB = toFullCoords(s.view, s, pB.x, pB.y);
+        s.pinchStart = {
+          scale: s.textScale,
+          cx: (fA.x + fB.x) / 2,
+          cy: (fA.y + fB.y) / 2,
+          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
+        };
+      }
+    });
+  
+    window.addEventListener('pointermove', debounce(e => {
+      if (!s.pinch || !(e.pointerId in s.pointers)) return;
+      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      const [a, b] = Object.values(s.pointers);
+      const fA = toFullCoords(s.view, s, a.x, a.y);
+      const fB = toFullCoords(s.view, s, b.x, b.y);
+      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
+      s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
+      s.textRightX = (fA.x + fB.x) / 2;
+      s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
+      const isBigKnife = knives.big.includes(knife);
+      const isSmallKnife = knives.small.includes(knife);
+      const isOtherItem = knives.others.includes(knife);
+      const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
+      if (alignRight) {
+        Object.keys(state).forEach(k => {
+          if (k !== knife && 
+              ((isBigKnife && knives.big.includes(k)) || 
+               (isSmallKnife && knives.small.includes(k)) || 
+               (isOtherItem && knives.others.includes(k)))) {
+            state[k].textRightX = s.textRightX;
+            state[k].pos.y = s.pos.y;
+            if (syncFonts) {
+              state[k].baseFont = s.baseFont * s.textScale;
+              state[k].textScale = 1;
+              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            }
+            invalidateTextCache(k);
+            if (!state[k].pendingDraw) {
+              state[k].pendingDraw = true;
+              requestAnimationFrame(() => draw(k));
+            }
+          }
+        });
+      }
+      if (syncFonts) {
+        syncFontAndText(knife);
+      }
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    }, 16));
+  
+    ['pointerup', 'pointercancel'].forEach(evt =>
+      window.addEventListener(evt, e => {
+        delete s.pointers[e.pointerId];
+        if (Object.keys(s.pointers).length < 2) {
+          s.pinch = false;
+          if (!s.pendingDraw) {
+            s.pendingDraw = true;
+            requestAnimationFrame(() => draw(knife));
+          }
+        }
+      })
+    );
+  
+    s.overlayEl.style.visibility = 'hidden';
+  }
+  
+  // Resize handler for responsive canvas
+  function handleResize() {
+    Object.keys(state).forEach(knife => {
+      const s = state[knife];
+      if (s.img) {
+        fitInBox(s.view, s.img, s.wrapper);
+        invalidateCache(knife);
+        invalidateTextCache(knife);
+        if (!s.pendingDraw) {
+          s.pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+      }
+    });
+  }
+  
+  window.addEventListener('resize', debounce(handleResize, 100));
+  
+  // Navigation and button event listeners
   next1Btn.addEventListener('click', async () => {
     if (isNavigating) return;
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
@@ -1324,11 +1745,11 @@
       }
     }
   });
-
+  
   back2Btn.addEventListener('click', () => {
     switchPage(2, 1);
   });
-
+  
   next2Btn.addEventListener('click', async () => {
     if (isNavigating) return;
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
@@ -1355,7 +1776,7 @@
       await generatePreviews();
     }
   });
-
+  
   back3Btn.addEventListener('click', () => {
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
     const hasBig = hasBigKnives(selected);
@@ -1365,7 +1786,7 @@
       switchPage(3, 1);
     }
   });
-
+  
   next3Btn.addEventListener('click', async () => {
     if (isNavigating) return;
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
@@ -1383,7 +1804,7 @@
       await generatePreviews();
     }
   });
-
+  
   back4Btn.addEventListener('click', () => {
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
     const hasOthers = hasOtherItems(selected);
@@ -1399,9 +1820,7 @@
       switchPage(4, 1);
     }
   });
-
-    
-
+  
   back5Btn.addEventListener('click', () => {
     const selected = Array.from(productPicker.querySelectorAll('input:checked'));
     const hasSmall = hasSmallKnives(selected);
@@ -1420,7 +1839,7 @@
     switchPage(5, 4);
     await generatePreviews();
   });
-
+  
   document.addEventListener('click', e => {
     if (e.target.id === 'edit-zone' || e.target.closest('#edit-zone')) {
       debounceToggle(toggleEditZone, 'edit-zone', 'vignette')();
@@ -1438,357 +1857,29 @@
       }
     }
   });
-
-  async function initializeKnife(knife) {
-    createCanvasSection(knife);
-    const s = state[knife];
-    s.overlayEl.style.visibility = 'visible';
-    s.img = await loadImage(
-      productPicker.querySelector(`input[data-name="${knife}"]`).value
-    );
-    try {
-      s.overlay = await loadImage(`${knife}-overlay.png`);
-    } catch (e) {
-      console.warn(`Overlay image for ${knife} not found`);
-      s.overlay = null;
-    }
-    s.full.width = s.img.naturalWidth;
-    s.full.height = s.img.naturalHeight;
-    // Center text
-    s.textRightX = s.full.width / 2;
-    s.pos.y = s.full.height / 2;
-    s.cacheCanvas.width = s.full.width;
-    s.cacheCanvas.height = s.full.height;
-    s.textCacheCanvas.width = s.full.width;
-    s.textCacheCanvas.height = s.full.height;
-    s.previewCanvas.width = s.full.width;
-    s.previewCanvas.height = s.full.height;
-    fitInBox(s.view, s.img, s.wrapper);
-    const isBigKnife = knives.big.includes(knife);
-    s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
-    s.baseDims = { w: 0, h: s.baseFont };
-
-    if (sameContent && sharedText) {
-      s.textInput.value = sharedText;
-      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-    }
-
-    await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
-    if (s.textInput.value) {
-      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-    }
-    s.overlayEl.style.visibility = 'hidden';
-    if (!s.pendingDraw) {
-      s.pendingDraw = true;
-      requestAnimationFrame(() => draw(knife));
-    }
-
-    s.textInput.addEventListener('input', () => {
-      if (sameContent) {
-        sharedText = s.textInput.value;
-        Object.keys(state).forEach(k => {
-          state[k].textInput.value = sharedText;
-          state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-          invalidateTextCache(k);
-          if (!state[k].pendingDraw) {
-            state[k].pendingDraw = true;
-            requestAnimationFrame(() => draw(k));
-          }
-        });
-      } else {
-        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-        invalidateTextCache(knife);
-        if (!s.pendingDraw) {
-          s.pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      }
-      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    });
-
-    s.fontSel.addEventListener('input', () => {
-      document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
-        s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
-        invalidateTextCache(knife);
-        if (!s.pendingDraw) {
-          s.pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-        syncFontAndText(knife);
-        lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-      });
-    });
-
-    if (s.sameContentChk) {
-      s.sameContentChk.addEventListener('change', () => {
-        sameContent = s.sameContentChk.checked;
-        if (sameContent) {
-          sharedText = s.textInput.value;
-          Object.keys(state).forEach(k => {
-            state[k].textInput.value = sharedText;
-            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          });
-        } else {
-          sharedText = '';
-        }
-      });
-    }
-
-    // Dragging
-    s.view.addEventListener('pointerdown', e => {
-      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-      if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
-      // console.log(`Dragging started for ${knife}`);
-      s.dragging = true;
-      s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
-      e.preventDefault();
-    });
-
-    window.addEventListener('pointermove', e => {
-      if (!s.dragging || e.pointerId !== s.dragStart.id) return;
-      const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-      s.textRightX = f.x - s.dragStart.dx;
-      s.pos.y = f.y - s.dragStart.dy;
-      const isBigKnife = knives.big.includes(knife);
-      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-      if (alignRight) {
-        Object.keys(state).forEach(k => {
-          if (k !== knife && knives.big.includes(k) === isBigKnife) {
-            state[k].textRightX = s.textRightX;
-            state[k].pos.y = s.pos.y;
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          }
-        });
-      }
-      invalidateTextCache(knife);
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
-        requestAnimationFrame(() => draw(knife));
-      }
-      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    });
-
-    ['pointerup', 'pointercancel'].forEach(evt =>
-      window.addEventListener(evt, e => {
-        if (e.pointerId === s.dragStart.id) {
-          // console.log(`Dragging stopped for ${knife}`);
-          s.dragging = false;
-        }
-      })
-    );
-
-    // Resizing
-    s.bbox.querySelectorAll('.handle').forEach(h => {
-      h.addEventListener('pointerdown', e => {
-        e.stopPropagation();
-        // console.log(`Resizing started for ${knife}`);
-        s.resizing = true;
-        const handle = h.dataset.handle;
-        const box = s.bbox.getBoundingClientRect();
-        let anchorX, anchorY;
-        // Anchor opposite corner
-        if (handle === 'se') {
-          anchorX = toFullCoords(s.view, s, box.left, box.top).x; // nw
-          anchorY = toFullCoords(s.view, s, box.left, box.top).y;
-        } else if (handle === 'nw') {
-          anchorX = toFullCoords(s.view, s, box.right, box.bottom).x; // se
-          anchorY = toFullCoords(s.view, s, box.right, box.bottom).y;
-        } else if (handle === 'ne') {
-          anchorX = toFullCoords(s.view, s, box.left, box.bottom).x; // sw
-          anchorY = toFullCoords(s.view, s, box.left, box.bottom).y;
-        } else if (handle === 'sw') {
-          anchorX = toFullCoords(s.view, s, box.right, box.top).x; // ne
-          anchorY = toFullCoords(s.view, s, box.right, box.top).y;
-        }
-        const p0 = toFullCoords(s.view, s, e.clientX, e.clientY);
-        s.resizeStart = {
-          id: e.pointerId,
-          anchorX,
-          anchorY,
-          scale: s.textScale,
-          textRightX: s.textRightX,
-          posY: s.pos.y,
-          handle
-        };
-      });
-    });
-
-    window.addEventListener('pointermove', e => {
-      if (!s.resizing || e.pointerId !== s.resizeStart.id) return;
-      const p = toFullCoords(s.view, s, e.clientX, e.clientY);
-      const isBigKnife = knives.big.includes(knife);
-      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-      let newScale;
-      if (s.resizeStart.handle === 'se') {
-        const dx = Math.abs(p.x - s.resizeStart.anchorX);
-        const dy = Math.abs(p.y - s.resizeStart.anchorY);
-        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
-        s.pos.y = s.resizeStart.anchorY;
-      } else if (s.resizeStart.handle === 'nw') {
-        const dx = Math.abs(s.resizeStart.anchorX - p.x);
-        const dy = Math.abs(s.resizeStart.anchorY - p.y);
-        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-        s.textRightX = s.resizeStart.anchorX;
-        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-      } else if (s.resizeStart.handle === 'ne') {
-        const dx = Math.abs(p.x - s.resizeStart.anchorX);
-        const dy = Math.abs(p.y - s.resizeStart.anchorY);
-        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-        s.textRightX = s.resizeStart.anchorX + s.baseDims.w * newScale;
-        s.pos.y = s.resizeStart.anchorY - s.baseDims.h * newScale;
-      } else if (s.resizeStart.handle === 'sw') {
-        const dx = Math.abs(s.resizeStart.anchorX - p.x);
-        const dy = Math.abs(p.y - s.resizeStart.anchorY);
-        newScale = Math.max(dx / s.baseDims.w, dy / s.baseDims.h) || s.resizeStart.scale;
-        s.textRightX = s.resizeStart.anchorX;
-        s.pos.y = s.resizeStart.anchorY;
-      }
-      s.textScale = newScale;
-      if (alignRight) {
-        Object.keys(state).forEach(k => {
-          if (k !== knife && knives.big.includes(k) === isBigKnife) {
-            state[k].textRightX = s.textRightX;
-            state[k].pos.y = s.pos.y;
-            if (syncFonts) {
-              state[k].baseFont = s.baseFont * s.textScale;
-              state[k].textScale = 1;
-              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-            }
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          }
-        });
-      }
-      if (syncFonts) {
-        syncFontAndText(knife);
-      }
-      invalidateTextCache(knife);
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
-        requestAnimationFrame(() => draw(knife));
-      }
-      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    });
-
-    ['pointerup', 'pointercancel'].forEach(evt =>
-      window.addEventListener(evt, e => {
-        if (e.pointerId === s.resizeStart.id) {
-          // console.log(`Resizing stopped for ${knife}`);
-          s.resizing = false;
-        }
-      })
-    );
-
-    // Pinching
-    s.view.addEventListener('pointerdown', e => {
-      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      if (Object.keys(s.pointers).length === 2 && !s.dragging && !s.resizing) {
-        // console.log(`Pinch started for ${knife}`);
-        s.pinch = true;
-        const [pA, pB] = Object.values(s.pointers);
-        const fA = toFullCoords(s.view, s, pA.x, pA.y);
-        const fB = toFullCoords(s.view, s, pB.x, pB.y);
-        s.pinchStart = {
-          scale: s.textScale,
-          cx: (fA.x + fB.x) / 2,
-          cy: (fA.y + fB.y) / 2,
-          d0: Math.hypot(fA.x - fB.x, fA.y - fB.y)
-        };
-      }
-    });
-
-    window.addEventListener('pointermove', e => {
-      if (!s.pinch || !(e.pointerId in s.pointers)) return;
-      s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      const [a, b] = Object.values(s.pointers);
-      const fA = toFullCoords(s.view, s, a.x, a.y);
-      const fB = toFullCoords(s.view, s, b.x, b.y);
-      const d1 = Math.hypot(fA.x - fB.x, fA.y - fB.y);
-      s.textScale = s.pinchStart.scale * (d1 / s.pinchStart.d0);
-      s.textRightX = (fA.x + fB.x) / 2;
-      s.pos.y = (fA.y + fB.y) / 2 - (s.baseDims.h * s.textScale) / 2;
-      const isBigKnife = knives.big.includes(knife);
-      const alignRight = isBigKnife ? alignRightBig : alignRightSmall;
-      if (alignRight) {
-        Object.keys(state).forEach(k => {
-          if (k !== knife && knives.big.includes(k) === isBigKnife) {
-            state[k].textRightX = s.textRightX;
-            state[k].pos.y = s.pos.y;
-            if (syncFonts) {
-              state[k].baseFont = s.baseFont * s.textScale;
-              state[k].textScale = 1;
-              state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
-            }
-            invalidateTextCache(k);
-            if (!state[k].pendingDraw) {
-              state[k].pendingDraw = true;
-              requestAnimationFrame(() => draw(k));
-            }
-          }
-        });
-      }
-      if (syncFonts) {
-        syncFontAndText(knife);
-      }
-      invalidateTextCache(knife);
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
-        requestAnimationFrame(() => draw(knife));
-      }
-      lastAdjusted[knives.big.includes(knife) ? 'big' : 'small'] = knife;
-    });
-
-    ['pointerup', 'pointercancel'].forEach(evt =>
-      window.addEventListener(evt, e => {
-        delete s.pointers[e.pointerId];
-        if (Object.keys(s.pointers).length < 2) {
-          // console.log(`Pinch stopped for ${knife}`);
-          s.pinch = false;
-          // Ensure final draw with updated state
-          if (!s.pendingDraw) {
-            s.pendingDraw = true;
-            requestAnimationFrame(() => draw(knife));
-          }
-        }
-      })
-    );
-
-    s.overlayEl.style.visibility = 'hidden';
-  }
-
+  
   downloadBtn.addEventListener('click', async () => {
     const zip = new JSZip();
     for (const knife of Object.keys(state)) {
       const s = state[knife];
-      const previewBlob = await new Promise(r => s.previewCanvas.toBlob(r));
+      const previewBlob = await new Promise(r => s.previewCanvas.toBlob(r, 'image/png', 1.0));
       zip.file(`${knife}-preview.png`, previewBlob);
-
+  
       const t = document.createElement('canvas');
       t.width = s.full.width;
       t.height = s.full.height;
       const tCtx = t.getContext('2d');
+      tCtx.imageSmoothingEnabled = true;
+      tCtx.imageSmoothingQuality = 'high';
       tCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       tCtx.fillStyle = '#000';
       tCtx.textBaseline = 'top';
       tCtx.textAlign = 'right';
       tCtx.fillText(s.textInput.value, s.textRightX, s.pos.y);
-      const textBlob = await new Promise(r => t.toBlob(r));
+      const textBlob = await new Promise(r => t.toBlob(r, 'image/png', 1.0));
       zip.file(`${knife}-text-only.png`, textBlob);
     }
-
+  
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
@@ -1801,7 +1892,7 @@
       a.remove();
     }, 100);
   });
-
+  
   updateLanguage(currentLang);
 
   // Set initial button states
