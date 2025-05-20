@@ -859,40 +859,25 @@
   }
 
   function fitInBox(canvas, img, wrapper) {
-    const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
     const wrapW = wrapper.clientWidth;
     const scale = wrapW / img.naturalWidth;
-  
-    // Set canvas CSS size to fit wrapper
-    canvas.style.width = wrapW + 'px';
-    canvas.style.height = (img.naturalHeight * scale) + 'px';
-  
-    // Set canvas internal resolution to account for DPR
-    canvas.width = img.naturalWidth * scale * dpr;
-    canvas.height = img.naturalHeight * scale * dpr;
-  
-    // Scale the context to match DPR
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-  
+    canvas.width = img.naturalWidth * scale;
+    canvas.height = img.naturalHeight * scale;
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
     return scale;
   }
 
   function measureText(ctx, text, fontSize, font) {
     ctx.font = `${fontSize}px ${font}`;
-    const metrics = ctx.measureText(text);
-    return {
-      w: metrics.width,
-      h: fontSize // Approximate height; consider metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent for precision
-    };
+    return { w: ctx.measureText(text).width, h: fontSize };
   }
 
   function toFullCoords(canvas, wrapper, cx, cy) {
     const r = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
     return {
-      x: (cx - r.left) * (wrapper.full.width / r.width) * dpr,
-      y: (cy - r.top) * (wrapper.full.height / r.height) * dpr
+      x: (cx - r.left) * (wrapper.full.width / r.width),
+      y: (cy - r.top) * (wrapper.full.height / r.height)
     };
   }
 
@@ -1041,8 +1026,6 @@
       s.cacheCanvas.width = s.full.width;
       s.cacheCanvas.height = s.full.height;
       if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
-      s.cacheCtx.imageSmoothingEnabled = true;
-      s.cacheCtx.imageSmoothingQuality = 'high';
       s.cacheCtx.clearRect(0, 0, s.full.width, s.full.height);
       s.cacheCtx.drawImage(s.img, 0, 0);
       if (showEditZone && s.overlay) {
@@ -1056,8 +1039,6 @@
       s.textCacheCanvas.width = s.full.width;
       s.textCacheCanvas.height = s.full.height;
       if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
-      s.textCacheCtx.imageSmoothingEnabled = true;
-      s.textCacheCtx.imageSmoothingQuality = 'high';
       s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
       if (s.textInput.value) {
         s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
@@ -1070,15 +1051,12 @@
     }
   
     // Full-res canvas
-    s.fCtx.imageSmoothingEnabled = true;
-    s.fCtx.imageSmoothingQuality = 'high';
     s.fCtx.clearRect(0, 0, s.full.width, s.full.height);
     s.fCtx.drawImage(s.cacheCanvas, 0, 0);
     s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
   
     // Preview canvas
-    const dpr = window.devicePixelRatio || 1;
-    const scale = s.view.width / s.full.width / dpr;
+    const scale = s.view.width / s.full.width;
     s.vCtx.imageSmoothingEnabled = true;
     s.vCtx.imageSmoothingQuality = 'high';
     s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -1087,30 +1065,15 @@
     s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
     s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
   
-    // Bounding box
+    // Bounding box (left edge at textRightX - width)
+    const dx = s.view.width / s.full.width;
+    const dy = s.view.height / s.full.height;
     if (s.boxVisible && s.textInput.value) {
-      const canvasRect = s.view.getBoundingClientRect();
-      const wrapperRect = s.wrapper.getBoundingClientRect();
-      const dx = s.view.width / s.full.width;
-      const dy = s.view.height / s.full.height;
-  
-      // Calculate text dimensions
-      s.fCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
-      const metrics = s.fCtx.measureText(s.textInput.value);
-      const textWidth = metrics.width;
-      const textHeight = s.baseFont * s.textScale; // Approximate height
-  
-      // Calculate bounding box position and size in CSS pixels
-      const bboxLeft = (s.textRightX - textWidth) * dx + (canvasRect.left - wrapperRect.left);
-      const bboxTop = s.pos.y * dy + (canvasRect.top - wrapperRect.top);
-      const bboxWidth = textWidth * dx;
-      const bboxHeight = textHeight * dy;
-  
       s.bbox.style.display = 'block';
-      s.bbox.style.width = bboxWidth + 'px';
-      s.bbox.style.height = bboxHeight + 'px';
-      s.bbox.style.left = bboxLeft + 'px';
-      s.bbox.style.top = bboxTop + 'px';
+      s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
+      s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
+      s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
+      s.bbox.style.top = (s.pos.y * dy) + 'px';
     } else {
       s.bbox.style.display = 'none';
     }
