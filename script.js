@@ -194,7 +194,6 @@ function createCanvasSection(knife) {
         <select id="weight-${knife}">
           <option value="400" data-i18n="regularWeight">Regular</option>
           <option value="700" data-i18n="boldWeight">Bold</option>
-          <option value="900" data-i18n="heavyWeight">Heavy</option>
         </select>
       </div>
     </div>
@@ -347,7 +346,7 @@ function syncFontAndText(knife) {
   if (!syncFonts) return;
   const refState = state[knife];
   const fontFamily = refState.fontSel.value;
-  const fontWeight = refState.weightSel.value; 
+  const fontWeight = refState.weightSel.value;
   const effectiveFontSize = refState.baseFont * refState.textScale;
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
@@ -361,7 +360,7 @@ function syncFontAndText(knife) {
       state[k].weightSel.value = fontWeight;
       state[k].baseFont = effectiveFontSize;
       state[k].textScale = 1;
-      state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+      state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
       invalidateTextCache(k);
       if (!state[k].pendingDraw) {
         state[k].pendingDraw = true;
