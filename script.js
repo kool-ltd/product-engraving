@@ -119,8 +119,8 @@ function fitInBox(canvas, img, wrapper) {
   return scale;
 }
 
-function measureText(ctx, text, fontSize, font) {
-  ctx.font = `${fontSize}px ${font}`;
+function measureText(ctx, text, fontSize, font, weight = '400') {
+  ctx.font = `${weight} ${fontSize}px ${font}`;
   return { w: ctx.measureText(text).width, h: fontSize };
 }
 
@@ -189,6 +189,14 @@ function createCanvasSection(knife) {
           </optgroup>
         </select>
       </div>
+      <div>
+        <label for="weight-${knife}" data-i18n="weightLabel">${translations[currentLang].weightLabel}</label>
+        <select id="weight-${knife}">
+          <option value="400" data-i18n="regularWeight">Regular</option>
+          <option value="700" data-i18n="boldWeight">Bold</option>
+          <option value="900" data-i18n="heavyWeight">Heavy</option>
+        </select>
+      </div>
     </div>
     ${showSameContent ? `
       <div class="same-content">
@@ -243,6 +251,7 @@ function createCanvasSection(knife) {
     bbox: document.getElementById(`bbox-${knife}`),
     textInput: document.getElementById(`text-${knife}`),
     fontSel: document.getElementById(`font-${knife}`),
+    weightSel: document.getElementById(`weight-${knife}`), 
     sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
     cacheCanvas: document.createElement('canvas'),
     cacheCtx: document.createElement('canvas').getContext('2d'),
@@ -290,7 +299,7 @@ function draw(knife) {
     if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
     s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
     if (s.textInput.value) {
-      s.textCacheCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      s.textCacheCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       s.textCacheCtx.fillStyle = '#000';
       s.textCacheCtx.textBaseline = 'top';
       s.textCacheCtx.textAlign = 'right';
@@ -338,6 +347,7 @@ function syncFontAndText(knife) {
   if (!syncFonts) return;
   const refState = state[knife];
   const fontFamily = refState.fontSel.value;
+  const fontWeight = refState.weightSel.value; 
   const effectiveFontSize = refState.baseFont * refState.textScale;
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
@@ -348,6 +358,7 @@ function syncFontAndText(knife) {
          (isSmallKnife && knives.small.includes(k)) || 
          (isOtherItem && knives.others.includes(k)))) {
       state[k].fontSel.value = fontFamily;
+      state[k].weightSel.value = fontWeight;
       state[k].baseFont = effectiveFontSize;
       state[k].textScale = 1;
       state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
@@ -477,7 +488,7 @@ async function generatePreviews() {
     const ctx = s.previewCanvas.getContext('2d');
     ctx.drawImage(s.img, 0, 0);
     if (s.textInput.value) {
-      ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      ctx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       ctx.fillStyle = '#000';
       ctx.textBaseline = 'top';
       ctx.textAlign = 'right';
@@ -707,6 +718,7 @@ async function initializeKnife(knife) {
   fitInBox(s.view, s.img, s.wrapper);
   const isBigKnife = knives.big.includes(knife);
   s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
+  s.weightSel.value = '400';
   s.baseDims = { w: 0, h: s.baseFont };
 
   if (sameContent && sharedText) {
@@ -714,7 +726,7 @@ async function initializeKnife(knife) {
     s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
   }
 
-  await document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`);
+  await document.fonts.load(`${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`);
   if (s.textInput.value) {
     s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
   }
@@ -1031,7 +1043,7 @@ downloadBtn.addEventListener('click', async () => {
     const ctx = previewCanvas.getContext('2d');
     ctx.drawImage(s.img, 0, 0);
     if (s.textInput.value) {
-      ctx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      ctx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`; 
       ctx.fillStyle = '#000';
       ctx.textBaseline = 'top';
       ctx.textAlign = 'right';
@@ -1047,7 +1059,7 @@ downloadBtn.addEventListener('click', async () => {
     textCtx.fillStyle = '#fff';
     textCtx.fillRect(0, 0, textCanvas.width, textCanvas.height);
     if (s.textInput.value) {
-      textCtx.font = `${s.baseFont * s.textScale}px ${s.fontSel.value}`;
+      textCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`; 
       textCtx.fillStyle = '#000';
       textCtx.textBaseline = 'top';
       textCtx.textAlign = 'right';
