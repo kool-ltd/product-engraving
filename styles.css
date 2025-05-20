@@ -121,6 +121,10 @@ h3 {
   border-radius: 7px;
 }
 
+select[id^="weight-"] {
+  width: 100px;
+}
+
 .canvas-wrapper {
   position: relative;
   width: 100%;

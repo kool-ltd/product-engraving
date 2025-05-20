@@ -759,6 +759,29 @@ async function initializeKnife(knife) {
     lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
   });
 
+  s.weightSel.addEventListener('input', () => {
+    const fontString = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
+    document.fonts.load(fontString).then(() => {
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+      syncFontAndText(knife);
+      lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    }).catch(err => {
+      console.warn(`Failed to load font: ${fontString}`, err);
+      // Fallback: Attempt to draw without waiting for font load
+      s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
+      invalidateTextCache(knife);
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(() => draw(knife));
+      }
+    });
+  });
+
   s.fontSel.addEventListener('input', () => {
     document.fonts.load(`${s.baseFont}px ${s.fontSel.value}`).then(() => {
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
