@@ -131,8 +131,8 @@ function toFullCoords(canvas, wrapper, cx, cy) {
   const r = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   return {
-    x: (cx - r.left) * (wrapper.full.width / (r.width / dpr)),
-    y: (cy - r.top) * (wrapper.full.height / (r.height / dpr))
+    x: (cx - r.left) * (wrapper.full.width / r.width) * dpr,
+    y: (cy - r.top) * (wrapper.full.height / r.height) * dpr
   };
 }
 
@@ -300,7 +300,7 @@ function draw(knife) {
   if (!s.textCacheValid) {
     s.textCacheCanvas.width = s.full.width;
     s.textCacheCanvas.height = s.full.height;
-    if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
+    if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
     s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
     if (s.textInput.value) {
       s.textCacheCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
@@ -316,7 +316,7 @@ function draw(knife) {
   s.fCtx.drawImage(s.cacheCanvas, 0, 0);
   s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
 
-  const scale = s.view.width / (s.full.width * dpr);
+  const scale = s.view.width / s.full.width; // Remove DPR from scale calculation
   s.vCtx.imageSmoothingEnabled = true;
   s.vCtx.imageSmoothingQuality = 'high';
   s.vCtx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
@@ -325,14 +325,14 @@ function draw(knife) {
   s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
   s.vCtx.setTransform(dpr, 0, 0, dpr, 0, 0); // Reset to DPR scale
 
-  const dx = s.view.width / (s.full.width * dpr);
-  const dy = s.view.height / (s.full.height * dpr);
+  const dx = s.view.width / s.full.width;
+  const dy = s.view.height / s.full.height;
   if (s.boxVisible && s.textInput.value) {
     s.bbox.style.display = 'block';
-    s.bbox.style.width = (s.baseDims.w * s.textScale * dx * dpr) + 'px';
-    s.bbox.style.height = (s.baseDims.h * s.textScale * dy * dpr) + 'px';
-    s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx * dpr) + 'px';
-    s.bbox.style.top = (s.pos.y * dy * dpr) + 'px';
+    s.bbox.style.width = (s.baseDims.w * s.textScale * dx) + 'px';
+    s.bbox.style.height = (s.baseDims.h * s.textScale * dy) + 'px';
+    s.bbox.style.left = ((textX - s.baseDims.w * s.textScale) * dx) + 'px';
+    s.bbox.style.top = (s.pos.y * dy) + 'px';
   } else {
     s.bbox.style.display = 'none';
   }
@@ -821,7 +821,10 @@ async function initializeKnife(knife) {
 
   s.view.addEventListener('pointerdown', e => {
     const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-    if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
+    const hit = hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX);
+    // Optional debug log (can remove after testing)
+    console.log(`Pointer down: x=${f.x}, y=${f.y}, hit=${hit}, textRightX=${s.textRightX}, posY=${s.pos.y}`);
+    if (!hit || s.resizing) return;
     s.dragging = true;
     s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
     e.preventDefault();
