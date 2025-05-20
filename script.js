@@ -112,13 +112,10 @@ function loadImage(src) {
 function fitInBox(canvas, img, wrapper) {
   const wrapW = wrapper.clientWidth;
   const scale = wrapW / img.naturalWidth;
-  const dpr = window.devicePixelRatio || 1; // Fallback to 1 if DPR is not available
-  canvas.width = img.naturalWidth * scale * dpr;
-  canvas.height = img.naturalHeight * scale * dpr;
-  canvas.style.width = (img.naturalWidth * scale) + 'px';
-  canvas.style.height = (img.naturalHeight * scale) + 'px';
-  // Apply DPR scaling to canvas context to avoid blurry rendering
-  canvas.getContext('2d').scale(dpr, dpr);
+  canvas.width = img.naturalWidth * scale;
+  canvas.height = img.naturalHeight * scale;
+  canvas.style.width = canvas.width + 'px';
+  canvas.style.height = canvas.height + 'px';
   return scale;
 }
 
@@ -129,10 +126,9 @@ function measureText(ctx, text, fontSize, font, weight = '400') {
 
 function toFullCoords(canvas, wrapper, cx, cy) {
   const r = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
   return {
-    x: (cx - r.left) * (wrapper.full.width / r.width) * dpr,
-    y: (cy - r.top) * (wrapper.full.height / r.height) * dpr
+    x: (cx - r.left) * (wrapper.full.width / r.width),
+    y: (cy - r.top) * (wrapper.full.height / r.height)
   };
 }
 
@@ -283,7 +279,6 @@ function draw(knife) {
   if (!s.img || s.full.width === 0 || s.full.height === 0) return;
 
   const textX = s.textRightX;
-  const dpr = window.devicePixelRatio || 1;
 
   if (!s.cacheValid) {
     s.cacheCanvas.width = s.full.width;
@@ -300,7 +295,7 @@ function draw(knife) {
   if (!s.textCacheValid) {
     s.textCacheCanvas.width = s.full.width;
     s.textCacheCanvas.height = s.full.height;
-    if (s.cacheCanvas.width === 0 || s.cacheCanvas.height === 0) return;
+    if (s.textCacheCanvas.width === 0 || s.textCacheCanvas.height === 0) return;
     s.textCacheCtx.clearRect(0, 0, s.full.width, s.full.height);
     if (s.textInput.value) {
       s.textCacheCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
@@ -316,14 +311,14 @@ function draw(knife) {
   s.fCtx.drawImage(s.cacheCanvas, 0, 0);
   s.fCtx.drawImage(s.textCacheCanvas, 0, 0);
 
-  const scale = s.view.width / s.full.width; // Remove DPR from scale calculation
+  const scale = s.view.width / s.full.width;
   s.vCtx.imageSmoothingEnabled = true;
   s.vCtx.imageSmoothingQuality = 'high';
-  s.vCtx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  s.vCtx.setTransform(scale, 0, 0, scale, 0, 0);
   s.vCtx.clearRect(0, 0, s.full.width, s.full.height);
   s.vCtx.drawImage(s.cacheCanvas, 0, 0);
   s.vCtx.drawImage(s.textCacheCanvas, 0, 0);
-  s.vCtx.setTransform(dpr, 0, 0, dpr, 0, 0); // Reset to DPR scale
+  s.vCtx.setTransform(1, 0, 0, 1, 0, 0);
 
   const dx = s.view.width / s.full.width;
   const dy = s.view.height / s.full.height;
@@ -821,10 +816,7 @@ async function initializeKnife(knife) {
 
   s.view.addEventListener('pointerdown', e => {
     const f = toFullCoords(s.view, s, e.clientX, e.clientY);
-    const hit = hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX);
-    // Optional debug log (can remove after testing)
-    console.log(`Pointer down: x=${f.x}, y=${f.y}, hit=${hit}, textRightX=${s.textRightX}, posY=${s.pos.y}`);
-    if (!hit || s.resizing) return;
+    if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
     s.dragging = true;
     s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
     e.preventDefault();
@@ -1055,8 +1047,6 @@ async function initializeKnife(knife) {
 
   window.addEventListener('resize', () => {
     fitInBox(s.view, s.img, s.wrapper);
-    // Reset context scale for DPR
-    s.vCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
     if (!s.pendingDraw) {
       s.pendingDraw = true;
       requestAnimationFrame(() => draw(knife));

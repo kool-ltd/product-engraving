@@ -122,7 +122,7 @@ h3 {
 }
 
 select[id^="weight-"] {
-  width: 100px;
+  width: 133px;
 }
 
 .canvas-wrapper {
@@ -143,10 +143,7 @@ select[id^="weight-"] {
 
 canvas {
   display: block;
-  image-rendering: -webkit-optimize-contrast; /* Improve sharpness on WebKit browsers */
-  image-rendering: crisp-edges; /* Standard property for sharp rendering */
-  image-rendering: pixelated; /* Fallback for some browsers */
-  touch-action: none; /* Prevent mobile browser interference with touch events */
+  touch-action: none;
 }
 
 .loading-overlay {
