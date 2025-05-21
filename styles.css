@@ -446,8 +446,8 @@ div#page-1 {
   align-items: center;
   margin: 1rem auto;
   padding: 0.5rem;
-  gap: 1.5rem;
-  background-color: #fff;
+  gap: 0.5rem; /* Reduced gap to account for separator */
+  /* background-color: #fff; */
   width: 100%;
   max-width: 1200px; /* Match .container width, adjust if different */
   box-sizing: border-box;
@@ -497,6 +497,13 @@ div#page-1 {
 
 .progress-step.preview.active .material-symbols-outlined {
   color: #fff;
+}
+
+.progress-step:not(:last-child)::after {
+  content: "-";
+  color: #666;
+  font-size: 1rem;
+  margin: 0 0.5rem;
 }
 
 @media (max-width: 600px) {
@@ -573,7 +580,7 @@ div#page-1 {
     font-size: .8rem;
   }
   .progress-section {
-    gap: 1rem;
+    gap: 0.4rem;
     padding: 0.5rem;
     border-radius: 6px; /* Slightly smaller radius on mobile, adjust if needed */
   }
@@ -586,5 +593,10 @@ div#page-1 {
 
   .progress-step .material-symbols-outlined {
     font-size: 1.2rem;
+  }
+
+  .progress-step:not(:last-child)::after {
+    font-size: 0.9rem;
+    margin: 0 0.4rem;
   }
 }
