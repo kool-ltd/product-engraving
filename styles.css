@@ -446,7 +446,7 @@ div#page-1 {
   align-items: center;
   margin: 1rem auto;
   padding: 0.5rem;
-  gap: 0.5rem; /* Reduced gap to account for separator */
+  gap: 0.5rem; /* Adjust gap for steps and separators */
   /* background-color: #fff; */
   width: 100%;
   max-width: 1200px; /* Match .container width, adjust if different */
@@ -499,11 +499,11 @@ div#page-1 {
   color: #fff;
 }
 
-.progress-step:not(:last-child)::after {
-  content: "-";
+.progress-separator {
   color: #666;
   font-size: 1rem;
-  margin: 0 0.5rem;
+  display: flex;
+  align-items: center;
 }
 
 @media (max-width: 600px) {
@@ -595,8 +595,7 @@ div#page-1 {
     font-size: 1.2rem;
   }
 
-  .progress-step:not(:last-child)::after {
+  .progress-separator {
     font-size: 0.9rem;
-    margin: 0 0.4rem;
   }
 }

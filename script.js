@@ -1141,10 +1141,13 @@ function updateProgressSection() {
 
   const progressSections = document.querySelectorAll('#progress-section');
   progressSections.forEach(section => {
-    section.innerHTML = steps.map(step => `
-      <div class="progress-step ${step.id === activePage ? 'active' : ''} ${step.isPreview ? 'preview' : ''}">
-        ${step.icon ? `<span class="material-symbols-outlined">${step.icon}</span>` : step.label}
-      </div>
-    `).join('');
+    section.innerHTML = steps
+      .map((step, index) => `
+        <div class="progress-step ${step.id === activePage ? 'active' : ''} ${step.isPreview ? 'preview' : ''}">
+          ${step.icon ? `<span class="material-symbols-outlined">${step.icon}</span>` : step.label}
+        </div>
+        ${index < steps.length - 1 ? '<span class="progress-separator">-</span>' : ''}
+      `)
+      .join('');
   });
 }
