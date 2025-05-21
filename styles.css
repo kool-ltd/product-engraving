@@ -444,27 +444,49 @@ div#page-1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 1rem 0;
-  gap: 1rem;
+  margin: 1rem auto;
+  padding: 0.5rem;
+  gap: 1.5rem;
+  background-color: #fff;
+  width: 100%;
+  max-width: 1200px; /* Match .container width, adjust if different */
+  box-sizing: border-box;
   flex-wrap: wrap;
 }
 
 .progress-step {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #e0e0e0;
   color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 .progress-step.active {
-  color: #000;
+  background-color: #000;
+  color: #fff;
   font-weight: bold;
 }
 
-.progress-step .material-symbols-outlined,
-.progress-step .material-symbols-filled {
-  font-size: 1.2rem;
+.progress-step.preview {
+  background-color: transparent;
+  width: auto;
+  height: auto;
+}
+
+.progress-step .material-symbols-outlined {
+  font-size: 1.5rem;
+  color: #666;
+}
+
+.progress-step.active .material-symbols-outlined {
+  color: #000;
 }
 
 @media (max-width: 600px) {
@@ -541,11 +563,17 @@ div#page-1 {
     font-size: .8rem;
   }
   .progress-section {
-    gap: 0.75rem;
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .progress-step {
+    width: 1.5rem;
+    height: 1.5rem;
     font-size: 0.9rem;
   }
-  .progress-step .material-symbols-outlined,
-  .progress-step .material-symbols-filled {
-    font-size: 1rem;
+
+  .progress-step .material-symbols-outlined {
+    font-size: 1.2rem;
   }
 }

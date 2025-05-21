@@ -1126,23 +1126,24 @@ function updateProgressSection() {
   const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
 
   const steps = [];
+  let stepNumber = 1;
+
   if (hasBig) {
-    steps.push({ id: '2', label: 'Large Knives', icon: 'surgical', filled: true });
+    steps.push({ id: '2', label: stepNumber++ });
   }
   if (hasSmall) {
-    steps.push({ id: '3', label: 'Small Knives', icon: 'surgical', filled: false });
+    steps.push({ id: '3', label: stepNumber++ });
   }
   if (hasOthers) {
-    steps.push({ id: '5', label: 'Other Items', icon: 'content_cut', filled: false });
+    steps.push({ id: '5', label: stepNumber++ });
   }
-  steps.push({ id: '4', label: 'Preview', icon: 'preview', filled: false });
+  steps.push({ id: '4', label: '', icon: 'preview', isPreview: true });
 
   const progressSections = document.querySelectorAll('#progress-section');
   progressSections.forEach(section => {
     section.innerHTML = steps.map(step => `
-      <div class="progress-step ${step.id === activePage ? 'active' : ''}">
-        <span class="material-symbols-${step.filled ? 'filled' : 'outlined'}">${step.icon}</span>
-        <span>${step.label}</span>
+      <div class="progress-step ${step.id === activePage ? 'active' : ''} ${step.isPreview ? 'preview' : ''}">
+        ${step.icon ? `<span class="material-symbols-outlined">${step.icon}</span>` : step.label}
       </div>
     `).join('');
   });
