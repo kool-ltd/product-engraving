@@ -89,7 +89,7 @@ const translations = {
     textPlaceholder: "輸入刻字",
     fontLabel: "字體：",
     weightLabel: "字體粗幼：",
-    regularWeight: "常規",
+    regularWeight: "普通",
     boldWeight: "粗體",
     heavyWeight: "特粗",
     sameContentLabel: "所有產品使用相同文字",

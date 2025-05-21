@@ -156,7 +156,10 @@ function switchPage(from, to) {
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(() => { isNavigating = false; }, 100);
+  setTimeout(() => { 
+    isNavigating = false;
+    updateProgressSection();
+  }, 100);
 }
 
 function createCanvasSection(knife) {
@@ -192,8 +195,8 @@ function createCanvasSection(knife) {
       <div>
         <label for="weight-${knife}" data-i18n="weightLabel">${translations[currentLang].weightLabel}</label>
         <select id="weight-${knife}">
-          <option value="400" data-i18n="regularWeight">Regular</option>
-          <option value="700" data-i18n="boldWeight">Bold</option>
+          <option value="400" data-i18n="regularWeight">${translations[currentLang].regularWeight}</option>
+          <option value="700" data-i18n="boldWeight">${translations[currentLang].boldWeight}</option>
         </select>
       </div>
     </div>
@@ -1112,4 +1115,35 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#auto-align').forEach(btn => {
     btn.classList.toggle('off', !alignRightBig);
   });
+  updateProgressSection();
 });
+
+function updateProgressSection() {
+  const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  const hasBig = hasBigKnives(selected);
+  const hasSmall = hasSmallKnives(selected);
+  const hasOthers = hasOtherItems(selected);
+  const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+
+  const steps = [];
+  if (hasBig) {
+    steps.push({ id: '2', label: 'Large Knives', icon: 'surgical', filled: true });
+  }
+  if (hasSmall) {
+    steps.push({ id: '3', label: 'Small Knives', icon: 'surgical', filled: false });
+  }
+  if (hasOthers) {
+    steps.push({ id: '5', label: 'Other Items', icon: 'content_cut', filled: false });
+  }
+  steps.push({ id: '4', label: 'Preview', icon: 'preview', filled: false });
+
+  const progressSections = document.querySelectorAll('#progress-section');
+  progressSections.forEach(section => {
+    section.innerHTML = steps.map(step => `
+      <div class="progress-step ${step.id === activePage ? 'active' : ''}">
+        <span class="material-symbols-${step.filled ? 'filled' : 'outlined'}">${step.icon}</span>
+        <span>${step.label}</span>
+      </div>
+    `).join('');
+  });
+}

@@ -440,6 +440,32 @@ div#page-1 {
   color: #666;
   line-height: 1.5;
 }
+.progress-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: #666;
+}
+
+.progress-step.active {
+  color: #000;
+  font-weight: bold;
+}
+
+.progress-step .material-symbols-outlined,
+.progress-step .material-symbols-filled {
+  font-size: 1.2rem;
+}
 
 @media (max-width: 600px) {
   .container {
@@ -513,5 +539,13 @@ div#page-1 {
 
   .disclaimer p {
     font-size: .8rem;
+  }
+  .progress-section {
+    gap: 0.75rem;
+    font-size: 0.9rem;
+  }
+  .progress-step .material-symbols-outlined,
+  .progress-step .material-symbols-filled {
+    font-size: 1rem;
   }
 }
