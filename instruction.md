@@ -1,6 +1,7 @@
-#Update product list instructions#
+# Update product list instructions
 
-###script.js###
+### script.js
+
 Search "const" and update
 
 ```
@@ -12,7 +13,8 @@ const knives = {
 ```
 
 
-###translation.js###
+### translation.js
+
 Search "prodocut list start" and update
 
 ```
@@ -49,7 +51,8 @@ Search "prodocut list start" and update
 
 
 
-###index.html###
+### index.html
+
 Search "product-picker" and update
 
 ```
@@ -61,6 +64,7 @@ Search "product-picker" and update
 ```
 
 For example :
+
 ```
 <div id="product-picker">
   <label class="product-option">
