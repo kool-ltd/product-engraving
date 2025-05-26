@@ -19,7 +19,7 @@ const translations = {
     choppingBoard: "Chopping Board (Coming Soon)",
     tongs: "Tongs (Coming Soon)",
     scissors: "Scissors (Coming Soon)",
-    turner: "Turner (Coming Soon)"
+    turner: "Turner (Coming Soon)",
     // product list end //
     textLabel: "Text:",
     textPlaceholder: "Enter engraving",
@@ -92,7 +92,7 @@ const translations = {
     choppingBoard: "砧板（即將推出）",
     tongs: "夾子（即將推出）",
     scissors: "剪刀（即將推出）",
-    turner: "鑊鏟（即將推出）"
+    turner: "鑊鏟（即將推出）",
     // product list end //
     textLabel: "文字：",
     textPlaceholder: "輸入刻字",
