@@ -2,7 +2,7 @@
 
 ### script.js
 
-Search "const" and update
+Search "const knives" and update
 
 ```
 const knives = {
