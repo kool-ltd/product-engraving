@@ -4,16 +4,19 @@
 ###script.js
 Search "const" and update
 
+```
 const knives = {
   big: ['santoku', 'chef', 'bread', 'chopper'],
   small: ['utility', 'paring'],
   others: ['choppingBoard', 'tongs', 'scissors','turner']
 };
+```
 
 
 ###translation.js
 Search "prodocut list start" and update
 
+```
   // product list start //
   chefKnife: "Chef Knife",
   santokuKnife: "Santoku Knife",
@@ -26,8 +29,11 @@ Search "prodocut list start" and update
   scissors: "Scissors (Coming Soon)",
   turner: "Turner (Coming Soon)",
   // product list end //
-
-
+```
+.
+.
+.
+```
   // product list start //
   chefKnife: "主廚刀",
   santokuKnife: "三德刀",
@@ -40,21 +46,23 @@ Search "prodocut list start" and update
   scissors: "剪刀（即將推出）",
   turner: "鑊鏟（即將推出）",
   // product list end //
-
+```
 
 
 
 ###index.html
 Search "product-picker" and update
 
+```
 <label class="product-option">
   <input type="checkbox" name="product" value="turner.jpg" data-thumb="turner-thumb.jpg" data-name="turner">
   <img src="turner-thumb.jpg" alt="Turner">
   <span data-i18n="turner">Turner</span>
 </label>
-
+```
 
 For example :
+```
 <div id="product-picker">
   <label class="product-option">
     <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
@@ -107,3 +115,4 @@ For example :
     <span data-i18n="turner">Turner</span>
   </label>
 </div>
+```
