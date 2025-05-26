@@ -66,7 +66,7 @@ let showEditZone = true;
 let showResizeControls = true;
 let alignRightBig = true;
 let alignRightSmall = true;
-let alignRightOthers = true;
+let alignRightOthers = false;
 let isNavigating = false;
 let lastToggleTime = 0;
 let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
@@ -434,10 +434,11 @@ function toggleAlignment(knife) {
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
   const isOtherItem = knives.others.includes(knife);
-  const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
   const group = isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others';
+  let alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
 
   if (alignRight) {
+    // Store current positions and disable alignment
     Object.keys(state).forEach(k => {
       if ((isBigKnife && knives.big.includes(k)) || 
           (isSmallKnife && knives.small.includes(k)) || 
@@ -454,26 +455,29 @@ function toggleAlignment(knife) {
     else if (isSmallKnife) alignRightSmall = false;
     else alignRightOthers = false;
   } else {
-    const lastKnife = lastAdjusted[group] || knife;
-    const refTextRightX = state[lastKnife].textRightX;
-    const refY = state[lastKnife].pos.y;
-    Object.keys(state).forEach(k => {
-      if ((isBigKnife && knives.big.includes(k)) || 
-          (isSmallKnife && knives.small.includes(k)) || 
-          (isOtherItem && knives.others.includes(k))) {
-        storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
-        state[k].textRightX = refTextRightX;
-        state[k].pos.y = refY;
-        invalidateTextCache(k);
-        if (!state[k].pendingDraw) {
-          state[k].pendingDraw = true;
-          requestAnimationFrame(() => draw(k));
+    // Restore alignment only for big or small knives, not others unless explicitly enabled
+    if (isBigKnife || isSmallKnife) {
+      const lastKnife = lastAdjusted[group] || knife;
+      const refTextRightX = state[lastKnife].textRightX;
+      const refY = state[lastKnife].pos.y;
+      Object.keys(state).forEach(k => {
+        if ((isBigKnife && knives.big.includes(k)) || 
+            (isSmallKnife && knives.small.includes(k))) {
+          storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
+          state[k].textRightX = refTextRightX;
+          state[k].pos.y = refY;
+          invalidateTextCache(k);
+          if (!state[k].pendingDraw) {
+            state[k].pendingDraw = true;
+            requestAnimationFrame(() => draw(k));
+          }
         }
-      }
-    });
-    if (isBigKnife) alignRightBig = true;
-    else if (isSmallKnife) alignRightSmall = true;
-    else alignRightOthers = true;
+      });
+      if (isBigKnife) alignRightBig = true;
+      else if (isSmallKnife) alignRightSmall = true;
+    } else {
+      alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
+    }
   }
 
   document.querySelectorAll('#auto-align').forEach(btn => {
@@ -1112,10 +1116,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
   });
+  // Update auto-align button state based on the active page
   document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.toggle('off', !alignRightBig);
+    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+    if (activePage === '5') {
+      btn.classList.toggle('off', !alignRightOthers); // Reflect alignRightOthers state
+    } else if (activePage === '2') {
+      btn.classList.toggle('off', !alignRightBig);
+    } else if (activePage === '3') {
+      btn.classList.toggle('off', !alignRightSmall);
+    }
   });
-  updateProgressSection();
 });
 
 function updateProgressSection() {
