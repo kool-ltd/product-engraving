@@ -1108,7 +1108,7 @@ downloadBtn.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
   updateLanguage(currentLang);
   document.querySelectorAll('#edit-zone').forEach(btn => {
-    btn.classList.toggle('off', !showEditZone);
+    btn.classList.toggle('off', !showEditZone); // Keep toggle for other buttons if it works
   });
   document.querySelectorAll('#resize-controls').forEach(btn => {
     btn.classList.toggle('off', !showResizeControls);
@@ -1116,15 +1116,29 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
   });
-  // Update auto-align button state based on the active page
   document.querySelectorAll('#auto-align').forEach(btn => {
-    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1';
+    btn.classList.remove('off'); // Clear any existing 'off' class
     if (activePage === '5') {
-      btn.classList.toggle('off', !alignRightOthers); // Reflect alignRightOthers state
+      if (alignRightOthers) {
+        btn.classList.remove('off');
+      } else {
+        btn.classList.add('off'); // Explicitly add 'off' for page 5
+      }
     } else if (activePage === '2') {
-      btn.classList.toggle('off', !alignRightBig);
+      if (alignRightBig) {
+        btn.classList.remove('off');
+      } else {
+        btn.classList.add('off');
+      }
     } else if (activePage === '3') {
-      btn.classList.toggle('off', !alignRightSmall);
+      if (alignRightSmall) {
+        btn.classList.remove('off');
+      } else {
+        btn.classList.add('off');
+      }
+    } else {
+      btn.classList.remove('off'); // Default for page 1
     }
   });
 });
