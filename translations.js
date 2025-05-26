@@ -9,12 +9,18 @@ const translations = {
     previewAllKnives: "Preview All Items",
     previewDescription: "Click any image to enlarge",
     download: "Download",
+    // product list start //
     chefKnife: "Chef Knife",
     santokuKnife: "Santoku Knife",
     breadKnife: "Bread Knife",
     chopperKnife: "Chopper Knife",
     utilityKnife: "Utility Knife",
     paringKnife: "Paring Knife",
+    choppingBoard: "Chopping Board (Coming Soon)",
+    tongs: "Tongs (Coming Soon)",
+    scissors: "Scissors (Coming Soon)",
+    turner: "Turner (Coming Soon)"
+    // product list end //
     textLabel: "Text:",
     textPlaceholder: "Enter engraving",
     fontLabel: "Font:",
@@ -54,9 +60,6 @@ const translations = {
     downloadOn: "Downloads a ZIP file with preview and text-only images for all customized items.",
     noSelection: "Please select at least one item.",
     close: "Close",
-    choppingBoard: "Chopping Board (Coming Soon)",
-    tongs: "Tongs (Coming Soon)",
-    scissors: "Scissors (Coming Soon)",
     chooseKnives: "Choose your items",
     disclaimerTitle: "Disclaimer",
     disclaimerText: `
@@ -79,12 +82,18 @@ const translations = {
     previewAllKnives: "預覽所有產品",
     previewDescription: "點擊任何圖片放大",
     download: "下載",
+    // product list start //
     chefKnife: "主廚刀",
     santokuKnife: "三德刀",
     breadKnife: "麵包刀",
     chopperKnife: "砍刀",
     utilityKnife: "多用途刀",
     paringKnife: "削皮刀",
+    choppingBoard: "砧板（即將推出）",
+    tongs: "夾子（即將推出）",
+    scissors: "剪刀（即將推出）",
+    turner: "鑊鏟（即將推出）"
+    // product list end //
     textLabel: "文字：",
     textPlaceholder: "輸入刻字",
     fontLabel: "字體：",
@@ -124,9 +133,6 @@ const translations = {
     downloadOn: "下載包含所有定制刀具預覽和純文字圖片的ZIP文件。",
     noSelection: "請至少選擇一件產品。",
     close: "關閉",
-    choppingBoard: "砧板（即將推出）",
-    tongs: "夾子（即將推出）",
-    scissors: "剪刀（即將推出）",
     chooseKnives: "選擇你的產品",
     disclaimerTitle: "免責聲明",
     disclaimerText: `
