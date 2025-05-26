@@ -52,9 +52,9 @@ document.addEventListener('click', e => {
 
 /* STATE */
 const knives = {
-  big: ['santoku', 'chef', 'bread', 'chopper'],
+  big: ['santoku', 'chef', 'bread'],
   small: ['utility', 'paring'],
-  others: ['choppingBoard', 'tongs', 'scissors','turner']
+  others: ['chopper', 'choppingBoard', 'tongs', 'scissors','turner']
 };
 const state = {};
 let sameContent = true;
