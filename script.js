@@ -153,13 +153,15 @@ function hasOtherItems(selected) {
 function switchPage(from, to) {
   if (isNavigating) return;
   isNavigating = true;
+  console.log(`switchPage called: from=${from}, to=${to}, typeof to=${typeof to}`);
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Show/hide sync-fonts and auto-align buttons based on page
-  const isPage5 = to === '5';
+  const isPage5 = to === '5' || to === 5 || pages[5].classList.contains('active');
+  console.log(`switchPage: to=${to}, isPage5=${isPage5}, active page=${Object.keys(pages).find(p => pages[p].classList.contains('active'))}`);
   const buttons = document.querySelectorAll('#sync-fonts, #auto-align');
-  console.log(`switchPage: to=${to}, isPage5=${isPage5}, found ${buttons.length} buttons (#sync-fonts, #auto-align)`);
+  console.log(`switchPage: found ${buttons.length} buttons (#sync-fonts, #auto-align)`);
   buttons.forEach(btn => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
     console.log(`Set display=${isPage5 ? 'none' : ''} for button ID=${btn.id}`);
