@@ -156,6 +156,11 @@ function switchPage(from, to) {
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Show/hide sync-fonts and auto-align buttons based on page
+  const isPage5 = to === '5';
+  document.querySelectorAll('#sync-fonts, #auto-align').forEach(btn => {
+    btn.style.display = isPage5 ? 'none' : '';
+  });
   setTimeout(() => { 
     isNavigating = false;
     updateProgressSection();
@@ -347,18 +352,18 @@ function invalidateTextCache(knife) {
 
 function syncFontAndText(knife) {
   if (!syncFonts) return;
+  const isOtherItem = knives.others.includes(knife);
+  if (isOtherItem) return; // Skip sync for others
   const refState = state[knife];
   const fontFamily = refState.fontSel.value;
   const fontWeight = refState.weightSel.value;
   const effectiveFontSize = refState.baseFont * refState.textScale;
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
-  const isOtherItem = knives.others.includes(knife);
   Object.keys(state).forEach(k => {
     if (k !== knife && 
         ((isBigKnife && knives.big.includes(k)) || 
-         (isSmallKnife && knives.small.includes(k)) || 
-         (isOtherItem && knives.others.includes(k)))) {
+         (isSmallKnife && knives.small.includes(k)))) {
       state[k].fontSel.value = fontFamily;
       state[k].weightSel.value = fontWeight;
       state[k].baseFont = effectiveFontSize;
@@ -723,8 +728,30 @@ async function initializeKnife(knife) {
   s.previewCanvas.height = s.full.height;
   fitInBox(s.view, s.img, s.wrapper);
   const isBigKnife = knives.big.includes(knife);
-  s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
-  s.weightSel.value = '400';
+  const isSmallKnife = knives.small.includes(knife);
+  const isOtherItem = knives.others.includes(knife);
+  
+  // Set initial font family and weight
+  let initialFont = lastBigKnifeFont;
+  let initialWeight = '400';
+  if (isSmallKnife || isOtherItem) {
+    // Inherit from last adjusted big or small knife
+    if (lastAdjusted.big && state[lastAdjusted.big]) {
+      initialFont = state[lastAdjusted.big].fontSel.value;
+      initialWeight = state[lastAdjusted.big].weightSel.value;
+    } else if (lastAdjusted.small && state[lastAdjusted.small] && isSmallKnife) {
+      initialFont = state[lastAdjusted.small].fontSel.value;
+      initialWeight = state[lastAdjusted.small].weightSel.value;
+    } else {
+      // Default font based on language
+      initialFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+      initialWeight = '400';
+    }
+  } else {
+    initialFont = isBigKnife ? lastBigKnifeFont : (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
+  }
+  s.fontSel.value = initialFont;
+  s.weightSel.value = initialWeight;
   s.baseDims = { w: 0, h: s.baseFont };
 
   if (sameContent && sharedText) {
@@ -774,11 +801,12 @@ async function initializeKnife(knife) {
         s.pendingDraw = true;
         requestAnimationFrame(() => draw(knife));
       }
-      syncFontAndText(knife);
+      if (!isOtherItem) { // Skip sync for others
+        syncFontAndText(knife);
+      }
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
     }).catch(err => {
       console.warn(`Failed to load font: ${fontString}`, err);
-      // Fallback: Attempt to draw without waiting for font load
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
       invalidateTextCache(knife);
       if (!s.pendingDraw) {
@@ -796,7 +824,9 @@ async function initializeKnife(knife) {
         s.pendingDraw = true;
         requestAnimationFrame(() => draw(knife));
       }
-      syncFontAndText(knife);
+      if (!isOtherItem) { // Skip sync for others
+        syncFontAndText(knife);
+      }
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
     });
   });
