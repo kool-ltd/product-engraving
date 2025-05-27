@@ -1164,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
     console.log(`DOMContentLoaded: Set auto-align display=${isPage5 ? 'none' : ''} for ID=${btn.id}`);
     if (!isPage5) {
-      btn.classList.toggle('off', pages[2].classList.contains('active') ? !alignRightBig : pages[3].classList.contains('active') ? !alignRightSmall : !alignRightOthers);
+      btn.classList.remove('off'); // Ensure no off class on pages 2 and 3
     }
   });
 });
