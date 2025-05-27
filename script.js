@@ -479,10 +479,6 @@ function toggleAlignment(knife) {
       alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
     }
   }
-
-  document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
-  });
 }
 
 async function generatePreviews() {
