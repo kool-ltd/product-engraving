@@ -157,14 +157,19 @@ function switchPage(from, to) {
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  // Show/hide sync-fonts and auto-align buttons based on page
-  const isPage5 = to === '5' || to === 5 || pages[5].classList.contains('active');
+  // Show/hide auto-align button based on page
+  const isPage5 = to === '5' || to === 5 || String(to) === '5' || pages[5].classList.contains('active');
   console.log(`switchPage: to=${to}, isPage5=${isPage5}, active page=${Object.keys(pages).find(p => pages[p].classList.contains('active'))}`);
-  const buttons = document.querySelectorAll('#sync-fonts, #auto-align');
-  console.log(`switchPage: found ${buttons.length} buttons (#sync-fonts, #auto-align)`);
-  buttons.forEach(btn => {
+  const autoAlignButtons = document.querySelectorAll('#auto-align');
+  console.log(`switchPage: found ${autoAlignButtons.length} auto-align buttons`);
+  autoAlignButtons.forEach(btn => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
-    console.log(`Set display=${isPage5 ? 'none' : ''} for button ID=${btn.id}`);
+    // console.log(`Set display=${isPage5 ? 'none' : ''} for auto-align button ID=${btn.id}`);
+  });
+  // Ensure sync-fonts buttons are visible
+  document.querySelectorAll('#sync-fonts').forEach(btn => {
+    btn.style.setProperty('display', '', 'important');
+    // console.log(`Set display='' for sync-fonts button ID=${btn.id}`);
   });
   setTimeout(() => { 
     isNavigating = false;
@@ -357,22 +362,25 @@ function invalidateTextCache(knife) {
 
 function syncFontAndText(knife) {
   if (!syncFonts) return;
-  const isOtherItem = knives.others.includes(knife);
-  if (isOtherItem) return; // Skip sync for others
   const refState = state[knife];
   const fontFamily = refState.fontSel.value;
   const fontWeight = refState.weightSel.value;
   const effectiveFontSize = refState.baseFont * refState.textScale;
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
+  const isOtherItem = knives.others.includes(knife);
   Object.keys(state).forEach(k => {
     if (k !== knife && 
         ((isBigKnife && knives.big.includes(k)) || 
-         (isSmallKnife && knives.small.includes(k)))) {
+         (isSmallKnife && knives.small.includes(k)) || 
+         (isOtherItem && knives.others.includes(k)))) {
       state[k].fontSel.value = fontFamily;
       state[k].weightSel.value = fontWeight;
-      state[k].baseFont = effectiveFontSize;
-      state[k].textScale = 1;
+      // Only sync font size for big and small knives, not others
+      if (!isOtherItem) {
+        state[k].baseFont = effectiveFontSize;
+        state[k].textScale = 1;
+      }
       state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
       invalidateTextCache(k);
       if (!state[k].pendingDraw) {
@@ -1142,6 +1150,8 @@ downloadBtn.addEventListener('click', async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   updateLanguage(currentLang);
+  const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+  console.log(`DOMContentLoaded: active page=${activePage}`);
   document.querySelectorAll('#edit-zone').forEach(btn => {
     btn.classList.toggle('off', !showEditZone);
   });
@@ -1150,15 +1160,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
+    // btn.style.setProperty('display', '', 'important'); // Always visible
+    // console.log(`DOMContentLoaded: Set sync-fonts display='' for ID=${btn.id}`);
   });
   document.querySelectorAll('#auto-align').forEach(btn => {
-    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
-    if (activePage === '5') {
-      btn.classList.add('off'); // Always disabled on page 5
-    } else if (activePage === '2') {
-      btn.classList.toggle('off', !alignRightBig);
-    } else if (activePage === '3') {
-      btn.classList.toggle('off', !alignRightSmall);
+    const isPage5 = activePage === '5' || pages[5].classList.contains('active');
+    btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
+    console.log(`DOMContentLoaded: Set auto-align display=${isPage5 ? 'none' : ''} for ID=${btn.id}`);
+    if (!isPage5) {
+      btn.classList.toggle('off', pages[2].classList.contains('active') ? !alignRightBig : pages[3].classList.contains('active') ? !alignRightSmall : !alignRightOthers);
     }
   });
 });
