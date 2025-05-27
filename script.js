@@ -688,6 +688,7 @@ document.addEventListener('click', e => {
     debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
   } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
     const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+    if (activePage === '5') return; // Skip auto-align on page 5
     const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
                   activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) :
                   activePage === '5' ? Object.keys(state).find(k => knives.others.includes(k)) : null;
