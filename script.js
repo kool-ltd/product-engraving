@@ -52,9 +52,9 @@ document.addEventListener('click', e => {
 
 /* STATE */
 const knives = {
-  big: ['santoku', 'chef', 'bread', 'chopper'],
+  big: ['santoku', 'chef', 'bread'],
   small: ['utility', 'paring'],
-  others: ['choppingBoard', 'tongs', 'scissors','turner']
+  others: ['chopper', 'choppingBoard', 'tongs', 'scissors','turner']
 };
 const state = {};
 let sameContent = true;
@@ -66,7 +66,7 @@ let showEditZone = true;
 let showResizeControls = true;
 let alignRightBig = true;
 let alignRightSmall = true;
-let alignRightOthers = true;
+let alignRightOthers = false;
 let isNavigating = false;
 let lastToggleTime = 0;
 let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
@@ -156,6 +156,29 @@ function switchPage(from, to) {
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Turn off auto-align for "others" when navigating to page 5
+  if (to === '5') {
+    alignRightOthers = false;
+    // Update auto-align button UI to reflect "off" state
+    document.querySelectorAll('#auto-align').forEach(btn => {
+      btn.classList.remove('on'); // Ensure no conflicting "on" class
+      btn.classList.add('off');   // Explicitly add "off" class
+    });
+    // Restore stored positions for "others" items to prevent unwanted alignment
+    Object.keys(state).forEach(knife => {
+      if (knives.others.includes(knife) && storedPositions.others[knife]) {
+        state[knife].textRightX = storedPositions.others[knife].textRightX;
+        state[knife].pos.y = storedPositions.others[knife].y;
+        invalidateTextCache(knife);
+        if (!state[knife].pendingDraw) {
+          state[knife].pendingDraw = true;
+          requestAnimationFrame(() => draw(knife));
+        }
+      }
+    });
+  }
+
   setTimeout(() => { 
     isNavigating = false;
     updateProgressSection();
@@ -434,10 +457,11 @@ function toggleAlignment(knife) {
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
   const isOtherItem = knives.others.includes(knife);
-  const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
   const group = isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others';
+  let alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
 
   if (alignRight) {
+    // Store current positions and disable alignment
     Object.keys(state).forEach(k => {
       if ((isBigKnife && knives.big.includes(k)) || 
           (isSmallKnife && knives.small.includes(k)) || 
@@ -454,31 +478,30 @@ function toggleAlignment(knife) {
     else if (isSmallKnife) alignRightSmall = false;
     else alignRightOthers = false;
   } else {
-    const lastKnife = lastAdjusted[group] || knife;
-    const refTextRightX = state[lastKnife].textRightX;
-    const refY = state[lastKnife].pos.y;
-    Object.keys(state).forEach(k => {
-      if ((isBigKnife && knives.big.includes(k)) || 
-          (isSmallKnife && knives.small.includes(k)) || 
-          (isOtherItem && knives.others.includes(k))) {
-        storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
-        state[k].textRightX = refTextRightX;
-        state[k].pos.y = refY;
-        invalidateTextCache(k);
-        if (!state[k].pendingDraw) {
-          state[k].pendingDraw = true;
-          requestAnimationFrame(() => draw(k));
+    // Restore alignment only for big or small knives, not others unless explicitly enabled
+    if (isBigKnife || isSmallKnife) {
+      const lastKnife = lastAdjusted[group] || knife;
+      const refTextRightX = state[lastKnife].textRightX;
+      const refY = state[lastKnife].pos.y;
+      Object.keys(state).forEach(k => {
+        if ((isBigKnife && knives.big.includes(k)) || 
+            (isSmallKnife && knives.small.includes(k))) {
+          storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
+          state[k].textRightX = refTextRightX;
+          state[k].pos.y = refY;
+          invalidateTextCache(k);
+          if (!state[k].pendingDraw) {
+            state[k].pendingDraw = true;
+            requestAnimationFrame(() => draw(k));
+          }
         }
-      }
-    });
-    if (isBigKnife) alignRightBig = true;
-    else if (isSmallKnife) alignRightSmall = true;
-    else alignRightOthers = true;
+      });
+      if (isBigKnife) alignRightBig = true;
+      else if (isSmallKnife) alignRightSmall = true;
+    } else {
+      alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
+    }
   }
-
-  document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
-  });
 }
 
 async function generatePreviews() {
@@ -1113,9 +1136,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.classList.toggle('off', !syncFonts);
   });
   document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.toggle('off', !alignRightBig);
+    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1';
+    btn.classList.remove('on', 'off'); // Clear existing classes to avoid conflicts
+    if (activePage === '5') {
+      btn.classList.add(alignRightOthers ? 'on' : 'off');
+    } else if (activePage === '2') {
+      btn.classList.add(alignRightBig ? 'on' : 'off');
+    } else if (activePage === '3') {
+      btn.classList.add(alignRightSmall ? 'on' : 'off');
+    } else {
+      btn.classList.add('off'); // Default for page 1 (no alignment)
+    }
   });
-  updateProgressSection();
 });
 
 function updateProgressSection() {
@@ -1149,5 +1181,19 @@ function updateProgressSection() {
         ${index < steps.length - 1 ? '<span class="progress-separator">-</span>' : ''}
       `)
       .join('');
+  });
+
+  // Ensure auto-align button reflects correct state after progress update
+  document.querySelectorAll('#auto-align').forEach(btn => {
+    btn.classList.remove('on', 'off'); // Clear existing classes
+    if (activePage === '5') {
+      btn.classList.add(alignRightOthers ? 'on' : 'off');
+    } else if (activePage === '2') {
+      btn.classList.add(alignRightBig ? 'on' : 'off');
+    } else if (activePage === '3') {
+      btn.classList.add(alignRightSmall ? 'on' : 'off');
+    } else {
+      btn.classList.add('off'); // Default for page 1
+    }
   });
 }
