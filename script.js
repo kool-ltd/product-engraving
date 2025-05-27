@@ -158,8 +158,11 @@ function switchPage(from, to) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Show/hide sync-fonts and auto-align buttons based on page
   const isPage5 = to === '5';
-  document.querySelectorAll('#sync-fonts, #auto-align').forEach(btn => {
-    btn.style.display = isPage5 ? 'none' : '';
+  const buttons = document.querySelectorAll('#sync-fonts, #auto-align');
+  console.log(`switchPage: to=${to}, isPage5=${isPage5}, found ${buttons.length} buttons (#sync-fonts, #auto-align)`);
+  buttons.forEach(btn => {
+    btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
+    console.log(`Set display=${isPage5 ? 'none' : ''} for button ID=${btn.id}`);
   });
   setTimeout(() => { 
     isNavigating = false;
