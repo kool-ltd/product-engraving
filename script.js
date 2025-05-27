@@ -453,9 +453,9 @@ function toggleAlignment(knife) {
     });
     if (isBigKnife) alignRightBig = false;
     else if (isSmallKnife) alignRightSmall = false;
-    else alignRightOthers = false;
+    else alignRightOthers = false; // Always disable for others
   } else {
-    // Restore alignment only for big or small knives, not others unless explicitly enabled
+    // Only allow alignment for big or small knives, not others
     if (isBigKnife || isSmallKnife) {
       const lastKnife = lastAdjusted[group] || knife;
       const refTextRightX = state[lastKnife].textRightX;
@@ -475,9 +475,8 @@ function toggleAlignment(knife) {
       });
       if (isBigKnife) alignRightBig = true;
       else if (isSmallKnife) alignRightSmall = true;
-    } else {
-      alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
     }
+    // Do not enable alignRightOthers for page 5
   }
 
   document.querySelectorAll('#auto-align').forEach(btn => {
@@ -1116,11 +1115,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
   });
-  // Update auto-align button state based on the active page
   document.querySelectorAll('#auto-align').forEach(btn => {
     const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
     if (activePage === '5') {
-      btn.classList.toggle('off', !alignRightOthers); // Reflect alignRightOthers state
+      btn.classList.add('off'); // Always disabled on page 5
     } else if (activePage === '2') {
       btn.classList.toggle('off', !alignRightBig);
     } else if (activePage === '3') {
