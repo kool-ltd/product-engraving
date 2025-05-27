@@ -814,9 +814,7 @@ async function initializeKnife(knife) {
         s.pendingDraw = true;
         requestAnimationFrame(() => draw(knife));
       }
-      if (!isOtherItem) { // Skip sync for others
-        syncFontAndText(knife);
-      }
+      syncFontAndText(knife);
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
     }).catch(err => {
       console.warn(`Failed to load font: ${fontString}`, err);
@@ -837,9 +835,7 @@ async function initializeKnife(knife) {
         s.pendingDraw = true;
         requestAnimationFrame(() => draw(knife));
       }
-      if (!isOtherItem) { // Skip sync for others
-        syncFontAndText(knife);
-      }
+      syncFontAndText(knife);
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
     });
   });
