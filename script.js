@@ -156,29 +156,6 @@ function switchPage(from, to) {
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // Turn off auto-align for "others" when navigating to page 5
-  if (to === '5') {
-    alignRightOthers = false;
-    // Update auto-align button UI to reflect "off" state
-    document.querySelectorAll('#auto-align').forEach(btn => {
-      btn.classList.remove('on'); // Ensure no conflicting "on" class
-      btn.classList.add('off');   // Explicitly add "off" class
-    });
-    // Restore stored positions for "others" items to prevent unwanted alignment
-    Object.keys(state).forEach(knife => {
-      if (knives.others.includes(knife) && storedPositions.others[knife]) {
-        state[knife].textRightX = storedPositions.others[knife].textRightX;
-        state[knife].pos.y = storedPositions.others[knife].y;
-        invalidateTextCache(knife);
-        if (!state[knife].pendingDraw) {
-          state[knife].pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      }
-    });
-  }
-
   setTimeout(() => { 
     isNavigating = false;
     updateProgressSection();
@@ -502,6 +479,10 @@ function toggleAlignment(knife) {
       alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
     }
   }
+
+  document.querySelectorAll('#auto-align').forEach(btn => {
+    btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
+  });
 }
 
 async function generatePreviews() {
@@ -1135,17 +1116,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
   });
+  // Update auto-align button state based on the active page
   document.querySelectorAll('#auto-align').forEach(btn => {
-    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1';
-    btn.classList.remove('on', 'off'); // Clear existing classes to avoid conflicts
+    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
     if (activePage === '5') {
-      btn.classList.add(alignRightOthers ? 'on' : 'off');
+      btn.classList.toggle('off', !alignRightOthers); // Reflect alignRightOthers state
     } else if (activePage === '2') {
-      btn.classList.add(alignRightBig ? 'on' : 'off');
+      btn.classList.toggle('off', !alignRightBig);
     } else if (activePage === '3') {
-      btn.classList.add(alignRightSmall ? 'on' : 'off');
-    } else {
-      btn.classList.add('off'); // Default for page 1 (no alignment)
+      btn.classList.toggle('off', !alignRightSmall);
     }
   });
 });
@@ -1181,19 +1160,5 @@ function updateProgressSection() {
         ${index < steps.length - 1 ? '<span class="progress-separator">-</span>' : ''}
       `)
       .join('');
-  });
-
-  // Ensure auto-align button reflects correct state after progress update
-  document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.remove('on', 'off'); // Clear existing classes
-    if (activePage === '5') {
-      btn.classList.add(alignRightOthers ? 'on' : 'off');
-    } else if (activePage === '2') {
-      btn.classList.add(alignRightBig ? 'on' : 'off');
-    } else if (activePage === '3') {
-      btn.classList.add(alignRightSmall ? 'on' : 'off');
-    } else {
-      btn.classList.add('off'); // Default for page 1
-    }
   });
 }
