@@ -153,32 +153,24 @@ function hasOtherItems(selected) {
 function switchPage(from, to) {
   if (isNavigating) return;
   isNavigating = true;
+  console.log(`switchPage called: from=${from}, to=${to}, typeof to=${typeof to}`);
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // Turn off auto-align for "others" when navigating to page 5
-  if (to === '5') {
-    alignRightOthers = false;
-    // Update auto-align button UI to reflect "off" state
-    document.querySelectorAll('#auto-align').forEach(btn => {
-      btn.classList.remove('on'); // Ensure no conflicting "on" class
-      btn.classList.add('off');   // Explicitly add "off" class
-    });
-    // Restore stored positions for "others" items to prevent unwanted alignment
-    Object.keys(state).forEach(knife => {
-      if (knives.others.includes(knife) && storedPositions.others[knife]) {
-        state[knife].textRightX = storedPositions.others[knife].textRightX;
-        state[knife].pos.y = storedPositions.others[knife].y;
-        invalidateTextCache(knife);
-        if (!state[knife].pendingDraw) {
-          state[knife].pendingDraw = true;
-          requestAnimationFrame(() => draw(knife));
-        }
-      }
-    });
-  }
-
+  // Show/hide auto-align button based on page
+  const isPage5 = to === '5' || to === 5 || String(to) === '5' || pages[5].classList.contains('active');
+  console.log(`switchPage: to=${to}, isPage5=${isPage5}, active page=${Object.keys(pages).find(p => pages[p].classList.contains('active'))}`);
+  const autoAlignButtons = document.querySelectorAll('#auto-align');
+  console.log(`switchPage: found ${autoAlignButtons.length} auto-align buttons`);
+  autoAlignButtons.forEach(btn => {
+    btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
+    // console.log(`Set display=${isPage5 ? 'none' : ''} for auto-align button ID=${btn.id}`);
+  });
+  // Ensure sync-fonts buttons are visible
+  document.querySelectorAll('#sync-fonts').forEach(btn => {
+    btn.style.setProperty('display', '', 'important');
+    // console.log(`Set display='' for sync-fonts button ID=${btn.id}`);
+  });
   setTimeout(() => { 
     isNavigating = false;
     updateProgressSection();
@@ -384,8 +376,11 @@ function syncFontAndText(knife) {
          (isOtherItem && knives.others.includes(k)))) {
       state[k].fontSel.value = fontFamily;
       state[k].weightSel.value = fontWeight;
-      state[k].baseFont = effectiveFontSize;
-      state[k].textScale = 1;
+      // Only sync font size for big and small knives, not others
+      if (!isOtherItem) {
+        state[k].baseFont = effectiveFontSize;
+        state[k].textScale = 1;
+      }
       state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
       invalidateTextCache(k);
       if (!state[k].pendingDraw) {
@@ -476,9 +471,9 @@ function toggleAlignment(knife) {
     });
     if (isBigKnife) alignRightBig = false;
     else if (isSmallKnife) alignRightSmall = false;
-    else alignRightOthers = false;
+    else alignRightOthers = false; // Always disable for others
   } else {
-    // Restore alignment only for big or small knives, not others unless explicitly enabled
+    // Only allow alignment for big or small knives, not others
     if (isBigKnife || isSmallKnife) {
       const lastKnife = lastAdjusted[group] || knife;
       const refTextRightX = state[lastKnife].textRightX;
@@ -498,10 +493,13 @@ function toggleAlignment(knife) {
       });
       if (isBigKnife) alignRightBig = true;
       else if (isSmallKnife) alignRightSmall = true;
-    } else {
-      alignRightOthers = true; // Allow toggling on, but it won't align unless explicitly set
     }
+    // Do not enable alignRightOthers for page 5
   }
+
+  document.querySelectorAll('#auto-align').forEach(btn => {
+    btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
+  });
 }
 
 async function generatePreviews() {
@@ -708,6 +706,7 @@ document.addEventListener('click', e => {
     debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
   } else if (e.target.id === 'auto-align' || e.target.closest('#auto-align')) {
     const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+    if (activePage === '5') return; // Skip auto-align on page 5
     const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
                   activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) :
                   activePage === '5' ? Object.keys(state).find(k => knives.others.includes(k)) : null;
@@ -742,8 +741,30 @@ async function initializeKnife(knife) {
   s.previewCanvas.height = s.full.height;
   fitInBox(s.view, s.img, s.wrapper);
   const isBigKnife = knives.big.includes(knife);
-  s.fontSel.value = isBigKnife ? lastBigKnifeFont : lastBigKnifeFont;
-  s.weightSel.value = '400';
+  const isSmallKnife = knives.small.includes(knife);
+  const isOtherItem = knives.others.includes(knife);
+  
+  // Set initial font family and weight
+  let initialFont = lastBigKnifeFont;
+  let initialWeight = '400';
+  if (isSmallKnife || isOtherItem) {
+    // Inherit from last adjusted big or small knife
+    if (lastAdjusted.big && state[lastAdjusted.big]) {
+      initialFont = state[lastAdjusted.big].fontSel.value;
+      initialWeight = state[lastAdjusted.big].weightSel.value;
+    } else if (lastAdjusted.small && state[lastAdjusted.small] && isSmallKnife) {
+      initialFont = state[lastAdjusted.small].fontSel.value;
+      initialWeight = state[lastAdjusted.small].weightSel.value;
+    } else {
+      // Default font based on language
+      initialFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+      initialWeight = '400';
+    }
+  } else {
+    initialFont = isBigKnife ? lastBigKnifeFont : (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
+  }
+  s.fontSel.value = initialFont;
+  s.weightSel.value = initialWeight;
   s.baseDims = { w: 0, h: s.baseFont };
 
   if (sameContent && sharedText) {
@@ -797,7 +818,6 @@ async function initializeKnife(knife) {
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
     }).catch(err => {
       console.warn(`Failed to load font: ${fontString}`, err);
-      // Fallback: Attempt to draw without waiting for font load
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
       invalidateTextCache(knife);
       if (!s.pendingDraw) {
@@ -1126,6 +1146,8 @@ downloadBtn.addEventListener('click', async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   updateLanguage(currentLang);
+  const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+  console.log(`DOMContentLoaded: active page=${activePage}`);
   document.querySelectorAll('#edit-zone').forEach(btn => {
     btn.classList.toggle('off', !showEditZone);
   });
@@ -1134,18 +1156,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
+    // btn.style.setProperty('display', '', 'important'); // Always visible
+    // console.log(`DOMContentLoaded: Set sync-fonts display='' for ID=${btn.id}`);
   });
   document.querySelectorAll('#auto-align').forEach(btn => {
-    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1';
-    btn.classList.remove('on', 'off'); // Clear existing classes to avoid conflicts
-    if (activePage === '5') {
-      btn.classList.add(alignRightOthers ? 'on' : 'off');
-    } else if (activePage === '2') {
-      btn.classList.add(alignRightBig ? 'on' : 'off');
-    } else if (activePage === '3') {
-      btn.classList.add(alignRightSmall ? 'on' : 'off');
-    } else {
-      btn.classList.add('off'); // Default for page 1 (no alignment)
+    const isPage5 = activePage === '5' || pages[5].classList.contains('active');
+    btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
+    console.log(`DOMContentLoaded: Set auto-align display=${isPage5 ? 'none' : ''} for ID=${btn.id}`);
+    if (!isPage5) {
+      btn.classList.remove('off'); // Ensure no off class on pages 2 and 3
     }
   });
 });
@@ -1181,19 +1200,5 @@ function updateProgressSection() {
         ${index < steps.length - 1 ? '<span class="progress-separator">-</span>' : ''}
       `)
       .join('');
-  });
-
-  // Ensure auto-align button reflects correct state after progress update
-  document.querySelectorAll('#auto-align').forEach(btn => {
-    btn.classList.remove('on', 'off'); // Clear existing classes
-    if (activePage === '5') {
-      btn.classList.add(alignRightOthers ? 'on' : 'off');
-    } else if (activePage === '2') {
-      btn.classList.add(alignRightBig ? 'on' : 'off');
-    } else if (activePage === '3') {
-      btn.classList.add(alignRightSmall ? 'on' : 'off');
-    } else {
-      btn.classList.add('off'); // Default for page 1
-    }
   });
 }
