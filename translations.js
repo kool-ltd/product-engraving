@@ -1,6 +1,6 @@
 const translations = {
   en: {
-    title: "Knife Engraving Customiser",
+    title: "Product Engraving Customiser",
     subtitle: "by",
     subtitleAfter: "",
     next: "Next",
@@ -10,6 +10,9 @@ const translations = {
     previewDescription: "Click any image to enlarge",
     download: "Download",
     // product list start //
+    bigKnives: "Big Knives",
+    smallKnives: "Small Knives",
+    extraBigKnifeAndGadgets: "Extra Big Knife and Gadgets",
     chefKnife: "Chef Knife",
     santokuKnife: "Santoku Knife",
     breadKnife: "Bread Knife",
@@ -56,7 +59,7 @@ const translations = {
     autoAlignOn: "Keeps text position aligned across all items on the same page for consistency.",
     autoAlignOff: "Allows independent text positioning for each item.",
     backPreview: "Next",
-    backPreviewOn: "Advances to the next page (e.g., preview page).",
+    backPreviewOn: "Advances to the next page (e.g., other items or preview page).",
     downloadGuide: "Download All",
     downloadOn: "Downloads a ZIP file with preview and text-only images for all customized items.",
     noSelection: "Please select at least one item.",
@@ -74,7 +77,7 @@ const translations = {
     `
   },
   "zh-hk": {
-    title: "刀具刻字定制器",
+    title: "產品刻字定制器",
     subtitle: "由",
     subtitleAfter: "提供",
     next: "下一步",
@@ -84,6 +87,9 @@ const translations = {
     previewDescription: "點擊任何圖片放大",
     download: "下載",
     // product list start //
+    bigKnives: "大刀款",
+    smallKnives: "小刀款",
+    extraBigKnifeAndGadgets: "特大刀款及其他廚具",
     chefKnife: "主廚刀",
     santokuKnife: "三德刀",
     breadKnife: "麵包刀",
@@ -130,7 +136,7 @@ const translations = {
     autoAlignOn: "開：保持同一組產品的文字位置對齊，確保一致性。",
     autoAlignOff: "關：允許每件產品的文字位置獨立調整。",
     backPreview: "下一步",
-    backPreviewOn: "前往下一頁（例如預覽頁面）。",
+    backPreviewOn: "前往下一頁（例如其他產品或預覽頁面）。",
     downloadGuide: "下載全部",
     downloadOn: "下載包含所有定制刀具預覽和純文字圖片的ZIP文件。",
     noSelection: "請至少選擇一件產品。",

@@ -23,62 +23,77 @@
 <body>
   <h1 id="title">Knife Engraving Customiser</h1>
   <h3 id="subtitle">by <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"></h3>
+  <button id="lang-toggle">中文</button>
   <div class="container">
     <!-- Page 1: Knife Selection -->
     <div id="page-1" class="page section active">
-      <button id="lang-toggle">中文</button>
       <h2 data-i18n="chooseKnives">Choose your knives</h2>
       <div id="product-picker">
-        <label class="product-option">
-          <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
-          <img src="chef-thumb.jpg" alt="Chef knife">
-          <span data-i18n="chefKnife">Chef Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
-          <img src="santoku-thumb.jpg" alt="Santoku knife">
-          <span data-i18n="santokuKnife">Santoku Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
-          <img src="bread-thumb.jpg" alt="Bread knife">
-          <span data-i18n="breadKnife">Bread Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
-          <img src="chopper-thumb.jpg" alt="Chopper knife">
-          <span data-i18n="chopperKnife">Chopper Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
-          <img src="utility-thumb.jpg" alt="Utility knife">
-          <span data-i18n="utilityKnife">Utility Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
-          <img src="paring-thumb.jpg" alt="Paring knife">
-          <span data-i18n="paringKnife">Paring Knife</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="tongs.jpg" data-thumb="tongs-thumb.jpg" data-name="tongs">
-          <img src="tongs-thumb.jpg" alt="Tongs">
-          <span data-i18n="tongs">Tongs</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="scissors.jpg" data-thumb="scissors-thumb.jpg" data-name="scissors">
-          <img src="scissors-thumb.jpg" alt="Scissors">
-          <span data-i18n="scissors">Scissors</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="chopping-board.jpg" data-thumb="chopping-board-thumb.jpg" data-name="choppingBoard">
-          <img src="chopping-board-thumb.jpg" alt="Chopping board">
-          <span data-i18n="choppingBoard">Chopping Board</span>
-        </label>
-        <label class="product-option">
-          <input type="checkbox" name="product" value="turner.jpg" data-thumb="turner-thumb.jpg" data-name="turner">
-          <img src="turner-thumb.jpg" alt="Turner">
-          <span data-i18n="turner">Turner</span>
-        </label>
+        <div class="cluster-frame">
+          <h3 data-i18n="bigKnives">Big Knives</h3>
+          <div class="cluster cluster1">
+            <label class="product-option">
+              <input type="checkbox" name="product" value="chef.jpg" data-thumb="chef-thumb.jpg" data-name="chef">
+              <img src="chef-thumb.jpg" alt="Chef knife">
+              <span data-i18n="chefKnife">Chef Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="santoku.jpg" data-thumb="santoku-thumb.jpg" data-name="santoku">
+              <img src="santoku-thumb.jpg" alt="Santoku knife">
+              <span data-i18n="santokuKnife">Santoku Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="bread.jpg" data-thumb="bread-thumb.jpg" data-name="bread">
+              <img src="bread-thumb.jpg" alt="Bread knife">
+              <span data-i18n="breadKnife">Bread Knife</span>
+            </label>
+          </div>
+        </div>
+        <div class="cluster-frame">
+          <h3 data-i18n="smallKnives">Small Knives</h3>
+          <div class="cluster cluster2">
+            <label class="product-option">
+              <input type="checkbox" name="product" value="utility.jpg" data-thumb="utility-thumb.jpg" data-name="utility">
+              <img src="utility-thumb.jpg" alt="Utility knife">
+              <span data-i18n="utilityKnife">Utility Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="paring.jpg" data-thumb="paring-thumb.jpg" data-name="paring">
+              <img src="paring-thumb.jpg" alt="Paring knife">
+              <span data-i18n="paringKnife">Paring Knife</span>
+            </label>
+          </div>
+        </div>
+        <div class="cluster-frame">
+          <h3 data-i18n="extraBigKnifeAndGadgets">Extra Big Knife and Gadgets</h3>
+          <div class="cluster cluster3">
+            <label class="product-option">
+              <input type="checkbox" name="product" value="chopper.jpg" data-thumb="chopper-thumb.jpg" data-name="chopper">
+              <img src="chopper-thumb.jpg" alt="Chopper knife">
+              <span data-i18n="chopperKnife">Chopper Knife</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="tongs.jpg" data-thumb="tongs-thumb.jpg" data-name="tongs">
+              <img src="tongs-thumb.jpg" alt="Tongs">
+              <span data-i18n="tongs">Tongs</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="scissors.jpg" data-thumb="scissors-thumb.jpg" data-name="scissors">
+              <img src="scissors-thumb.jpg" alt="Scissors">
+              <span data-i18n="scissors">Scissors</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="chopping-board.jpg" data-thumb="chopping-board-thumb.jpg" data-name="choppingBoard">
+              <img src="chopping-board-thumb.jpg" alt="Chopping board">
+              <span data-i18n="choppingBoard">Chopping Board</span>
+            </label>
+            <label class="product-option">
+              <input type="checkbox" name="product" value="turner.jpg" data-thumb="turner-thumb.jpg" data-name="turner">
+              <img src="turner-thumb.jpg" alt="Turner">
+              <span data-i18n="turner">Turner</span>
+            </label>
+          </div>
+        </div>
       </div>
       <div class="navigation">
         <button id="next-1"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
@@ -122,6 +137,9 @@
       <div class="navigation">
         <button id="back-4"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
         <button id="download-all"><span class="material-symbols-outlined">download_2</span></button>
+        <button id="submit-order" class="control-btn" style="margin-left: 10px;">
+          <span class="material-symbols-outlined">send</span>
+        </button>
       </div>
     </div>
     
@@ -153,7 +171,6 @@
           <div class="button-desc">
             <h4 data-i18n="backCustomize"></h4>
             <p data-i18n="backCustomizeOn"></p>
-            <p data-i18n="backCustomizeOff"></p>
           </div>
         </div>
         <div class="button-item">
@@ -189,11 +206,10 @@
           </div>
         </div>
         <div class="button-item">
-          <button class="guide-button" data-i18n="nextGuide"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
+          <button class="guide-button"><span class="material-symbols-outlined">arrow_forward_ios</span></button>
           <div class="button-desc">
             <h4 data-i18n="backPreview"></h4>
             <p data-i18n="backPreviewOn"></p>
-            <p data-i18n="backPreviewOff"></p>
           </div>
         </div>
         <div class="button-item">
@@ -201,7 +217,6 @@
           <div class="button-desc">
             <h4 data-i18n="downloadGuide"></h4>
             <p data-i18n="downloadOn"></p>
-            <p data-i18n="downloadOff"></p>
           </div>
         </div>
       </div>
@@ -221,6 +236,33 @@
       </div>
     </div>
   </div>
+
+
+  <!-- submit-modal -->
+  <div id="submit-modal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 400px; padding: 20px; background: white; border-radius: 8px; color: black;">
+    <h3 data-i18n="submitTitle">Submit Design</h3>
+    <p data-i18n="submitDesc" style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+      Submit your design directly to us for production. Please provide your Email and Order Number so we can match it with your purchase.
+    </p>
+    
+    <div style="margin-bottom: 10px;">
+      <label for="order-email" style="display:block; margin-bottom:5px;" data-i18n="emailLabel">Email</label>
+      <input type="email" id="order-email" style="width: 100%; padding: 8px; box-sizing: border-box;" required>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label for="order-no" style="display:block; margin-bottom:5px;" data-i18n="orderNoLabel">Order Number</label>
+      <input type="text" id="order-no" style="width: 100%; padding: 8px; box-sizing: border-box;" required>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button id="cancel-submit" style="padding: 8px 16px; cursor: pointer;">Cancel</button>
+      <button id="confirm-submit" style="padding: 8px 16px; background: #000; color: #fff; border: none; cursor: pointer;">Send</button>
+    </div>
+    <p id="submit-status" style="margin-top: 10px; font-size: 0.8rem;"></p>
+  </div>
+</div>
 
   <script src="translations.js"></script>
   <script src="script.js"></script>

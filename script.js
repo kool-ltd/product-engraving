@@ -1,5 +1,37 @@
-/* LANGUAGE TOGGLE */
+/* LANGUAGE TOGGLE & TRANSLATIONS EXTENSION */
 let currentLang = 'en';
+
+// Merge new translations into your existing object (Assuming 'translations' exists globally)
+// If 'translations' is defined inside this file, add these keys to it.
+const extraTranslations = {
+  en: {
+    submitTitle: "Submit Design",
+    submitDesc: "Submit your design directly to us for production. Please provide your Email and Order Number so we can match it with your purchase.",
+    emailLabel: "Email Address",
+    orderNoLabel: "Order Number",
+    submitSuccess: "Design submitted successfully!",
+    submitError: "Error submitting design. Please try downloading instead.",
+    sending: "Sending...",
+    restoreData: "Restoring your previous session..."
+  },
+  'zh-hk': {
+    submitTitle: "提交設計",
+    submitDesc: "直接提交您的設計給我們進行製作。請提供您的電子郵件和訂單編號，以便我們核對您的購買記錄。",
+    emailLabel: "電子郵件",
+    orderNoLabel: "訂單編號",
+    submitSuccess: "設計提交成功！",
+    submitError: "提交失敗，請嘗試下載文件。",
+    sending: "發送中...",
+    restoreData: "正在恢復您之前的設計..."
+  }
+};
+
+// Helper to merge translations safely
+function getTrans(key) {
+  if (translations[currentLang][key]) return translations[currentLang][key];
+  if (extraTranslations[currentLang][key]) return extraTranslations[currentLang][key];
+  return key;
+}
 
 function updateLanguage(lang) {
   currentLang = lang;
@@ -12,22 +44,27 @@ function updateLanguage(lang) {
   document.getElementById('title').textContent = translations[lang].title;
   const subtitle = document.getElementById('subtitle');
   subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
+  
+  // Update standard i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (translations[lang][key]) {
+    const text = getTrans(key); // Use helper to check both lists
+    if (text) {
       if (el.tagName === 'INPUT' && el.type === 'text') {
-        el.placeholder = translations[lang][key];
-      } else if (el.id !== 'back-2' && el.id !== 'back-3' && el.id !== 'back-4' &&
-                 el.id !== 'edit-zone' && el.id !== 'resize-controls' &&
-                 el.id !== 'sync-fonts' && el.id !== 'auto-align' &&
-                 el.id !== 'next-1' && el.id !== 'next-2' && el.id !== 'next-3' &&
-                 el.id !== 'download-all') {
-        el.innerHTML = translations[lang][key];
+        el.placeholder = text;
+      } else if (!['back-2', 'back-3', 'back-4', 'edit-zone', 'resize-controls', 'sync-fonts', 'auto-align', 'next-1', 'next-2', 'next-3', 'download-all'].includes(el.id)) {
+        el.innerHTML = text;
       }
     }
   });
 
   document.getElementById('alert-close').textContent = translations[lang].close;
+  
+  // Update Modal Buttons
+  const cancelBtn = document.getElementById('cancel-submit');
+  const confirmBtn = document.getElementById('confirm-submit');
+  if(cancelBtn) cancelBtn.textContent = lang === 'en' ? 'Cancel' : '取消';
+  if(confirmBtn) confirmBtn.textContent = lang === 'en' ? 'Send' : '發送';
 
   bigKnifeContent.innerHTML = '';
   smallKnifeContent.innerHTML = '';
@@ -47,6 +84,7 @@ document.addEventListener('click', e => {
   if (e.target.id === 'lang-toggle' || e.target.closest('#lang-toggle')) {
     console.log('Language toggle clicked');
     updateLanguage(currentLang === 'en' ? 'zh-hk' : 'en');
+    saveStateToLocal(); // Save lang preference
   }
 });
 
@@ -95,8 +133,136 @@ const back4Btn = document.getElementById('back-4');
 const back5Btn = document.getElementById('back-5');
 const next5Btn = document.getElementById('next-5');
 const downloadBtn = document.getElementById('download-all');
+const submitBtn = document.getElementById('submit-order'); // NEW
 const modal = document.getElementById('modal');
 const modalImage = document.getElementById('modal-image');
+
+/* LOCAL STORAGE HELPERS */
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+const saveStateToLocal = debounce(() => {
+  const dataToSave = {
+    lang: currentLang,
+    selectedProducts: Array.from(productPicker.querySelectorAll('input:checked')).map(i => i.dataset.name),
+    sameContent: sameContent,
+    sharedText: sharedText,
+    syncFonts: syncFonts,
+    alignRightBig: alignRightBig,
+    alignRightSmall: alignRightSmall,
+    knifeStates: {}
+  };
+
+  Object.keys(state).forEach(k => {
+    const s = state[k];
+    dataToSave.knifeStates[k] = {
+      text: s.textInput ? s.textInput.value : '',
+      font: s.fontSel ? s.fontSel.value : '',
+      weight: s.weightSel ? s.weightSel.value : '400',
+      textRightX: s.textRightX,
+      posY: s.pos.y,
+      textScale: s.textScale,
+      fullWidth: s.full.width, // Save ref dimensions to calculate relative pos if needed
+      fullHeight: s.full.height
+    };
+  });
+
+  localStorage.setItem('knifeCustomizerData', JSON.stringify(dataToSave));
+  console.log('State saved to cache');
+}, 1000);
+
+async function loadStateFromLocal() {
+  const saved = localStorage.getItem('knifeCustomizerData');
+  if (!saved) return;
+
+  try {
+    const data = JSON.parse(saved);
+    console.log('Restoring state...');
+    
+    // 1. Restore Language
+    if (data.lang && data.lang !== currentLang) {
+      updateLanguage(data.lang);
+    }
+
+    // 2. Restore Global Settings
+    if (typeof data.sameContent !== 'undefined') sameContent = data.sameContent;
+    if (typeof data.sharedText !== 'undefined') sharedText = data.sharedText;
+    if (typeof data.syncFonts !== 'undefined') syncFonts = data.syncFonts;
+    if (typeof data.alignRightBig !== 'undefined') alignRightBig = data.alignRightBig;
+    if (typeof data.alignRightSmall !== 'undefined') alignRightSmall = data.alignRightSmall;
+
+    // 3. Restore Product Selection
+    if (data.selectedProducts && data.selectedProducts.length > 0) {
+      // Uncheck all first
+      productPicker.querySelectorAll('input').forEach(i => i.checked = false);
+      
+      data.selectedProducts.forEach(name => {
+        const input = productPicker.querySelector(`input[data-name="${name}"]`);
+        if (input) input.checked = true;
+      });
+
+      // 4. Trigger Navigation logic to build UI (Simulate Next Click)
+      // We manually call the logic inside next1Btn without the click event
+      const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+      if (selected.length === 0) return;
+
+      Object.keys(state).forEach(knife => delete state[knife]);
+      firstSelectedKnife = selected[0].dataset.name;
+
+      // Determine where to go (logic copied from next1Btn)
+      const hasBig = hasBigKnives(selected);
+      const hasSmall = hasSmallKnives(selected);
+      const hasOthers = hasOtherItems(selected);
+
+      // Initialize knives based on selection
+      const promises = [];
+      for (const input of selected) {
+        const knife = input.dataset.name;
+        promises.push(initializeKnife(knife).then(() => {
+          // 5. Apply specific knife state after initialization
+          if (data.knifeStates && data.knifeStates[knife]) {
+            const ks = data.knifeStates[knife];
+            const s = state[knife];
+            
+            if (s.textInput) s.textInput.value = ks.text;
+            if (s.fontSel) s.fontSel.value = ks.font;
+            if (s.weightSel) s.weightSel.value = ks.weight;
+            
+            // Restore positions
+            s.textRightX = ks.textRightX;
+            s.pos.y = ks.posY;
+            s.textScale = ks.textScale || 1;
+
+            // Trigger updates
+            s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value);
+            invalidateTextCache(knife);
+            if (!s.pendingDraw) {
+              s.pendingDraw = true;
+              requestAnimationFrame(() => draw(knife));
+            }
+          }
+        }));
+      }
+      
+      await Promise.all(promises);
+
+      // Go to the correct page
+      if (hasBig) switchPage(1, 2);
+      else if (hasSmall) switchPage(1, 3);
+      else if (hasOthers) switchPage(1, 5);
+      
+      updateProgressSection();
+    }
+  } catch (e) {
+    console.error("Failed to load save state", e);
+    localStorage.removeItem('knifeCustomizerData'); // Clear corrupt data
+  }
+}
 
 /* HELPERS */
 function loadImage(src) {
@@ -159,17 +325,13 @@ function switchPage(from, to) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Show/hide auto-align button based on page
   const isPage5 = to === '5' || to === 5 || String(to) === '5' || pages[5].classList.contains('active');
-  console.log(`switchPage: to=${to}, isPage5=${isPage5}, active page=${Object.keys(pages).find(p => pages[p].classList.contains('active'))}`);
   const autoAlignButtons = document.querySelectorAll('#auto-align');
-  console.log(`switchPage: found ${autoAlignButtons.length} auto-align buttons`);
   autoAlignButtons.forEach(btn => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
-    // console.log(`Set display=${isPage5 ? 'none' : ''} for auto-align button ID=${btn.id}`);
   });
   // Ensure sync-fonts buttons are visible
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.style.setProperty('display', '', 'important');
-    // console.log(`Set display='' for sync-fonts button ID=${btn.id}`);
   });
   setTimeout(() => { 
     isNavigating = false;
@@ -350,6 +512,9 @@ function draw(knife) {
     s.bbox.style.display = 'none';
   }
   s.pendingDraw = false;
+  
+  // Save state on draw (debounced)
+  saveStateToLocal();
 }
 
 function invalidateCache(knife) {
@@ -404,6 +569,7 @@ function debounceToggle(fn, id, icon) {
     document.querySelectorAll(`#${id}`).forEach(btn => {
       btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
     });
+    saveStateToLocal(); // Save toggle state
   };
 }
 
@@ -494,12 +660,12 @@ function toggleAlignment(knife) {
       if (isBigKnife) alignRightBig = true;
       else if (isSmallKnife) alignRightSmall = true;
     }
-    // Do not enable alignRightOthers for page 5
   }
 
   document.querySelectorAll('#auto-align').forEach(btn => {
     btn.classList.toggle('off', isBigKnife ? !alignRightBig : isSmallKnife ? !alignRightSmall : !alignRightOthers);
   });
+  saveStateToLocal();
 }
 
 async function generatePreviews() {
@@ -601,6 +767,7 @@ next1Btn.addEventListener('click', async () => {
       }
     }
   }
+  saveStateToLocal();
 });
 
 back2Btn.addEventListener('click', () => {
@@ -632,6 +799,7 @@ next2Btn.addEventListener('click', async () => {
     switchPage(2, 4);
     await generatePreviews();
   }
+  saveStateToLocal();
 });
 
 back3Btn.addEventListener('click', () => {
@@ -660,6 +828,7 @@ next3Btn.addEventListener('click', async () => {
     switchPage(3, 4);
     await generatePreviews();
   }
+  saveStateToLocal();
 });
 
 back4Btn.addEventListener('click', () => {
@@ -695,6 +864,7 @@ next5Btn.addEventListener('click', async () => {
   if (isNavigating) return;
   switchPage(5, 4);
   await generatePreviews();
+  saveStateToLocal();
 });
 
 document.addEventListener('click', e => {
@@ -743,7 +913,7 @@ async function initializeKnife(knife) {
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
   const isOtherItem = knives.others.includes(knife);
-  
+   
   // Set initial font family and weight
   let initialFont = lastBigKnifeFont;
   let initialWeight = '400';
@@ -803,6 +973,7 @@ async function initializeKnife(knife) {
       }
     }
     lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+    saveStateToLocal();
   });
 
   s.weightSel.addEventListener('input', () => {
@@ -816,6 +987,7 @@ async function initializeKnife(knife) {
       }
       syncFontAndText(knife);
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+      saveStateToLocal();
     }).catch(err => {
       console.warn(`Failed to load font: ${fontString}`, err);
       s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
@@ -837,6 +1009,7 @@ async function initializeKnife(knife) {
       }
       syncFontAndText(knife);
       lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+      saveStateToLocal();
     });
   });
 
@@ -857,6 +1030,7 @@ async function initializeKnife(knife) {
       } else {
         sharedText = '';
       }
+      saveStateToLocal();
     });
   }
 
@@ -904,6 +1078,7 @@ async function initializeKnife(knife) {
     window.addEventListener(evt, e => {
       if (e.pointerId === s.dragStart.id) {
         s.dragging = false;
+        saveStateToLocal(); // Save after drag
       }
     })
   );
@@ -1010,6 +1185,7 @@ async function initializeKnife(knife) {
     window.addEventListener(evt, e => {
       if (e.pointerId === s.resizeStart.id) {
         s.resizing = false;
+        saveStateToLocal(); // Save after resize
       }
     })
   );
@@ -1086,6 +1262,7 @@ async function initializeKnife(knife) {
         delete s.pointers[e.pointerId];
         if (Object.keys(s.pointers).length < 2) {
           s.pinch = false;
+          saveStateToLocal(); // Save after pinch
         }
       }
     })
@@ -1100,7 +1277,8 @@ async function initializeKnife(knife) {
   });
 }
 
-downloadBtn.addEventListener('click', async () => {
+// Helper to generate the zip file blob (used by both download and submit)
+async function generateZipBlob() {
   const zip = new JSZip();
   for (const knife of Object.keys(state)) {
     const s = state[knife];
@@ -1136,7 +1314,11 @@ downloadBtn.addEventListener('click', async () => {
     const textUrl = textCanvas.toDataURL('image/png');
     folder.file(`${knife}-text.png`, textUrl.split(',')[1], { base64: true });
   }
-  const content = await zip.generateAsync({ type: 'blob' });
+  return await zip.generateAsync({ type: 'blob' });
+}
+
+downloadBtn.addEventListener('click', async () => {
+  const content = await generateZipBlob();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(content);
   a.download = 'custom-knives.zip';
@@ -1144,7 +1326,81 @@ downloadBtn.addEventListener('click', async () => {
   URL.revokeObjectURL(a.href);
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+// SUBMIT LOGIC
+const submitModal = document.getElementById('submit-modal');
+const cancelSubmitBtn = document.getElementById('cancel-submit');
+const confirmSubmitBtn = document.getElementById('confirm-submit');
+const submitStatus = document.getElementById('submit-status');
+
+if (submitBtn) {
+  submitBtn.addEventListener('click', () => {
+    submitModal.style.display = 'flex';
+    submitStatus.textContent = '';
+  });
+}
+
+if (cancelSubmitBtn) {
+  cancelSubmitBtn.addEventListener('click', () => {
+    submitModal.style.display = 'none';
+  });
+}
+
+if (confirmSubmitBtn) {
+  confirmSubmitBtn.addEventListener('click', async () => {
+    const email = document.getElementById('order-email').value;
+    const orderNo = document.getElementById('order-no').value;
+
+    if (!email || !orderNo) {
+      submitStatus.textContent = "Please fill in all fields.";
+      submitStatus.style.color = "red";
+      return;
+    }
+
+    submitStatus.textContent = getTrans('sending');
+    submitStatus.style.color = "blue";
+    confirmSubmitBtn.disabled = true;
+
+    try {
+      const zipBlob = await generateZipBlob();
+      
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('orderNo', orderNo);
+      // Formspree requires file uploads to be enabled on your plan
+      formData.append('attachment', zipBlob, `order-${orderNo}.zip`);
+
+      // REPLACE {YOUR_FORM_ID} WITH YOUR ACTUAL FORMSPREE ID
+      const response = await fetch('https://formspree.io/f/xovgndbp', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        submitStatus.textContent = getTrans('submitSuccess');
+        submitStatus.style.color = "green";
+        setTimeout(() => {
+          submitModal.style.display = 'none';
+          confirmSubmitBtn.disabled = false;
+          // Clear inputs
+          document.getElementById('order-email').value = '';
+          document.getElementById('order-no').value = '';
+        }, 2000);
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (error) {
+      console.error(error);
+      submitStatus.textContent = getTrans('submitError');
+      submitStatus.style.color = "red";
+      confirmSubmitBtn.disabled = false;
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
   updateLanguage(currentLang);
   const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
   console.log(`DOMContentLoaded: active page=${activePage}`);
@@ -1156,17 +1412,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.classList.toggle('off', !syncFonts);
-    // btn.style.setProperty('display', '', 'important'); // Always visible
-    // console.log(`DOMContentLoaded: Set sync-fonts display='' for ID=${btn.id}`);
   });
   document.querySelectorAll('#auto-align').forEach(btn => {
     const isPage5 = activePage === '5' || pages[5].classList.contains('active');
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
-    console.log(`DOMContentLoaded: Set auto-align display=${isPage5 ? 'none' : ''} for ID=${btn.id}`);
     if (!isPage5) {
-      btn.classList.remove('off'); // Ensure no off class on pages 2 and 3
+      btn.classList.remove('off'); 
     }
   });
+
+  // RESTORE SESSION
+  await loadStateFromLocal();
 });
 
 function updateProgressSection() {
