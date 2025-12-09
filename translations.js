@@ -61,15 +61,6 @@ const translations = {
     downloadOn: "Downloads a ZIP file with preview and text-only images for all customized items.",
     noSelection: "Please select at least one item.",
     close: "Close",
-    bigKnives: "Big Knives",
-    smallKnives: "Small Knives",
-    otherItems: "Other Items",
-    submitOrder: "Submit Your Design",
-    submitOrderDesc: "After downloading the ZIP, click here to send us your design with your email and order number so we can make your custom knives!",
-    pleaseDownloadFirst: "Please download the ZIP file first!",
-    enterEmail: "Your email address",
-    enterOrderNo: "Your Order Number",
-    submitting: "Submitting your design... Thank you!"
     chooseKnives: "Choose your items",
     disclaimerTitle: "Disclaimer",
     disclaimerText: `
@@ -144,15 +135,6 @@ const translations = {
     downloadOn: "下載包含所有定制刀具預覽和純文字圖片的ZIP文件。",
     noSelection: "請至少選擇一件產品。",
     close: "關閉",
-    bigKnives: "大刀",
-    smallKnives: "小刀",
-    otherItems: "其他物品",
-    submitOrder: "提交設計",
-    submitOrderDesc: "下載 ZIP 後，請點擊此按鈕並輸入電郵及訂單編號，我們會為您製作刻字刀具！",
-    pleaseDownloadFirst: "請先下載 ZIP 檔案！",
-    enterEmail: "請輸入您的電郵地址",
-    enterOrderNo: "請輸入您的訂單編號",
-    submitting: "正在提交設計… 感謝您！"
     chooseKnives: "選擇你的產品",
     disclaimerTitle: "免責聲明",
     disclaimerText: `
