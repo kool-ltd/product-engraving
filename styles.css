@@ -54,51 +54,46 @@ h3 {
 }
 
 #product-picker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding-bottom: 4rem;
 }
 
 .product-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  height: 200px;
-  width: 170px;
-  margin: 10px;
+  position: relative;
   text-align: center;
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 5px;
-  padding: 5px;
-  transition: border-color 0.3s;
+  height: 210px;
+  display: grid;
+  align-items: center;
+  justify-content: center;
 }
 
-.product-option:has(input:checked) {
-  border-color: var(--accent);
+.product-option input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .product-option img {
   max-width: 100%;
-  max-height: 170px;
+  max-height: 210px;
   object-fit: contain;
-  flex-grow: 1;
-  border: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
   display: block;
 }
 
-.product-option span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .9rem;
-  margin-top: 10px;
-  height: 40px;
+.product-option input:checked+img {
+  border-color: var(--accent);
+  border-width: medium;
 }
 
-.product-option input {
-  display: none;
+.product-option span {
+  display: block;
+  font-size: .9rem;
+  margin-top: .25rem;
 }
 
 .controls {
@@ -328,16 +323,16 @@ button.off {
   color: #fff;
   font-size: 1rem;
 }
-#title{
-  margin: 60px auto 0px;
-}
 
 #lang-toggle {
-  display: block;
-  margin: 40px auto 0px;
-  padding: 10px 25px;
-  cursor: pointer;
+  display: none;
+  margin: 0 auto 1rem;
+  padding: .5rem 1rem;
   text-align: center;
+}
+
+#page-1.active #lang-toggle {
+  display: block;
 }
 
 .knife-section p {
@@ -509,28 +504,6 @@ div#page-1 {
   font-size: 1rem;
   display: flex;
   align-items: center;
-}
-
-.cluster-frame {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 20px;
-  width: 80%;
-  max-width: 800px;
-  border-radius: 5px;
-  background-color: #fff;
-}
-
-.cluster-frame h3 {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.cluster {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 @media (max-width: 600px) {
