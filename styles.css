@@ -515,6 +515,10 @@ div#page-1 {
   color: #6f6f6f;
 }
 
+#title {
+  margin-top: 3rem;
+}
+
 @media (max-width: 600px) {
   .container {
     padding: var(--mpad);
