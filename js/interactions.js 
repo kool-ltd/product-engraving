@@ -1,0 +1,52 @@
+import { state, appConfig } from './state.js';
+import { toFullCoords, hitTest, measureText } from './helpers.js';
+import { draw, invalidateTextCache } from './canvas-engine.js';
+import { KNIVES } from './constants.js';
+
+export function handlePointerDown(knife, e) {
+  const s = state[knife];
+  const f = toFullCoords(s.view, s.full.width, s.full.height, e.clientX, e.clientY);
+  
+  if (!hitTest(f.x, f.y, s.pos.y, s.baseDims, s.textScale, s.textRightX) || s.resizing) return;
+  
+  s.dragging = true;
+  s.dragStart = { id: e.pointerId, dx: f.x - s.textRightX, dy: f.y - s.pos.y };
+}
+
+export function handlePointerMove(knife, e) {
+  const s = state[knife];
+  if (!s.dragging || e.pointerId !== s.dragStart.id) return;
+
+  const f = toFullCoords(s.view, s.full.width, s.full.height, e.clientX, e.clientY);
+  s.textRightX = f.x - s.dragStart.dx;
+  s.pos.y = f.y - s.dragStart.dy;
+
+  syncGroupPosition(knife);
+  
+  invalidateTextCache(knife);
+  if (!s.pendingDraw) {
+    s.pendingDraw = true;
+    requestAnimationFrame(() => draw(knife));
+  }
+}
+
+function syncGroupPosition(sourceKnife) {
+  const isBig = KNIVES.big.includes(sourceKnife);
+  const isSmall = KNIVES.small.includes(sourceKnife);
+  const alignActive = isBig ? appConfig.alignRightBig : (isSmall ? appConfig.alignRightSmall : appConfig.alignRightOthers);
+
+  if (alignActive) {
+    Object.keys(state).forEach(k => {
+      if (k === sourceKnife) return;
+      if ((isBig && KNIVES.big.includes(k)) || (isSmall && KNIVES.small.includes(k))) {
+        state[k].textRightX = state[sourceKnife].textRightX;
+        state[k].pos.y = state[sourceKnife].pos.y;
+        invalidateTextCache(k);
+        if (!state[k].pendingDraw) {
+          state[k].pendingDraw = true;
+          requestAnimationFrame(() => draw(k));
+        }
+      }
+    });
+  }
+}
