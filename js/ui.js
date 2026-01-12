@@ -42,7 +42,7 @@ export function updateLanguage(lang) {
 
   document.getElementById('title').textContent = TRANSLATIONS[lang].title;
   const subtitle = document.getElementById('subtitle');
-  subtitle.innerHTML = `${TRANSLATIONS[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${TRANSLATIONS[lang].subtitleAfter}`;
+  subtitle.innerHTML = `${TRANSLATIONS[lang].subtitle} <img src="/images/kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${TRANSLATIONS[lang].subtitleAfter}`;
   
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
@@ -162,4 +162,24 @@ export function createCanvasSection(knife) {
   s.textCacheCanvas = document.createElement('canvas');
   s.textCacheCtx = s.textCacheCanvas.getContext('2d');
   s.previewCanvas = document.createElement('canvas');
+}
+
+export function generatePreviewImages() {
+  const container = document.getElementById('preview-content');
+  if (!container) return;
+  container.innerHTML = ''; // Clear previous
+
+  Object.keys(canvasState).forEach(knife => {
+    const state = canvasState[knife];
+    const wrapper = document.createElement('div');
+    wrapper.className = 'preview-item';
+    
+    // Create an image from the 'full' high-res canvas
+    const img = new Image();
+    img.src = state.full.toDataURL('image/png');
+    img.className = 'w-full h-auto border rounded';
+    
+    wrapper.appendChild(img);
+    container.appendChild(wrapper);
+  });
 }

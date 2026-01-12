@@ -1,6 +1,6 @@
 /* js/main.js */
 import { appState, resetCanvasState } from './state.js';
-import { updateLanguage, createCanvasSection, switchPage } from './ui.js';
+import { updateLanguage, createCanvasSection, switchPage, updateProgressSection } from './ui.js';
 import { initGlobalEvents, initializeKnifeLogic } from './events.js';
 import { hasBigKnives, hasSmallKnives, hasOtherItems } from './utils.js';
 import { KNIVES } from './config.js';
