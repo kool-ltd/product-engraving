@@ -11,7 +11,7 @@ function updateLanguage(lang) {
 
   document.getElementById('title').textContent = translations[lang].title;
   const subtitle = document.getElementById('subtitle');
-  subtitle.innerHTML = `${translations[lang].subtitle} <img src="kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
+  subtitle.innerHTML = `${translations[lang].subtitle} <img src="/images/kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (translations[lang][key]) {
@@ -29,6 +29,9 @@ function updateLanguage(lang) {
 
   document.getElementById('alert-close').textContent = translations[lang].close;
 
+  // FIX: Clear old state to prevent duplicate listeners when recreating sections
+  Object.keys(state).forEach(knife => delete state[knife]);
+
   bigKnifeContent.innerHTML = '';
   smallKnifeContent.innerHTML = '';
   otherContent.innerHTML = '';
@@ -41,6 +44,8 @@ function updateLanguage(lang) {
   if (pages[4].classList.contains('active')) {
     generatePreviews();
   }
+
+  updateProgressSection();
 }
 
 document.addEventListener('click', e => {
@@ -50,9 +55,9 @@ document.addEventListener('click', e => {
   }
 });
 
-/* PERSISTENCE - NEW */
+/* PERSISTENCE - UPDATED */
 const STORAGE_KEY = 'knifeEngravingState_v1';
-let persistedSettings = {}; // temporary holder for restored per-item settings
+let persistedSettings = {};
 
 function saveState() {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'))
@@ -71,6 +76,8 @@ function saveState() {
     };
   });
 
+  const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1';
+
   const data = {
     lang: currentLang,
     selected,
@@ -86,31 +93,28 @@ function saveState() {
 
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return false;
+  if (!raw) return null;
 
   try {
     const data = JSON.parse(raw);
 
-    // Restore globals
     currentLang = data.lang || 'en';
     sameContent = data.sameContent !== undefined ? data.sameContent : true;
     syncFonts = data.syncFonts !== undefined ? data.syncFonts : true;
     showEditZone = data.showEditZone !== undefined ? data.showEditZone : true;
     showResizeControls = data.showResizeControls !== undefined ? data.showResizeControls : true;
 
-    // Store per-item settings for later application
     persistedSettings = data.settings || {};
 
-    // Restore selections on page 1
     document.querySelectorAll('#product-picker input[type="checkbox"]').forEach(cb => {
       cb.checked = data.selected.includes(cb.dataset.name);
     });
 
-    return true;
+    return data;
   } catch (e) {
     console.error('Failed to load saved state', e);
     localStorage.removeItem(STORAGE_KEY);
-    return false;
+    return null;
   }
 }
 
@@ -214,25 +218,25 @@ function hasOtherItems(selected) {
   return selected.some(input => knives.others.includes(input.dataset.name));
 }
 
+/* switchPage – added saveState() */
 function switchPage(from, to) {
   if (isNavigating) return;
   isNavigating = true;
-  console.log(`switchPage called: from=${from}, to=${to}, typeof to=${typeof to}`);
+  console.log(`switchPage called: from=${from}, to=${to}`);
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  // Show/hide auto-align button based on page
+
   const isPage5 = to === '5' || to === 5 || String(to) === '5' || pages[5].classList.contains('active');
-  console.log(`switchPage: to=${to}, isPage5=${isPage5}, active page=${Object.keys(pages).find(p => pages[p].classList.contains('active'))}`);
-  const autoAlignButtons = document.querySelectorAll('#auto-align');
-  console.log(`switchPage: found ${autoAlignButtons.length} auto-align buttons`);
-  autoAlignButtons.forEach(btn => {
+  document.querySelectorAll('#auto-align').forEach(btn => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
   });
-  // Ensure sync-fonts buttons are visible
   document.querySelectorAll('#sync-fonts').forEach(btn => {
     btn.style.setProperty('display', '', 'important');
   });
+
+  saveState(); // NEW: Save the new current page
+
   setTimeout(() => {
     isNavigating = false;
     updateProgressSection();
@@ -1287,32 +1291,45 @@ downloadBtn.addEventListener('click', async () => {
   persistedSettings = {};
 });
 
-/* DOM LOADED - with loadState */
-document.addEventListener('DOMContentLoaded', () => {
-  loadState();  // NEW: Load persisted state first
+/* DOMCONTENTLOADED – BIG FIX FOR REFRESH RESTORATION */
+document.addEventListener('DOMContentLoaded', async () => {
+  const loadedData = loadState();
 
-  updateLanguage(currentLang);  // Re-apply language (in case restored)
+  updateLanguage(currentLang);
 
-  const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
-  console.log(`DOMContentLoaded: active page=${activePage}`);
-
-  // Restore toggle button states
-  document.querySelectorAll('#edit-zone').forEach(btn => {
-    btn.classList.toggle('off', !showEditZone);
-  });
-  document.querySelectorAll('#resize-controls').forEach(btn => {
-    btn.classList.toggle('off', !showResizeControls);
-  });
-  document.querySelectorAll('#sync-fonts').forEach(btn => {
-    btn.classList.toggle('off', !syncFonts);
-  });
+  // Restore toggle button classes
+  document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.toggle('off', !showEditZone));
+  document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
+  document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
   document.querySelectorAll('#auto-align').forEach(btn => {
-    const isPage5 = activePage === '5' || pages[5].classList.contains('active');
+    const isPage5 = pages[5].classList.contains('active');
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
-    if (!isPage5) {
-      btn.classList.remove('off');
-    }
+    if (!isPage5) btn.classList.remove('off');
   });
 
   updateProgressSection();
+
+  // NEW: Full restoration on refresh if there was saved data
+  if (loadedData && loadedData.selected && loadedData.selected.length > 0) {
+    // Clear any existing content/state
+    bigKnifeContent.innerHTML = '';
+    smallKnifeContent.innerHTML = '';
+    otherContent.innerHTML = '';
+    Object.keys(state).forEach(k => delete state[k]);
+
+    // Recreate all sections (restores text/font/weight)
+    loadedData.selected.forEach(knife => createCanvasSection(knife));
+
+    // Load images + restore position/scale for all knives
+    await Promise.all(loadedData.selected.map(knife => initializeKnife(knife)));
+
+    // Switch to the saved page
+    const savedPage = loadedData.currentPage || '1';
+    switchPage('1', savedPage);
+
+    // If we restored to preview page, generate previews
+    if (savedPage === '4') {
+      generatePreviews();
+    }
+  }
 });
