@@ -1,4 +1,5 @@
 import { appConfig, elements, state } from './state.js';
+import { translations } from './translations.js';
 // Note: translations is assumed to be globally available from translations.js
 // or you can import it if converted to a module.
 
