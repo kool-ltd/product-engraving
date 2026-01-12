@@ -1,5 +1,5 @@
 import { state, appConfig, elements } from './state.js';
-import { KNIVES, FONT_WEIGHTS, TOGGLE_DEBOUNCE } from './constants.js';
+import { KNIVES, TOGGLE_DEBOUNCE } from './constants.js';
 import { updateLanguage, translations } from './language.js';
 import { switchPage, updateProgressSection } from './navigation.js';
 import { loadImage, fitInBox, measureText, toFullCoords } from './helpers.js';
