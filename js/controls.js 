@@ -1,0 +1,80 @@
+/* FEATURE CONTROLS */
+function syncFontAndText(knife) {
+  if (!syncFonts) return;
+  const refState = state[knife];
+  const isBigKnife = knives.big.includes(knife);
+  const isSmallKnife = knives.small.includes(knife);
+  const isOtherItem = knives.others.includes(knife);
+
+  Object.keys(state).forEach(k => {
+    if (k !== knife && 
+        ((isBigKnife && knives.big.includes(k)) || 
+         (isSmallKnife && knives.small.includes(k)) || 
+         (isOtherItem && knives.others.includes(k)))) {
+      state[k].fontSel.value = refState.fontSel.value;
+      state[k].weightSel.value = refState.weightSel.value;
+      if (!isOtherItem) {
+        state[k].baseFont = refState.baseFont * refState.textScale;
+        state[k].textScale = 1;
+      }
+      state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
+      invalidateTextCache(k);
+      if (!state[k].pendingDraw) {
+        state[k].pendingDraw = true;
+        requestAnimationFrame(() => draw(k));
+      }
+    }
+  });
+  if (isBigKnife) lastBigKnifeFont = refState.fontSel.value;
+}
+
+function debounceToggle(fn, id, icon) {
+  return () => {
+    const now = Date.now();
+    if (now - lastToggleTime < toggleDebounce) return;
+    lastToggleTime = now;
+    fn();
+    document.querySelectorAll(`#${id}`).forEach(btn => {
+      btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+    });
+  };
+}
+
+function toggleEditZone() {
+  showEditZone = !showEditZone;
+  Object.keys(state).forEach(k => { invalidateCache(k); draw(k); });
+  document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.toggle('off', !showEditZone));
+}
+
+function toggleResizeControls() {
+  showResizeControls = !showResizeControls;
+  Object.keys(state).forEach(k => { state[k].boxVisible = showResizeControls; draw(k); });
+  document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
+}
+
+function toggleSyncFonts() {
+  syncFonts = !syncFonts;
+  if (syncFonts) {
+    const big = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
+    if (big) syncFontAndText(big);
+  }
+  document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
+}
+
+function toggleAlignment(knife) {
+  // ... (Paste the content of toggleAlignment function here)
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  if (btn.id === 'edit-zone') debounceToggle(toggleEditZone, 'edit-zone', 'vignette')();
+  if (btn.id === 'resize-controls') debounceToggle(toggleResizeControls, 'resize-controls', 'format_shapes')();
+  if (btn.id === 'sync-fonts') debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
+  if (btn.id === 'auto-align') {
+    const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
+    const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
+                  activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
+    if (knife) debounceToggle(() => toggleAlignment(knife), 'auto-align', 'recenter')();
+  }
+});
