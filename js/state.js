@@ -37,5 +37,26 @@ export const elements = {
   modal: document.getElementById('modal'),
   modalImage: document.getElementById('modal-image'),
   alertModal: document.getElementById('alert-modal'),
-  alertMessage: document.getElementById('alert-message')
+  alertMessage: document.getElementById('alert-message'),
+  langToggle: document.getElementById('lang-toggle'),
+  next1: document.getElementById('next-1'),
+  back2: document.getElementById('back-2'),
+  next2: document.getElementById('next-2'),
+  back3: document.getElementById('back-3'),
+  next3: document.getElementById('next-3'),
+  back4: document.getElementById('back-4'),
+  back5: document.getElementById('back-5'),
+  next5: document.getElementById('next-5'),
+  downloadAll: document.getElementById('download-all'),
+  alertClose: document.getElementById('alert-close'),
+  // Optional: Used only in language.js, but caching for consistency
+  title: document.getElementById('title'),
+  subtitle: document.getElementById('subtitle'),
+  // Additional from main.js (e.g., navigation and preview generation)
+  generatePreview: document.getElementById('generate-preview'),
+  // Toggles (add these if you want to cache them; update IDs if they don't match HTML)
+  syncBig: document.getElementById('sync-big'),  // May need to change to 'auto-align' if that's the real ID
+  syncSmall: document.getElementById('sync-small'),
+  syncOthers: document.getElementById('sync-others'),
+  showZone: document.getElementById('show-zone')  // May need to change to 'edit-zone'
 };

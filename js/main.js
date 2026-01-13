@@ -59,19 +59,19 @@ function setupGlobalListeners() {
   });
 
   // 3. Navigation Buttons for Steps
-  document.getElementById('next-2').onclick = () => {
+  elements.next2.onclick = () => {
     const hasSmall = Object.keys(state).some(k => KNIVES.small.includes(k));
     switchPage(2, hasSmall ? 3 : 5);
   };
-  document.getElementById('back-2').onclick = () => switchPage(2, 1);
-  
-  document.getElementById('next-3').onclick = () => switchPage(3, 5);
-  document.getElementById('back-3').onclick = () => {
+  elements.back2.onclick = () => switchPage(2, 1);
+
+  elements.next3.onclick = () => switchPage(3, 5);
+  elements.back3.onclick = () => {
     const hasBig = Object.keys(state).some(k => KNIVES.big.includes(k));
     switchPage(3, hasBig ? 2 : 1);
   };
 
-  document.getElementById('back-5').onclick = () => {
+  elements.back5.onclick = () => {
     const hasSmall = Object.keys(state).some(k => KNIVES.small.includes(k));
     if (hasSmall) return switchPage(5, 3);
     const hasBig = Object.keys(state).some(k => KNIVES.big.includes(k));
@@ -80,7 +80,7 @@ function setupGlobalListeners() {
   };
 
   // 4. Final Preview Generation
-  document.getElementById('generate-preview').onclick = async () => {
+  elements.generatePreview.onclick = async () => {
     await generatePreviews();
     switchPage(5, 6);
   };
@@ -89,7 +89,7 @@ function setupGlobalListeners() {
   setupToggleListeners();
 
   // 6. Alert Modal Close
-  elements.modalClose.onclick = () => {
+  elements.alertClose.onclick = () => {
     elements.alertModal.style.display = 'none';
   };
 }
@@ -251,7 +251,7 @@ function setupToggleListeners() {
   });
 
   // Edit Zone Overlay Toggle
-  const zoneToggle = document.getElementById('show-zone');
+  const zoneToggle = document.getElementById('edit-zone');
   if (zoneToggle) {
     zoneToggle.addEventListener('change', (e) => {
       appConfig.showEditZone = e.target.checked;
