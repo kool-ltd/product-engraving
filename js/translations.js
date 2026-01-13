@@ -1,4 +1,4 @@
-const translations = {
+export const translations = {
   en: {
     title: "Product Engraving Customiser",
     subtitle: "by",
