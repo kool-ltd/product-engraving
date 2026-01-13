@@ -56,13 +56,53 @@ function toggleSyncFonts() {
   syncFonts = !syncFonts;
   if (syncFonts) {
     const big = lastAdjusted.big || Object.keys(state).find(k => knives.big.includes(k));
+    const small = lastAdjusted.small || Object.keys(state).find(k => knives.small.includes(k));
     if (big) syncFontAndText(big);
+    if (small) syncFontAndText(small);
   }
   document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
 }
 
 function toggleAlignment(knife) {
-  // ... (Paste the content of toggleAlignment function here)
+  const isBigKnife = knives.big.includes(knife);
+  const isSmallKnife = knives.small.includes(knife);
+  const isOtherItem = knives.others.includes(knife);
+  const group = isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others';
+  let alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
+
+  if (alignRight) {
+    // Disable Alignment: Store current positions
+    Object.keys(state).forEach(k => {
+      if ((isBigKnife && knives.big.includes(k)) || (isSmallKnife && knives.small.includes(k)) || (isOtherItem && knives.others.includes(k))) {
+        storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
+      }
+    });
+    if (isBigKnife) alignRightBig = false;
+    else if (isSmallKnife) alignRightSmall = false;
+    else alignRightOthers = false;
+  } else {
+    // Enable Alignment: Sync to the reference knife
+    if (isBigKnife || isSmallKnife) {
+      const lastKnife = lastAdjusted[group] || knife;
+      const refX = state[lastKnife].textRightX;
+      const refY = state[lastKnife].pos.y;
+      Object.keys(state).forEach(k => {
+        if ((isBigKnife && knives.big.includes(k)) || (isSmallKnife && knives.small.includes(k))) {
+          state[k].textRightX = refX;
+          state[k].pos.y = refY;
+          invalidateTextCache(k);
+          draw(k);
+        }
+      });
+      if (isBigKnife) alignRightBig = true;
+      else if (isSmallKnife) alignRightSmall = true;
+    }
+  }
+
+  document.querySelectorAll('#auto-align').forEach(btn => {
+    const currentStatus = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
+    btn.classList.toggle('off', !currentStatus);
+  });
 }
 
 document.addEventListener('click', e => {
@@ -73,8 +113,9 @@ document.addEventListener('click', e => {
   if (btn.id === 'sync-fonts') debounceToggle(toggleSyncFonts, 'sync-fonts', 'format_size')();
   if (btn.id === 'auto-align') {
     const activePage = Object.keys(pages).find(p => pages[p].classList.contains('active'));
-    const knife = activePage === '2' ? Object.keys(state).find(k => knives.big.includes(k)) :
-                  activePage === '3' ? Object.keys(state).find(k => knives.small.includes(k)) : null;
+    let knife;
+    if (activePage === '2') knife = Object.keys(state).find(k => knives.big.includes(k));
+    if (activePage === '3') knife = Object.keys(state).find(k => knives.small.includes(k));
     if (knife) debounceToggle(() => toggleAlignment(knife), 'auto-align', 'recenter')();
   }
 });
