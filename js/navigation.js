@@ -2,8 +2,15 @@
 function switchPage(from, to) {
   if (isNavigating) return;
   isNavigating = true;
+  
   pages[from].classList.remove('active');
   pages[to].classList.add('active');
+  
+  // Fix for Issue #2: Recalculate canvas sizes once the page is visible
+  requestAnimationFrame(() => {
+    resizePageCanvases();
+  });
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
   
   const isPage5 = String(to) === '5';
@@ -15,6 +22,18 @@ function switchPage(from, to) {
     isNavigating = false;
     updateProgressSection();
   }, 100);
+}
+
+function resizePageCanvases() {
+  Object.keys(state).forEach(knife => {
+    const s = state[knife];
+    // Only resize if the canvas is actually inside the currently active page
+    if (s.wrapper.offsetParent !== null) { 
+      fitInBox(s.view, s.img, s.wrapper);
+      invalidateTextCache(knife);
+      draw(knife);
+    }
+  });
 }
 
 function updateProgressSection() {
@@ -41,7 +60,7 @@ function updateProgressSection() {
   });
 }
 
-// Button Event Listeners
+// Event Listeners for Navigation Buttons
 document.getElementById('next-1').addEventListener('click', async () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
   if (selected.length === 0) {
@@ -67,9 +86,19 @@ document.getElementById('next-1').addEventListener('click', async () => {
 document.getElementById('back-2').addEventListener('click', () => switchPage(2, 1));
 document.getElementById('next-2').addEventListener('click', async () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-  if (hasSmallKnives(selected)) switchPage(2, 3);
-  else if (hasOtherItems(selected)) switchPage(2, 5);
-  else { switchPage(2, 4); generatePreviews(); }
+  if (hasSmallKnives(selected)) {
+    switchPage(2, 3);
+    for (const input of selected) {
+      const knife = input.dataset.name;
+      if (knives.small.includes(knife) && !state[knife]) await initializeKnife(knife);
+    }
+  } else if (hasOtherItems(selected)) {
+    switchPage(2, 5);
+    for (const input of selected) {
+      const knife = input.dataset.name;
+      if (knives.others.includes(knife) && !state[knife]) await initializeKnife(knife);
+    }
+  } else { switchPage(2, 4); generatePreviews(); }
 });
 
 document.getElementById('back-3').addEventListener('click', () => {
@@ -79,8 +108,13 @@ document.getElementById('back-3').addEventListener('click', () => {
 
 document.getElementById('next-3').addEventListener('click', async () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
-  if (hasOtherItems(selected)) switchPage(3, 5);
-  else { switchPage(3, 4); generatePreviews(); }
+  if (hasOtherItems(selected)) {
+    switchPage(3, 5);
+    for (const input of selected) {
+      const knife = input.dataset.name;
+      if (knives.others.includes(knife) && !state[knife]) await initializeKnife(knife);
+    }
+  } else { switchPage(3, 4); generatePreviews(); }
 });
 
 document.getElementById('back-4').addEventListener('click', () => {
