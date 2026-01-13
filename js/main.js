@@ -1,6 +1,7 @@
 import { state, appConfig, elements } from './state.js';
 import { KNIVES, TOGGLE_DEBOUNCE } from './constants.js';
-import { updateLanguage, translations } from './language.js';
+import { updateLanguage } from './language.js';
+import { translations } from './translations.js';
 import { switchPage, updateProgressSection } from './navigation.js';
 import { loadImage, fitInBox, measureText, toFullCoords } from './helpers.js';
 import { draw, invalidateCache, invalidateTextCache, generatePreviews } from './canvas-engine.js';
