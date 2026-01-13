@@ -133,3 +133,13 @@ document.getElementById('back-5').addEventListener('click', () => {
 });
 
 document.getElementById('next-5').addEventListener('click', () => { switchPage(5, 4); generatePreviews(); });
+
+// Modal Close Logic
+const alertModal = document.getElementById('alert-modal');
+if (alertModal) {
+  alertModal.addEventListener('click', (e) => {
+    // Close if clicking the background (the modal itself) 
+    // or the "Click anywhere to close" text
+    alertModal.style.display = 'none';
+  });
+}
