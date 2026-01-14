@@ -31,24 +31,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             cb.checked = savedState.selectedKnives.includes(cb.dataset.name);
         });
 
+        // Restore sections
         for (const knife of Object.keys(savedState.knives || {})) {
             await initializeKnife(knife);
-
+            
+            // Re-fetch state after await to ensure it exists
             const s = state[knife];
             const data = savedState.knives[knife];
-            s.textInput.value = data.text || '';
-            s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
-            s.weightSel.value = data.weight || "400";
-            s.baseFont = data.baseFont || s.baseFont; // RESTORE baseFont
-            s.textScale = data.textScale || 1;
-            s.textRightX = data.textRightX || 0;
-            s.pos.y = data.posY || 0;
             
-            // Re-measure after restoring font properties
-            s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
-            
-            invalidateTextCache(knife);
-            draw(knife);
+            if (s && data) {
+                s.textInput.value = data.text || '';
+                s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
+                s.weightSel.value = data.weight || "400";
+                s.baseFont = data.baseFont || s.baseFont;
+                s.textScale = data.textScale || 1;
+                s.textRightX = data.textRightX || 0;
+                s.pos.y = data.posY || 0;
+                
+                // Ensure font is loaded before measuring
+                const fontStr = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
+                try { await document.fonts.load(fontStr); } catch(e) {}
+                
+                s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
+                invalidateTextCache(knife);
+                draw(knife);
+            }
         }
 
         const targetPage = savedState.currentPage || '1';

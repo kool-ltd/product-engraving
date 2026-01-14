@@ -6,31 +6,32 @@ async function syncFontAndText(knife) {
   const isSmallKnife = knives.small.includes(knife);
   const isOtherItem = knives.others.includes(knife);
 
-  const targetKnives = Object.keys(state).filter(k => 
-    k !== knife && 
-    ((isBigKnife && knives.big.includes(k)) || 
-     (isSmallKnife && knives.small.includes(k)) || 
-     (isOtherItem && knives.others.includes(k)))
+  // Find all knives in the same category, INCLUDING the current one
+  const groupKnives = Object.keys(state).filter(k => 
+    (isBigKnife && knives.big.includes(k)) || 
+    (isSmallKnife && knives.small.includes(k)) || 
+    (isOtherItem && knives.others.includes(k))
   );
 
-  for (const k of targetKnives) {
-    state[k].fontSel.value = refState.fontSel.value;
-    state[k].weightSel.value = refState.weightSel.value;
+  for (const k of groupKnives) {
+    const s = state[k];
     
-    // Normalize scale into baseFont
-    state[k].baseFont = refState.baseFont * refState.textScale;
-    state[k].textScale = 1;
+    // Sync UI values
+    s.fontSel.value = refState.fontSel.value;
+    s.weightSel.value = refState.weightSel.value;
+    
+    // Normalize scale into baseFont for EVERYONE in the group
+    s.baseFont = refState.baseFont * refState.textScale;
+    s.textScale = 1;
 
-    // CRITICAL: Wait for font to load at this specific size before measuring
-    const fontStr = `${state[k].weightSel.value} ${state[k].baseFont}px ${state[k].fontSel.value}`;
-    try {
-      await document.fonts.load(fontStr);
-    } catch(e) {}
+    // Load font and measure
+    const fontStr = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
+    try { await document.fonts.load(fontStr); } catch(e) {}
 
-    state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
+    s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
     invalidateTextCache(k);
-    if (!state[k].pendingDraw) {
-      state[k].pendingDraw = true;
+    if (!s.pendingDraw) {
+      s.pendingDraw = true;
       requestAnimationFrame(() => draw(k));
     }
   }
@@ -90,21 +91,23 @@ function toggleAlignment(knife) {
     else if (isSmallKnife) alignRightSmall = false;
     else alignRightOthers = false;
   } else {
-    if (isBigKnife || isSmallKnife) {
-      const lastKnife = lastAdjusted[group] || knife;
-      const refX = state[lastKnife].textRightX;
-      const refY = state[lastKnife].pos.y;
+    // Enable Alignment: Sync to the reference knife
+    const refKnife = lastAdjusted[group] || knife;
+    if (state[refKnife]) {
+      const refX = state[refKnife].textRightX;
+      const refY = state[refKnife].pos.y;
       Object.keys(state).forEach(k => {
-        if ((isBigKnife && knives.big.includes(k)) || (isSmallKnife && knives.small.includes(k))) {
+        if ((isBigKnife && knives.big.includes(k)) || (isSmallKnife && knives.small.includes(k)) || (isOtherItem && knives.others.includes(k))) {
           state[k].textRightX = refX;
           state[k].pos.y = refY;
           invalidateTextCache(k);
           draw(k);
         }
       });
-      if (isBigKnife) alignRightBig = true;
-      else if (isSmallKnife) alignRightSmall = true;
     }
+    if (isBigKnife) alignRightBig = true;
+    else if (isSmallKnife) alignRightSmall = true;
+    else alignRightOthers = true;
   }
 
   document.querySelectorAll('#auto-align').forEach(btn => {
@@ -124,6 +127,7 @@ document.addEventListener('click', e => {
     let knife;
     if (activePage === '2') knife = Object.keys(state).find(k => knives.big.includes(k));
     if (activePage === '3') knife = Object.keys(state).find(k => knives.small.includes(k));
+    if (activePage === '5') knife = Object.keys(state).find(k => knives.others.includes(k));
     if (knife) debounceToggle(() => toggleAlignment(knife), 'auto-align', 'recenter')();
   }
 });

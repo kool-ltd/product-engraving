@@ -114,7 +114,8 @@ function createCanvasSection(knife) {
 
 function draw(knife) {
   const s = state[knife];
-  if (!s.img || s.full.width === 0 || s.full.height === 0) return;
+  // FIXED: Added safety check to ensure s exists and is fully loaded
+  if (!s || !s.img || s.full.width === 0 || s.full.height === 0) return;
 
   const textX = s.textRightX;
 
@@ -173,11 +174,11 @@ function draw(knife) {
 }
 
 function invalidateCache(knife) {
-  state[knife].cacheValid = false;
+  if (state[knife]) state[knife].cacheValid = false;
 }
 
 function invalidateTextCache(knife) {
-  state[knife].textCacheValid = false;
+  if (state[knife]) state[knife].textCacheValid = false;
 }
 
 async function initializeKnife(knife) {
@@ -229,7 +230,7 @@ async function initializeKnife(knife) {
   }
 
   const fontStr = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
-  await document.fonts.load(fontStr);
+  try { await document.fonts.load(fontStr); } catch(e) {}
   
   if (s.textInput.value) {
     s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
@@ -242,6 +243,7 @@ async function initializeKnife(knife) {
   }
 
   s.textInput.addEventListener('input', () => {
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     if (sameContent) {
       sharedText = s.textInput.value;
       Object.keys(state).forEach(k => {
@@ -261,12 +263,12 @@ async function initializeKnife(knife) {
         requestAnimationFrame(() => draw(knife));
       }
     }
-    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
   });
 
   s.weightSel.addEventListener('input', async () => {
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     const fontString = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
-    await document.fonts.load(fontString);
+    try { await document.fonts.load(fontString); } catch(e) {}
     s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
     invalidateTextCache(knife);
     if (!s.pendingDraw) {
@@ -274,12 +276,12 @@ async function initializeKnife(knife) {
       requestAnimationFrame(() => draw(knife));
     }
     syncFontAndText(knife);
-    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
   });
 
   s.fontSel.addEventListener('input', async () => {
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     const fontString = `${s.weightSel.value} ${s.baseFont}px ${s.fontSel.value}`;
-    await document.fonts.load(fontString);
+    try { await document.fonts.load(fontString); } catch(e) {}
     s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
     invalidateTextCache(knife);
     if (!s.pendingDraw) {
@@ -287,7 +289,6 @@ async function initializeKnife(knife) {
       requestAnimationFrame(() => draw(knife));
     }
     syncFontAndText(knife);
-    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
   });
 
   if (s.sameContentChk) {
@@ -321,6 +322,7 @@ async function initializeKnife(knife) {
     const f = toFullCoords(s.view, s, e.clientX, e.clientY);
     s.textRightX = f.x - s.dragStart.dx;
     s.pos.y = f.y - s.dragStart.dy;
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
     if (alignRight) {
       Object.keys(state).forEach(k => {
@@ -404,6 +406,7 @@ async function initializeKnife(knife) {
       s.pos.y = s.resizeStart.anchorY;
     }
     s.textScale = newScale;
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     
     if (syncFonts) {
       await syncFontAndText(knife);
@@ -457,6 +460,7 @@ async function initializeKnife(knife) {
     s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist);
     s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
     s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     
     if (syncFonts) {
       await syncFontAndText(knife);
