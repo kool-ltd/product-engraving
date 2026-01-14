@@ -10,6 +10,9 @@ function loadImage(src) {
 }
 
 function fitInBox(canvas, img, wrapper) {
+  // FIXED: Added check for null image to prevent 'naturalWidth' error
+  if (!img || !img.naturalWidth) return 0;
+  
   const wrapW = wrapper.clientWidth;
   const scale = wrapW / img.naturalWidth;
   canvas.width = img.naturalWidth * scale;

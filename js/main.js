@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Create sections & restore values for saved knives
         for (const knife of Object.keys(savedState.knives || {})) {
-            iawait initializeKnife(knife);
+            // FIXED: Changed 'iawait' to 'await'
+            await initializeKnife(knife);
 
             const s = state[knife];
             const data = savedState.knives[knife];
@@ -66,12 +67,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
       document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
     }
-}); // <--- THIS WAS MISSING: Closes the DOMContentLoaded listener
+});
 
 window.addEventListener('resize', () => {
   Object.keys(state).forEach(knife => {
-    fitInBox(state[knife].view, state[knife].img, state[knife].wrapper);
-    draw(knife);
+    // Added safety check for s.img
+    const s = state[knife];
+    if (s && s.img) {
+      fitInBox(s.view, s.img, s.wrapper);
+      draw(knife);
+    }
   });
 });
 

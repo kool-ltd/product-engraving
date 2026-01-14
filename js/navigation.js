@@ -28,8 +28,8 @@ function switchPage(from, to) {
 function resizePageCanvases() {
   Object.keys(state).forEach(knife => {
     const s = state[knife];
-    // Only resize if the canvas is actually inside the currently active page
-    if (s.wrapper.offsetParent !== null) { 
+    // FIXED: Only resize if the canvas is visible AND the image is loaded
+    if (s.wrapper.offsetParent !== null && s.img) { 
       fitInBox(s.view, s.img, s.wrapper);
       invalidateTextCache(knife);
       draw(knife);
