@@ -14,9 +14,19 @@ function switchPage(from, to) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   
   const isPage5 = String(to) === '5';
+  
+  // Handle Auto-Align visibility
   document.querySelectorAll('#auto-align').forEach(btn => {
     btn.style.setProperty('display', isPage5 ? 'none' : '', 'important');
   });
+
+  // NEW: Disable Sync Fonts by default when entering Page 5
+  if (isPage5) {
+    syncFonts = false;
+    document.querySelectorAll('#sync-fonts').forEach(btn => {
+      btn.classList.add('off');
+    });
+  }
 
   setTimeout(() => { 
     isNavigating = false;
