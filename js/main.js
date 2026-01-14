@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.toggle('off', !showEditZone));
       document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
       document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
-    };
+    }
 
 window.addEventListener('resize', () => {
   Object.keys(state).forEach(knife => {
