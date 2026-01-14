@@ -20,6 +20,7 @@ function switchPage(from, to) {
 
   setTimeout(() => { 
     isNavigating = false;
+    saveAppState();
     updateProgressSection();
   }, 100);
 }
@@ -73,6 +74,7 @@ document.getElementById('next-1').addEventListener('click', async () => {
   otherContent.innerHTML = '';
   Object.keys(state).forEach(knife => delete state[knife]);
   firstSelectedKnife = selected[0].dataset.name;
+  saveAppState();
 
   if (hasBigKnives(selected)) switchPage(1, 2);
   else if (hasSmallKnives(selected)) switchPage(1, 3);
@@ -83,9 +85,13 @@ document.getElementById('next-1').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('back-2').addEventListener('click', () => switchPage(2, 1));
+document.getElementById('back-2').addEventListener('click', () => {
+    saveAppState();
+    switchPage(2, 1);
+});
 document.getElementById('next-2').addEventListener('click', async () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  saveAppState();
   if (hasSmallKnives(selected)) {
     switchPage(2, 3);
     for (const input of selected) {
@@ -103,11 +109,13 @@ document.getElementById('next-2').addEventListener('click', async () => {
 
 document.getElementById('back-3').addEventListener('click', () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  saveAppState();
   hasBigKnives(selected) ? switchPage(3, 2) : switchPage(3, 1);
 });
 
 document.getElementById('next-3').addEventListener('click', async () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  saveAppState();
   if (hasOtherItems(selected)) {
     switchPage(3, 5);
     for (const input of selected) {
@@ -119,6 +127,7 @@ document.getElementById('next-3').addEventListener('click', async () => {
 
 document.getElementById('back-4').addEventListener('click', () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  saveAppState();
   if (hasOtherItems(selected)) switchPage(4, 5);
   else if (hasSmallKnives(selected)) switchPage(4, 3);
   else if (hasBigKnives(selected)) switchPage(4, 2);
@@ -127,12 +136,13 @@ document.getElementById('back-4').addEventListener('click', () => {
 
 document.getElementById('back-5').addEventListener('click', () => {
   const selected = Array.from(productPicker.querySelectorAll('input:checked'));
+  saveAppState();
   if (hasSmallKnives(selected)) switchPage(5, 3);
   else if (hasBigKnives(selected)) switchPage(5, 2);
   else switchPage(5, 1);
 });
 
-document.getElementById('next-5').addEventListener('click', () => { switchPage(5, 4); generatePreviews(); });
+document.getElementById('next-5').addEventListener('click', () => { saveAppState(); switchPage(5, 4); generatePreviews(); });
 
 // Modal Close Logic
 const alertModal = document.getElementById('modal');

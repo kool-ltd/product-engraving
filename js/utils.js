@@ -49,3 +49,60 @@ function hasSmallKnives(selected) {
 function hasOtherItems(selected) {
   return selected.some(input => knives.others.includes(input.dataset.name));
 }
+
+
+function saveAppState() {
+    try {
+        const stateData = {
+            version: 1, // for future schema changes
+            timestamp: Date.now(),
+            currentLang,
+            sameContent,
+            firstSelectedKnife,
+            lastAdjusted: { ...lastAdjusted },
+            lastBigKnifeFont,
+            showEditZone,
+            showResizeControls,
+            syncFonts,
+            alignRightBig,
+            alignRightSmall,
+            alignRightOthers,
+            storedPositions: JSON.parse(JSON.stringify(storedPositions)), // deep copy
+            selectedKnives: Array.from(productPicker.querySelectorAll('input:checked'))
+                .map(input => input.dataset.name),
+            currentPage: Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1',
+            knives: {}
+        };
+
+        Object.keys(state).forEach(knife => {
+            const s = state[knife];
+            stateData.knives[knife] = {
+                text: s.textInput.value,
+                font: s.fontSel.value,
+                weight: s.weightSel.value,
+                textScale: s.textScale,
+                textRightX: s.textRightX,
+                posY: s.pos.y
+            };
+        });
+
+        localStorage.setItem('knifeCustomizerState', JSON.stringify(stateData));
+    } catch (e) {
+        console.warn('Failed to save state to localStorage:', e);
+    }
+}
+
+function loadAppState() {
+    try {
+        const saved = localStorage.getItem('knifeCustomizerState');
+        if (!saved) return null;
+        return JSON.parse(saved);
+    } catch (e) {
+        console.warn('Failed to load state from localStorage:', e);
+        return null;
+    }
+}
+
+function clearAppState() {
+    localStorage.removeItem('knifeCustomizerState');
+}

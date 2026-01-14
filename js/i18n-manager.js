@@ -35,6 +35,7 @@ function updateLanguage(lang) {
   if (pages[4].classList.contains('active')) {
     generatePreviews();
   }
+  saveAppState();
 }
 
 document.addEventListener('click', e => {

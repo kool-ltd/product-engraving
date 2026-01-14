@@ -476,6 +476,7 @@ async function initializeKnife(knife) {
     window.addEventListener(evt, e => {
       if (e.pointerId === s.resizeStart.id) {
         s.resizing = false;
+        saveAppState();
       }
     })
   );
@@ -552,6 +553,7 @@ async function initializeKnife(knife) {
         delete s.pointers[e.pointerId];
         if (Object.keys(s.pointers).length < 2) {
           s.pinch = false;
+          saveAppState();
         }
       }
     })
