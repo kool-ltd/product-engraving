@@ -38,10 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Create sections & restore values for saved knives
         for (const knife of Object.keys(savedState.knives || {})) {
-            if (!state[knife]) {
-                await createCanvasSection(knife);
-                await initializeKnife(knife);
-            }
+            iawait initializeKnife(knife);
+
             const s = state[knife];
             const data = savedState.knives[knife];
             s.textInput.value = data.text || '';
@@ -50,7 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             s.textScale = data.textScale || 1;
             s.textRightX = data.textRightX || 0;
             s.pos.y = data.posY || 0;
+            
             invalidateTextCache(knife);
+            draw(knife);
         }
 
         // Show correct page

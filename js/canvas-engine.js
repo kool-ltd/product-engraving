@@ -1,10 +1,15 @@
 /* CANVAS ENGINE */
 function createCanvasSection(knife) {
+  if (state[knife] && document.getElementById(`wrapper-${knife}`)) return;
+
   const showSameContent = knife === firstSelectedKnife;
   const section = document.createElement('div');
   section.className = 'knife-section';
+
+  const headerKey = knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife;
+
   section.innerHTML = `
-    <h3 data-i18n="${knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife}">${translations[currentLang][knives.big.includes(knife) || knives.small.includes(knife) ? knife + 'Knife' : knife]}</h3>
+    <h3 data-i18n="${headerKey}">${translations[currentLang][headerKey]}</h3>
     <div class="controls">
       <div>
         <label for="text-${knife}" data-i18n="textLabel">${translations[currentLang].textLabel}</label>
@@ -13,7 +18,7 @@ function createCanvasSection(knife) {
       <div>
         <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
         <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
-          <optgroup label="${translations[currentLang].english}">
+          <optgroup label="${translations[currentLang].english}" data-i18n="english">
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
             <option value="Lobster">Lobster</option>
@@ -21,7 +26,7 @@ function createCanvasSection(knife) {
             <option value="'Courier New',monospace">Courier New</option>
             <option value="Arial,sans-serif">Arial</option>
           </optgroup>
-          <optgroup label="${translations[currentLang].chinese}">
+          <optgroup label="${translations[currentLang].chinese}" data-i18n="chinese">
             <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
             <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
             <option value="'Noto Sans HK',sans-serif">思源黑體</option>
@@ -84,7 +89,7 @@ function createCanvasSection(knife) {
     view: document.getElementById(`canvas-${knife}`),
     vCtx: document.getElementById(`canvas-${knife}`).getContext('2d'),
     full: document.createElement('canvas'),
-    fCtx: document.createElement('canvas').getContext('2d'),
+    fCtx: null, // set below
     wrapper: document.getElementById(`wrapper-${knife}`),
     overlayEl: document.getElementById(`overlay-${knife}`),
     bbox: document.getElementById(`bbox-${knife}`),
@@ -93,25 +98,18 @@ function createCanvasSection(knife) {
     weightSel: document.getElementById(`weight-${knife}`), 
     sameContentChk: showSameContent ? document.getElementById(`same-content-${knife}`) : null,
     cacheCanvas: document.createElement('canvas'),
-    cacheCtx: document.createElement('canvas').getContext('2d'),
+    cacheCtx: null,
     textCacheCanvas: document.createElement('canvas'),
-    textCacheCtx: document.createElement('canvas').getContext('2d'),
+    textCacheCtx: null,
     previewCanvas: document.createElement('canvas'),
     cacheValid: false,
     textCacheValid: false,
     pendingDraw: false
   };
-  state[knife].full.width = 0;
-  state[knife].full.height = 0;
+  
   state[knife].fCtx = state[knife].full.getContext('2d');
-  state[knife].cacheCanvas.width = 0;
-  state[knife].cacheCanvas.height = 0;
   state[knife].cacheCtx = state[knife].cacheCanvas.getContext('2d');
-  state[knife].textCacheCanvas.width = 0;
-  state[knife].textCacheCanvas.height = 0;
   state[knife].textCacheCtx = state[knife].textCacheCanvas.getContext('2d');
-  state[knife].previewCanvas.width = 0;
-  state[knife].previewCanvas.height = 0;
 }
 
 function draw(knife) {
@@ -183,7 +181,10 @@ function invalidateTextCache(knife) {
 }
 
 async function initializeKnife(knife) {
-  createCanvasSection(knife);
+  // Only create section if it doesn't exist
+  if (!state[knife]) {
+    createCanvasSection(knife);
+  }
   const s = state[knife];
   s.overlayEl.style.visibility = 'visible';
   s.img = await loadImage(
