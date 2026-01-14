@@ -1,11 +1,9 @@
 /* MAIN ENTRY POINT */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Try to restore saved state first
     const savedState = loadAppState();
 
     if (savedState && savedState.version === 1) {
-        // Restore globals
         currentLang = savedState.currentLang || 'en';
         sameContent = savedState.sameContent ?? true;
         firstSelectedKnife = savedState.firstSelectedKnife;
@@ -19,7 +17,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         alignRightOthers = savedState.alignRightOthers ?? false;
         Object.assign(storedPositions, savedState.storedPositions || {});
 
-        // Set UI toggles to match restored state
         document.querySelectorAll('#edit-zone').forEach(btn => 
             btn.classList.toggle('off', !showEditZone));
         document.querySelectorAll('#resize-controls').forEach(btn => 
@@ -27,18 +24,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('#sync-fonts').forEach(btn => 
             btn.classList.toggle('off', !syncFonts));
 
-        // Restore language
         updateLanguage(currentLang);
 
-        // Restore selected products
         const checkboxes = productPicker.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(cb => {
             cb.checked = savedState.selectedKnives.includes(cb.dataset.name);
         });
 
-        // Create sections & restore values for saved knives
         for (const knife of Object.keys(savedState.knives || {})) {
-            // FIXED: Changed 'iawait' to 'await'
             await initializeKnife(knife);
 
             const s = state[knife];
@@ -46,15 +39,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             s.textInput.value = data.text || '';
             s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
             s.weightSel.value = data.weight || "400";
+            s.baseFont = data.baseFont || s.baseFont; // RESTORE baseFont
             s.textScale = data.textScale || 1;
             s.textRightX = data.textRightX || 0;
             s.pos.y = data.posY || 0;
+            
+            // Re-measure after restoring font properties
+            s.baseDims = measureText(s.fCtx, s.textInput.value, s.baseFont, s.fontSel.value, s.weightSel.value);
             
             invalidateTextCache(knife);
             draw(knife);
         }
 
-        // Show correct page
         const targetPage = savedState.currentPage || '1';
         switchPage(1, targetPage); 
 
@@ -71,7 +67,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 window.addEventListener('resize', () => {
   Object.keys(state).forEach(knife => {
-    // Added safety check for s.img
     const s = state[knife];
     if (s && s.img) {
       fitInBox(s.view, s.img, s.wrapper);
@@ -84,7 +79,6 @@ document.getElementById('alert-close').addEventListener('click', () => {
   document.getElementById('alert-modal').style.display = 'none';
 });
 
-// Download Logic
 document.getElementById('download-all').addEventListener('click', async () => {
   const zip = new JSZip();
   for (const knife of Object.keys(state)) {

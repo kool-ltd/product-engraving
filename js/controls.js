@@ -1,30 +1,40 @@
 /* FEATURE CONTROLS */
-function syncFontAndText(knife) {
+async function syncFontAndText(knife) {
   if (!syncFonts) return;
   const refState = state[knife];
   const isBigKnife = knives.big.includes(knife);
   const isSmallKnife = knives.small.includes(knife);
   const isOtherItem = knives.others.includes(knife);
 
-  Object.keys(state).forEach(k => {
-    if (k !== knife && 
-        ((isBigKnife && knives.big.includes(k)) || 
-         (isSmallKnife && knives.small.includes(k)) || 
-         (isOtherItem && knives.others.includes(k)))) {
-      state[k].fontSel.value = refState.fontSel.value;
-      state[k].weightSel.value = refState.weightSel.value;
-      if (!isOtherItem) {
-        state[k].baseFont = refState.baseFont * refState.textScale;
-        state[k].textScale = 1;
-      }
-      state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
-      invalidateTextCache(k);
-      if (!state[k].pendingDraw) {
-        state[k].pendingDraw = true;
-        requestAnimationFrame(() => draw(k));
-      }
+  const targetKnives = Object.keys(state).filter(k => 
+    k !== knife && 
+    ((isBigKnife && knives.big.includes(k)) || 
+     (isSmallKnife && knives.small.includes(k)) || 
+     (isOtherItem && knives.others.includes(k)))
+  );
+
+  for (const k of targetKnives) {
+    state[k].fontSel.value = refState.fontSel.value;
+    state[k].weightSel.value = refState.weightSel.value;
+    
+    // Normalize scale into baseFont
+    state[k].baseFont = refState.baseFont * refState.textScale;
+    state[k].textScale = 1;
+
+    // CRITICAL: Wait for font to load at this specific size before measuring
+    const fontStr = `${state[k].weightSel.value} ${state[k].baseFont}px ${state[k].fontSel.value}`;
+    try {
+      await document.fonts.load(fontStr);
+    } catch(e) {}
+
+    state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value, state[k].weightSel.value);
+    invalidateTextCache(k);
+    if (!state[k].pendingDraw) {
+      state[k].pendingDraw = true;
+      requestAnimationFrame(() => draw(k));
     }
-  });
+  }
+  
   if (isBigKnife) lastBigKnifeFont = refState.fontSel.value;
 }
 
@@ -71,7 +81,6 @@ function toggleAlignment(knife) {
   let alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
 
   if (alignRight) {
-    // Disable Alignment: Store current positions
     Object.keys(state).forEach(k => {
       if ((isBigKnife && knives.big.includes(k)) || (isSmallKnife && knives.small.includes(k)) || (isOtherItem && knives.others.includes(k))) {
         storedPositions[group][k] = { textRightX: state[k].textRightX, y: state[k].pos.y };
@@ -81,7 +90,6 @@ function toggleAlignment(knife) {
     else if (isSmallKnife) alignRightSmall = false;
     else alignRightOthers = false;
   } else {
-    // Enable Alignment: Sync to the reference knife
     if (isBigKnife || isSmallKnife) {
       const lastKnife = lastAdjusted[group] || knife;
       const refX = state[lastKnife].textRightX;

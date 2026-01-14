@@ -10,7 +10,6 @@ function loadImage(src) {
 }
 
 function fitInBox(canvas, img, wrapper) {
-  // FIXED: Added check for null image to prevent 'naturalWidth' error
   if (!img || !img.naturalWidth) return 0;
   
   const wrapW = wrapper.clientWidth;
@@ -53,11 +52,10 @@ function hasOtherItems(selected) {
   return selected.some(input => knives.others.includes(input.dataset.name));
 }
 
-
 function saveAppState() {
     try {
         const stateData = {
-            version: 1, // for future schema changes
+            version: 1,
             timestamp: Date.now(),
             currentLang,
             sameContent,
@@ -70,7 +68,7 @@ function saveAppState() {
             alignRightBig,
             alignRightSmall,
             alignRightOthers,
-            storedPositions: JSON.parse(JSON.stringify(storedPositions)), // deep copy
+            storedPositions: JSON.parse(JSON.stringify(storedPositions)),
             selectedKnives: Array.from(productPicker.querySelectorAll('input:checked'))
                 .map(input => input.dataset.name),
             currentPage: Object.keys(pages).find(p => pages[p].classList.contains('active')) || '1',
@@ -83,6 +81,7 @@ function saveAppState() {
                 text: s.textInput.value,
                 font: s.fontSel.value,
                 weight: s.weightSel.value,
+                baseFont: s.baseFont, // ADDED: Save the actual base font size
                 textScale: s.textScale,
                 textRightX: s.textRightX,
                 posY: s.pos.y
