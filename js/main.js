@@ -1,4 +1,5 @@
 /* MAIN ENTRY POINT */
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Try to restore saved state first
     const savedState = loadAppState();
@@ -25,9 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.classList.toggle('off', !showResizeControls));
         document.querySelectorAll('#sync-fonts').forEach(btn => 
             btn.classList.toggle('off', !syncFonts));
-        // Note: auto-align visibility depends on page → handled later
 
-        // Restore language (this will update texts)
+        // Restore language
         updateLanguage(currentLang);
 
         // Restore selected products
@@ -42,35 +42,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await createCanvasSection(knife);
                 await initializeKnife(knife);
             }
-
             const s = state[knife];
             const data = savedState.knives[knife];
-
             s.textInput.value = data.text || '';
             s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
             s.weightSel.value = data.weight || "400";
             s.textScale = data.textScale || 1;
             s.textRightX = data.textRightX || 0;
             s.pos.y = data.posY || 0;
-
             invalidateTextCache(knife);
         }
 
         // Show correct page
         const targetPage = savedState.currentPage || '1';
-        switchPage(1, targetPage); // force switch to restore correct view
+        switchPage(1, targetPage); 
 
-        // If we restored to preview page → regenerate
         if (targetPage === '4') {
             generatePreviews();
         }
     } else {
       updateLanguage(currentLang);
-      
       document.querySelectorAll('#edit-zone').forEach(btn => btn.classList.toggle('off', !showEditZone));
       document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
       document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
     }
+}); // <--- THIS WAS MISSING: Closes the DOMContentLoaded listener
 
 window.addEventListener('resize', () => {
   Object.keys(state).forEach(knife => {
@@ -89,11 +85,13 @@ document.getElementById('download-all').addEventListener('click', async () => {
   for (const knife of Object.keys(state)) {
     const s = state[knife];
     const folder = zip.folder(knife);
+    
     const previewCanvas = document.createElement('canvas');
     previewCanvas.width = s.full.width;
     previewCanvas.height = s.full.height;
     const ctx = previewCanvas.getContext('2d');
     ctx.drawImage(s.img, 0, 0);
+    
     if (s.textInput.value) {
       ctx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`; 
       ctx.fillStyle = '#000';
@@ -101,6 +99,7 @@ document.getElementById('download-all').addEventListener('click', async () => {
       ctx.textAlign = 'right';
       ctx.fillText(s.textInput.value, s.textRightX, s.pos.y);
     }
+    
     const previewUrl = previewCanvas.toDataURL('image/png');
     folder.file(`${knife}-preview.png`, previewUrl.split(',')[1], { base64: true });
 
@@ -110,6 +109,7 @@ document.getElementById('download-all').addEventListener('click', async () => {
     const textCtx = textCanvas.getContext('2d');
     textCtx.fillStyle = '#fff';
     textCtx.fillRect(0, 0, textCanvas.width, textCanvas.height);
+    
     if (s.textInput.value) {
       textCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`; 
       textCtx.fillStyle = '#000';
@@ -117,15 +117,17 @@ document.getElementById('download-all').addEventListener('click', async () => {
       textCtx.textAlign = 'right';
       textCtx.fillText(s.textInput.value, s.textRightX, s.pos.y);
     }
+    
     const textUrl = textCanvas.toDataURL('image/png');
     folder.file(`${knife}-text.png`, textUrl.split(',')[1], { base64: true });
   }
+
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(content);
   a.download = 'custom-knives.zip';
   a.click();
-  // Reset persistence after download
+  
   clearAppState();
 });
 
@@ -137,6 +139,7 @@ async function generatePreviews() {
     s.previewCanvas.height = s.full.height;
     const ctx = s.previewCanvas.getContext('2d');
     ctx.drawImage(s.img, 0, 0);
+    
     if (s.textInput.value) {
       ctx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`;
       ctx.fillStyle = '#000';
@@ -144,6 +147,7 @@ async function generatePreviews() {
       ctx.textAlign = 'right';
       ctx.fillText(s.textInput.value, s.textRightX, s.pos.y);
     }
+    
     const previewUrl = s.previewCanvas.toDataURL('image/png');
     const div = document.createElement('div');
     div.className = 'preview-item';
@@ -153,6 +157,7 @@ async function generatePreviews() {
     `;
     previewContent.appendChild(div);
   }
+
   previewContent.querySelectorAll('img').forEach(img => {
     img.addEventListener('click', () => {
       modalImage.src = img.src;
