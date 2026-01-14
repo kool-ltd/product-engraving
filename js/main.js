@@ -70,6 +70,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelectorAll('#resize-controls').forEach(btn => btn.classList.toggle('off', !showResizeControls));
       document.querySelectorAll('#sync-fonts').forEach(btn => btn.classList.toggle('off', !syncFonts));
     }
+
+    // Language toggle handler
+    const langToggleBtn = document.getElementById('lang-toggle');
+    if (langToggleBtn) {
+        langToggleBtn.addEventListener('click', () => {
+            const newLang = currentLang === 'en' ? 'zh-hk' : 'en';
+            updateLanguage(newLang);
+            // Optional: Re-render canvases if language change affects them (e.g., font defaults)
+            Object.keys(state).forEach(knife => {
+                if (state[knife]) {
+                    invalidateTextCache(knife);
+                    draw(knife);
+                }
+            });
+        });
+    }
 });
 
 window.addEventListener('resize', () => {
