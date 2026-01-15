@@ -19,7 +19,7 @@ let alignRightSmall = true;
 let alignRightOthers = false;
 let isNavigating = false;
 let lastToggleTime = 0;
-let lastBigKnifeFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+let lastBigKnifeFont = currentLang === 'zh-hk' ? "'中文預設',sans-serif" : "Default";
 let storedPositions = { big: {}, small: {}, others: {} };
 const toggleDebounce = 200; // ms
 
