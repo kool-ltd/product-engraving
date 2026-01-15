@@ -193,7 +193,7 @@ async function initializeKnife(knife) {
     productPicker.querySelector(`input[data-name="${knife}"]`).value
   );
   try {
-    s.overlay = await loadImage(`/images/${knife}-overlay.png`);
+    s.overlay = await loadImage(`./images/${knife}-overlay.png`);
   } catch (e) {
     s.overlay = null;
   }
