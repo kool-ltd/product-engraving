@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (s && data) {
                 s.textInput.value = data.text || '';
-                s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat");
+                s.fontSel.value = data.font || (currentLang === 'zh-hk' ? "'中文預設',sans-serif" : "Default");
                 s.weightSel.value = data.weight || "400";
                 s.baseFont = data.baseFont || s.baseFont;
                 s.textScale = data.textScale || 1;
