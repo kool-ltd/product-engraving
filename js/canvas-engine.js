@@ -19,7 +19,7 @@ function createCanvasSection(knife) {
         <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
         <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
           <optgroup label="${translations[currentLang].english}" data-i18n="english">
-            <option value="Default">Default</option>
+            <option value="'Default',sans-serif">Default</option>
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
             <option value="Caveat Brush">Caveat Brush</option>
