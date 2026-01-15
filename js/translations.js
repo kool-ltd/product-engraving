@@ -64,7 +64,7 @@ const translations = {
     downloadOn: "Downloads a ZIP file with preview and text-only images for all customized items.",
     noSelection: "Please select at least one item.",
     close: "Close",
-    chooseKnives: "Select one or more items to customize",
+    chooseKnives: "select one or more items to customize",
     disclaimerTitle: "Disclaimer",
     disclaimerText: `
       The Knife Engraving Customizer allows you to preview and design personalized engravings on selected products. Please note the following:<br>
