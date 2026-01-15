@@ -519,6 +519,29 @@ div#page-1 {
   margin-top: 3rem;
 }
 
+
+@font-face {
+  font-family: 'Default';
+  src: url('./font/Default.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+@font-face {
+  font-family: 'Default';
+  src: url('./font/Default Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: '中文預設';
+  src: url('./font/Chinese Default.ttf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
 @media (max-width: 600px) {
   .container {
     padding: var(--mpad);
