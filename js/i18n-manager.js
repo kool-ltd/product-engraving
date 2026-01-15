@@ -10,7 +10,7 @@ function updateLanguage(lang) {
 
   document.getElementById('title').textContent = translations[lang].title;
   const subtitle = document.getElementById('subtitle');
-  subtitle.innerHTML = `${translations[lang].subtitle} <img src="/images/kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
+  subtitle.innerHTML = `${translations[lang].subtitle} <img src="./images/kool-logo.png" alt="logo" style="width:50px;vertical-align:bottom;"> ${translations[lang].subtitleAfter}`;
   
   const excludedIds = ['back-2', 'back-3', 'back-4', 'edit-zone', 'resize-controls', 'sync-fonts', 'auto-align', 'next-1', 'next-2', 'next-3', 'download-all'];
 
