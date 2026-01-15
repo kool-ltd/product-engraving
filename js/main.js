@@ -86,6 +86,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
     }
+
+    function updateNext1Button() {
+      const anySelected = productPicker.querySelector('input[type="checkbox"]:checked') !== null;
+      const next1Btn = document.getElementById('next-1');
+      
+      if (next1Btn) {
+        next1Btn.classList.toggle('off', !anySelected);
+      }
+    }
+    
+    // Attach listeners to all checkboxes
+    productPicker.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', updateNext1Button);
+    });
+    
+    // Run immediately on load (handles saved/restored selections)
+    updateNext1Button();
 });
 
 window.addEventListener('resize', () => {
