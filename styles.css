@@ -63,10 +63,13 @@ h3 {
 .product-option {
   position: relative;
   text-align: center;
-  height: 210px;
+  height: auto; /* Changed from 210px to auto to fit image + text */
   display: grid;
   align-items: center;
   justify-content: center;
+  border: medium solid transparent; /* Base transparent border */
+  border-radius: var(--radius);
+  padding: 0.5rem; /* Optional: Adds space inside the border for better highlight */
 }
 
 .product-option input {
@@ -80,14 +83,12 @@ h3 {
   max-width: 100%;
   max-height: 210px;
   object-fit: contain;
-  border: 2px solid transparent;
   border-radius: var(--radius);
   display: block;
 }
 
-.product-option input:checked+img {
+.product-option:has(input:checked) {
   border-color: var(--accent);
-  border-width: medium;
 }
 
 .product-option span {
