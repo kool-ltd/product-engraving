@@ -220,7 +220,7 @@ async function initializeKnife(knife) {
       initialFont = state[lastAdjusted.big].fontSel.value;
       initialWeight = state[lastAdjusted.big].weightSel.value;
     } else {
-      initialFont = currentLang === 'zh-hk' ? "'中文預設',sans-serif" : "Default',sans-serif";
+      initialFont = currentLang === 'zh-hk' ? "'中文預設',sans-serif" : "'Default',sans-serif";
     }
   }
   s.fontSel.value = initialFont;
