@@ -104,10 +104,15 @@ document.getElementById('alert-close').addEventListener('click', () => {
 
 document.getElementById('download-all').addEventListener('click', async () => {
   const zip = new JSZip();
+  
+  // Scale factor 
+  const PPI_SCALE = 2;
+
   for (const knife of Object.keys(state)) {
     const s = state[knife];
     const folder = zip.folder(knife);
     
+    // --- 1. Preview Image (Original Resolution) ---
     const previewCanvas = document.createElement('canvas');
     previewCanvas.width = s.full.width;
     previewCanvas.height = s.full.height;
@@ -125,19 +130,26 @@ document.getElementById('download-all').addEventListener('click', async () => {
     const previewUrl = previewCanvas.toDataURL('image/png');
     folder.file(`${knife}-preview.png`, previewUrl.split(',')[1], { base64: true });
 
+    // --- 2. Text-Only Image (Scaled to 300 PPI) ---
     const textCanvas = document.createElement('canvas');
-    textCanvas.width = s.full.width;
-    textCanvas.height = s.full.height;
+    // Scale canvas dimensions
+    textCanvas.width = s.full.width * PPI_SCALE;
+    textCanvas.height = s.full.height * PPI_SCALE;
     const textCtx = textCanvas.getContext('2d');
+    
     textCtx.fillStyle = '#fff';
     textCtx.fillRect(0, 0, textCanvas.width, textCanvas.height);
     
     if (s.textInput.value) {
-      textCtx.font = `${s.weightSel.value} ${s.baseFont * s.textScale}px ${s.fontSel.value}`; 
+      // Scale font size
+      const scaledFontSize = s.baseFont * s.textScale * PPI_SCALE;
+      textCtx.font = `${s.weightSel.value} ${scaledFontSize}px ${s.fontSel.value}`; 
       textCtx.fillStyle = '#000';
       textCtx.textBaseline = 'top';
       textCtx.textAlign = 'right';
-      textCtx.fillText(s.textInput.value, s.textRightX, s.pos.y);
+      
+      // Scale coordinates
+      textCtx.fillText(s.textInput.value, s.textRightX * PPI_SCALE, s.pos.y * PPI_SCALE);
     }
     
     const textUrl = textCanvas.toDataURL('image/png');
