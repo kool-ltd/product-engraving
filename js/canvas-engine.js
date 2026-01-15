@@ -19,14 +19,16 @@ function createCanvasSection(knife) {
         <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
         <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
           <optgroup label="${translations[currentLang].english}" data-i18n="english">
+            <option value="Default">Default</option>
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
-            <option value="Lobster">Lobster</option>
+            <option value="Caveat Brush">Caveat Brush</option>
             <option value="'Times New Roman',serif">Times New Roman</option>
             <option value="'Courier New',monospace">Courier New</option>
             <option value="Arial,sans-serif">Arial</option>
           </optgroup>
           <optgroup label="${translations[currentLang].chinese}" data-i18n="chinese">
+            <option value="'中文預設',sans-serif">中文預設</option>
             <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
             <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
             <option value="'Noto Sans HK',sans-serif">思源黑體</option>
