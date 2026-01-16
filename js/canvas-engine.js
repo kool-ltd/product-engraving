@@ -451,27 +451,45 @@ async function initializeKnife(knife) {
 
   window.addEventListener('pointermove', async e => {
     if (!s.pinch || !s.pointers[e.pointerId]) return;
+  
+    // Update current pointer position (in full coords)
     s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
+  
     const [p1, p2] = Object.values(s.pointers);
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const currentDist = Math.hypot(dx, dy);  // more reliable than sqrt(dx*dx + dy*dy)
+  
     const cx = (p1.x + p2.x) / 2;
     const cy = (p1.y + p2.y) / 2;
-    
-    // Calculate new scale with sensitivity damping
-    if (s.pinchStart.dist > 0.001) { // Prevent div0 or tiny jumps
-      const ratio = dist / s.pinchStart.dist;
-      const sensitivity = 0.5; // Adjust: 0.5 = slower, 0.7 = medium, 1.0 = original
-      s.textScale = s.pinchStart.scale * Math.pow(ratio, sensitivity);
+  
+    // --- Improved scale calculation ---
+    if (s.pinchStart.dist > 5) {  // small threshold prevents huge jumps at start
+      const rawRatio = currentDist / s.pinchStart.dist;
+  
+      // 1. Apply strong damping (most important fix)
+      const sensitivity = 0.45;           // 0.3–0.6 range → lower = slower/smoother
+      const dampedRatio = Math.pow(rawRatio, sensitivity);
+  
+      // 2. Optional: add a little exponential ease for natural feel
+      // const dampedRatio = 1 + (rawRatio - 1) * 0.5;
+  
+      s.textScale = s.pinchStart.scale * dampedRatio;
+  
+      // Optional: clamp to reasonable range (prevents going microscopic or gigantic)
+      s.textScale = Math.max(0.3, Math.min(8, s.textScale));
     }
-    
-    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
-    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
+  
+    // Panning (center movement between fingers)
+    // Optional: dampen this too if panning feels too fast
+    const moveDamping = 1.0; // 0.6–0.8 if still too sensitive
+    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx) * moveDamping;
+    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy) * moveDamping;
+  
     lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
-    
+  
+    // Your existing throttling logic (good!)
     if (syncFonts) {
-      // Throttle sync to prevent lag during fast pinching
       if (!s.pendingDraw) {
         s.pendingDraw = true;
         requestAnimationFrame(async () => {
