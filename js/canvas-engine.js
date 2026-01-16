@@ -451,55 +451,21 @@ async function initializeKnife(knife) {
 
   window.addEventListener('pointermove', async e => {
     if (!s.pinch || !s.pointers[e.pointerId]) return;
-  
     s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
-  
     const [p1, p2] = Object.values(s.pointers);
-    const currentDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);   // cleaner distance
-  
-    if (currentDist < 1) return; // safety
-  
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
     const cx = (p1.x + p2.x) / 2;
     const cy = (p1.y + p2.y) / 2;
-  
-    // ── The improved, stable way ───────────────────────────────────────
-    const rawRatio = currentDist / s.pinchStart.dist;
-  
-    // 1. Limit how much the scale can change per frame (prevents jumps)
-    const MAX_SCALE_CHANGE_PER_FRAME = 0.18; // 0.12–0.25 range, tune this!
-  
-    let targetScale = s.pinchStart.scale * rawRatio;
-  
-    // 2. Smoothly approach target (lerp) – this is the magic for no jumps
-    const lerpFactor = 0.35; // 0.25 = very smooth/slow, 0.5 = faster response
-    s.textScale += (targetScale - s.textScale) * lerpFactor;
-  
-    // 3. Hard clamp per-frame change (extra insurance)
-    const scaleDelta = s.textScale - s.pinchStart.scale * s.pinchStart.lastRatio;
-    if (Math.abs(scaleDelta) > MAX_SCALE_CHANGE_PER_FRAME) {
-      s.textScale = s.pinchStart.scale * s.pinchStart.lastRatio +
-                    Math.sign(scaleDelta) * MAX_SCALE_CHANGE_PER_FRAME;
-    }
-  
-    // Remember last ratio for next frame delta check
-    s.pinchStart.lastRatio = s.textScale / s.pinchStart.scale;
-  
-    // ── Panning (also slightly damped if you want) ──────────────────────
-    const moveDamping = 0.85; // 0.7–1.0, lower = slower panning
-    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx) * moveDamping;
-    s.pos.y       = s.pinchStart.posY       + (cy - s.pinchStart.cy)       * moveDamping;
-  
+    
+    s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist);
+    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
+    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
     lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
-  
-    // Your existing draw throttling
+    
     if (syncFonts) {
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
-        requestAnimationFrame(async () => {
-          await syncFontAndText(knife);
-          s.pendingDraw = false;
-        });
-      }
+      await syncFontAndText(knife);
     } else {
       invalidateTextCache(knife);
       if (!s.pendingDraw) {
