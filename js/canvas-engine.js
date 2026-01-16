@@ -451,40 +451,21 @@ async function initializeKnife(knife) {
 
   window.addEventListener('pointermove', async e => {
     if (!s.pinch || !s.pointers[e.pointerId]) return;
-    s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-    
+    s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
     const [p1, p2] = Object.values(s.pointers);
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
+    const cx = (p1.x + p2.x) / 2;
+    const cy = (p1.y + p2.y) / 2;
     
-    // Current center in full coordinates
-    const f1 = toFullCoords(s.view, s, p1.x, p1.y);
-    const f2 = toFullCoords(s.view, s, p2.x, p2.y);
-    const cx = (f1.x + f2.x) / 2;
-    const cy = (f1.y + f2.y) / 2;
-    
-    // Calculate new scale based on screen distance ratio (much more stable)
-    // We use a small threshold to prevent division by zero or extreme jumps
-    if (s.pinchStart.dist > 10) {
-      const ratio = dist / s.pinchStart.dist;
-      const sensitivity = 0.5; // Adjust this value (0.5 = slower, 0.7 = medium, 1.0 = original speed)
-      s.textScale = s.pinchStart.scale * Math.pow(ratio, sensitivity);
-    }
-    
+    s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist);
     s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
     s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
     lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     
     if (syncFonts) {
-      // Throttled sync to prevent lag during fast pinching
-      if (!s.pendingDraw) {
-        s.pendingDraw = true;
-        requestAnimationFrame(async () => {
-          await syncFontAndText(knife);
-          s.pendingDraw = false;
-        });
-      }
+      await syncFontAndText(knife);
     } else {
       invalidateTextCache(knife);
       if (!s.pendingDraw) {
