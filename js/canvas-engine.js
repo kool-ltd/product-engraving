@@ -452,43 +452,46 @@ async function initializeKnife(knife) {
   window.addEventListener('pointermove', async e => {
     if (!s.pinch || !s.pointers[e.pointerId]) return;
   
-    // Update current pointer position (in full coords)
     s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
   
     const [p1, p2] = Object.values(s.pointers);
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const currentDist = Math.hypot(dx, dy);  // more reliable than sqrt(dx*dx + dy*dy)
+    const currentDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);   // cleaner distance
+  
+    if (currentDist < 1) return; // safety
   
     const cx = (p1.x + p2.x) / 2;
     const cy = (p1.y + p2.y) / 2;
   
-    // --- Improved scale calculation ---
-    if (s.pinchStart.dist > 5) {  // small threshold prevents huge jumps at start
-      const rawRatio = currentDist / s.pinchStart.dist;
+    // ── The improved, stable way ───────────────────────────────────────
+    const rawRatio = currentDist / s.pinchStart.dist;
   
-      // 1. Apply strong damping (most important fix)
-      const sensitivity = 0.45;           // 0.3–0.6 range → lower = slower/smoother
-      const dampedRatio = Math.pow(rawRatio, sensitivity);
+    // 1. Limit how much the scale can change per frame (prevents jumps)
+    const MAX_SCALE_CHANGE_PER_FRAME = 0.18; // 0.12–0.25 range, tune this!
   
-      // 2. Optional: add a little exponential ease for natural feel
-      // const dampedRatio = 1 + (rawRatio - 1) * 0.5;
+    let targetScale = s.pinchStart.scale * rawRatio;
   
-      s.textScale = s.pinchStart.scale * dampedRatio;
+    // 2. Smoothly approach target (lerp) – this is the magic for no jumps
+    const lerpFactor = 0.35; // 0.25 = very smooth/slow, 0.5 = faster response
+    s.textScale += (targetScale - s.textScale) * lerpFactor;
   
-      // Optional: clamp to reasonable range (prevents going microscopic or gigantic)
-      s.textScale = Math.max(0.3, Math.min(8, s.textScale));
+    // 3. Hard clamp per-frame change (extra insurance)
+    const scaleDelta = s.textScale - s.pinchStart.scale * s.pinchStart.lastRatio;
+    if (Math.abs(scaleDelta) > MAX_SCALE_CHANGE_PER_FRAME) {
+      s.textScale = s.pinchStart.scale * s.pinchStart.lastRatio +
+                    Math.sign(scaleDelta) * MAX_SCALE_CHANGE_PER_FRAME;
     }
   
-    // Panning (center movement between fingers)
-    // Optional: dampen this too if panning feels too fast
-    const moveDamping = 1.0; // 0.6–0.8 if still too sensitive
+    // Remember last ratio for next frame delta check
+    s.pinchStart.lastRatio = s.textScale / s.pinchStart.scale;
+  
+    // ── Panning (also slightly damped if you want) ──────────────────────
+    const moveDamping = 0.85; // 0.7–1.0, lower = slower panning
     s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx) * moveDamping;
-    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy) * moveDamping;
+    s.pos.y       = s.pinchStart.posY       + (cy - s.pinchStart.cy)       * moveDamping;
   
     lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
   
-    // Your existing throttling logic (good!)
+    // Your existing draw throttling
     if (syncFonts) {
       if (!s.pendingDraw) {
         s.pendingDraw = true;
