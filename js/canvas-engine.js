@@ -449,52 +449,64 @@ async function initializeKnife(knife) {
     }
   });
 
-  s.view.addEventListener('pointerdown', e => {
-    if (Object.keys(s.pointers).length >= 2) return;
-    s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
-    if (Object.keys(s.pointers).length === 2) {
-      const [p1, p2] = Object.values(s.pointers);
-      const dx = p2.x - p1.x;
-      const dy = p2.y - p1.y;
-      s.pinch = true;
-      s.pinchStart = {
-        cx: (p1.x + p2.x) / 2,
-        cy: (p1.y + p2.y) / 2,
-        dist: Math.sqrt(dx * dx + dy * dy),
-        scale: s.textScale,
-        textRightX: s.textRightX,
-        posY: s.pos.y
-      };
-    }
-  });
-
   window.addEventListener('pointermove', e => {
     if (!s.pinch || !s.pointers[e.pointerId]) return;
+  
     s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
+    
     const [p1, p2] = Object.values(s.pointers);
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.hypot(dx, dy);           // ← cleaner & more precise
+  
+    if (dist < 1) return;                      // safety against zero/near-zero
+  
     const cx = (p1.x + p2.x) / 2;
     const cy = (p1.y + p2.y) / 2;
+  
     const isBigKnife = knives.big.includes(knife);
     const isSmallKnife = knives.small.includes(knife);
     const isOtherItem = knives.others.includes(knife);
     const alignRight = isBigKnife ? alignRightBig : isSmallKnife ? alignRightSmall : alignRightOthers;
-    s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist) || s.pinchStart.scale;
-    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
-    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
+  
+    // ────────────────────── Main change: controlled scaling ──────────────────────
+    const rawRatio = dist / s.pinchStart.dist;
+    
+    // Option A – Most recommended: simple power curve (very natural feel)
+    const sensitivity = 0.55;   // 0.45 = slower, 0.6 = a bit faster, 0.7 = close to original
+    const newScale = s.pinchStart.scale * Math.pow(rawRatio, sensitivity);
+  
+    // Option B – Alternative if you prefer linear but capped speed
+    // const newScale = s.pinchStart.scale * Math.min(1.8, Math.max(0.6, rawRatio)); // cap per gesture
+  
+    s.textScale = newScale;
+  
+    // Panning – optional mild damping (usually not needed, but helps if movement feels too quick)
+    const panDamping = 0.92;   // 1.0 = original, 0.8 = noticeably slower pan
+    s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx) * panDamping;
+    s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy) * panDamping;
+  
+    // ──────────────────────────────────────────────────────────────────────────────
+  
     if (alignRight) {
       Object.keys(state).forEach(k => {
-        if (k !== knife && ((isBigKnife && knives.big.includes(k)) || 
-                            (isSmallKnife && knives.small.includes(k)) || 
-                            (isOtherItem && knives.others.includes(k)))) {
+        if (k !== knife && (
+          (isBigKnife && knives.big.includes(k)) ||
+          (isSmallKnife && knives.small.includes(k)) ||
+          (isOtherItem && knives.others.includes(k))
+        )) {
           state[k].textRightX = s.textRightX;
           state[k].pos.y = s.pos.y;
+          
           if (syncFonts) {
             state[k].baseFont = s.baseFont * s.textScale;
             state[k].textScale = 1;
-            state[k].baseDims = measureText(state[k].fCtx, state[k].textInput.value, state[k].baseFont, state[k].fontSel.value);
+            state[k].baseDims = measureText(
+              state[k].fCtx,
+              state[k].textInput.value,
+              state[k].baseFont,
+              state[k].fontSel.value
+            );
           }
           invalidateTextCache(k);
           if (!state[k].pendingDraw) {
@@ -504,15 +516,25 @@ async function initializeKnife(knife) {
         }
       });
     }
+  
     if (syncFonts) {
-      syncFontAndText(knife);
+      // Better: throttle sync to avoid lag/jank during fast pinch
+      if (!s.pendingSync) {
+        s.pendingSync = true;
+        requestAnimationFrame(async () => {
+          await syncFontAndText(knife);
+          s.pendingSync = false;
+        });
+      }
     }
+  
     invalidateTextCache(knife);
     if (!s.pendingDraw) {
       s.pendingDraw = true;
       requestAnimationFrame(() => draw(knife));
     }
-    lastAdjusted[knives.big.includes(knife) ? 'big' : knives.small.includes(knife) ? 'small' : 'others'] = knife;
+  
+    lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
   });
 
   ['pointerup', 'pointercancel'].forEach(evt =>
