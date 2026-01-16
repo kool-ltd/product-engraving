@@ -459,13 +459,26 @@ async function initializeKnife(knife) {
     const cx = (p1.x + p2.x) / 2;
     const cy = (p1.y + p2.y) / 2;
     
-    s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist);
+    // Calculate new scale with sensitivity damping
+    if (s.pinchStart.dist > 0.001) { // Prevent div0 or tiny jumps
+      const ratio = dist / s.pinchStart.dist;
+      const sensitivity = 0.5; // Adjust: 0.5 = slower, 0.7 = medium, 1.0 = original
+      s.textScale = s.pinchStart.scale * Math.pow(ratio, sensitivity);
+    }
+    
     s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
     s.pos.y = s.pinchStart.posY + (cy - s.pinchStart.cy);
     lastAdjusted[isBigKnife ? 'big' : isSmallKnife ? 'small' : 'others'] = knife;
     
     if (syncFonts) {
-      await syncFontAndText(knife);
+      // Throttle sync to prevent lag during fast pinching
+      if (!s.pendingDraw) {
+        s.pendingDraw = true;
+        requestAnimationFrame(async () => {
+          await syncFontAndText(knife);
+          s.pendingDraw = false;
+        });
+      }
     } else {
       invalidateTextCache(knife);
       if (!s.pendingDraw) {
