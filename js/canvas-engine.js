@@ -19,14 +19,16 @@ function createCanvasSection(knife) {
         <label for="font-${knife}" data-i18n="fontLabel">${translations[currentLang].fontLabel}</label>
         <select id="font-${knife}" ${currentLang === 'zh-hk' ? 'data-default="Noto Sans HK"' : ''}>
           <optgroup label="${translations[currentLang].english}" data-i18n="english">
+            <option value="'Default',sans-serif">Default</option>
             <option value="Montserrat">Montserrat</option>
             <option value="Roboto">Roboto</option>
-            <option value="Lobster">Lobster</option>
+            <option value="Caveat Brush">Caveat Brush</option>
             <option value="'Times New Roman',serif">Times New Roman</option>
             <option value="'Courier New',monospace">Courier New</option>
             <option value="Arial,sans-serif">Arial</option>
           </optgroup>
           <optgroup label="${translations[currentLang].chinese}" data-i18n="chinese">
+            <option value="'中文預設',sans-serif">中文預設</option>
             <option value="'Chocolate Classical Sans',sans-serif">朱古力黑體</option>
             <option value="'LXGW WenKai Mono TC',monospace">霞鶩文楷</option>
             <option value="'Noto Sans HK',sans-serif">思源黑體</option>
@@ -114,6 +116,7 @@ function createCanvasSection(knife) {
 
 function draw(knife) {
   const s = state[knife];
+  // FIXED: Added safety check to ensure s exists and is fully loaded
   if (!s || !s.img || s.full.width === 0 || s.full.height === 0) return;
 
   const textX = s.textRightX;
@@ -190,7 +193,7 @@ async function initializeKnife(knife) {
     productPicker.querySelector(`input[data-name="${knife}"]`).value
   );
   try {
-    s.overlay = await loadImage(`/images/${knife}-overlay.png`);
+    s.overlay = await loadImage(`./images/${knife}-overlay.png`);
   } catch (e) {
     s.overlay = null;
   }
@@ -217,7 +220,7 @@ async function initializeKnife(knife) {
       initialFont = state[lastAdjusted.big].fontSel.value;
       initialWeight = state[lastAdjusted.big].weightSel.value;
     } else {
-      initialFont = currentLang === 'zh-hk' ? "'Noto Sans HK',sans-serif" : "Montserrat";
+      initialFont = currentLang === 'zh-hk' ? "'中文預設',sans-serif" : "'Default',sans-serif";
     }
   }
   s.fontSel.value = initialFont;
@@ -429,23 +432,16 @@ async function initializeKnife(knife) {
 
   s.view.addEventListener('pointerdown', e => {
     if (Object.keys(s.pointers).length >= 2) return;
-    // Store original client coordinates for distance calculation to avoid coordinate system scaling issues
-    s.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-    
+    s.pointers[e.pointerId] = toFullCoords(s.view, s, e.clientX, e.clientY);
     if (Object.keys(s.pointers).length === 2) {
       const [p1, p2] = Object.values(s.pointers);
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
-      
-      // Center point in full canvas coordinates for movement
-      const f1 = toFullCoords(s.view, s, p1.x, p1.y);
-      const f2 = toFullCoords(s.view, s, p2.x, p2.y);
-      
       s.pinch = true;
       s.pinchStart = {
-        cx: (f1.x + f2.x) / 2,
-        cy: (f1.y + f2.y) / 2,
-        dist: Math.sqrt(dx * dx + dy * dy), // Screen distance
+        cx: (p1.x + p2.x) / 2,
+        cy: (p1.y + p2.y) / 2,
+        dist: Math.sqrt(dx * dx + dy * dy),
         scale: s.textScale,
         textRightX: s.textRightX,
         posY: s.pos.y
@@ -471,7 +467,9 @@ async function initializeKnife(knife) {
     // Calculate new scale based on screen distance ratio (much more stable)
     // We use a small threshold to prevent division by zero or extreme jumps
     if (s.pinchStart.dist > 10) {
-      s.textScale = s.pinchStart.scale * (dist / s.pinchStart.dist);
+      const ratio = dist / s.pinchStart.dist;
+      const sensitivity = 0.5; // Adjust this value (0.5 = slower, 0.7 = medium, 1.0 = original speed)
+      s.textScale = s.pinchStart.scale * Math.pow(ratio, sensitivity);
     }
     
     s.textRightX = s.pinchStart.textRightX + (cx - s.pinchStart.cx);
